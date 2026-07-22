@@ -1,8 +1,4 @@
-# cmake -B build | 
-# cmake --build build | 
-# cmake --build build/ --target clean
-# cmake --build build --config Debug
-# cmake -B build -DCMAKE_BUILD_TYPE=Debug
+# CMake settings for Optim Engine
 
 cmake_minimum_required(VERSION 4.2)
 
@@ -13,9 +9,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 20)
 
-# Static and shared libraries have no prefixes being set
-# so that the output name is set as the given cmake
-# library name
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
 set(BUILD_SHARED_LIBS ON)
@@ -55,23 +48,13 @@ else()
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 endif()
 
-# add_compile_options(-g3 -03)
-
-
 include(GenerateExportHeader)
-# include(FetchContent)
 
-# THIRD PARTY LIBRARIES FETCH
-# FetchContent_Declare(
-#   SDL3
-#   GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-#   GIT_TAG main         
-# )
+# External system libraries
+find_package(Vulkan REQUIRED)
 
-# set(SDL_TEST OFF CACHE BOOL "" FORCE)
-# set(SDL_SHARED ON CACHE BOOL "" FORCE)
-
-# FetchContent_MakeAvailable(SDL3)
+# VCPKG managed libraries
+find_package(SDL3 CONFIG REQUIRED)
 
 # List all libraries in the `cmake` directory
 # then include files
@@ -83,7 +66,6 @@ include(VulkanRHI)
 include(Rendering)
 include(System)
 
-find_package(SDL3 CONFIG REQUIRED)
 
 # EXECUTABLE
 #
@@ -106,17 +88,9 @@ target_link_libraries(optimengine PRIVATE
 )
 
 # Move all dlls into the samke directory as the executable if not already there.
-
 add_custom_command(TARGET optimengine POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "$<TARGET_RUNTIME_DLLS:optimengine>"
     "$<TARGET_FILE_DIR:optimengine>"
   COMMAND_EXPAND_LISTS
 )
-
-# add_custom_command(TARGET optimengine POST_BUILD
-#   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#   "$<TARGET_PROPERTY:SDL3,IMPORTED_LOCATION>"
-#   "$<TARGET_FILE_DIR:optimengine>"
-#   COMMENT "Copying SDL3.dll to output directory..."
-# )

@@ -7,19 +7,17 @@
 add_library(rhi)
 
 target_include_directories(rhi 
-  PRIVATE 
+  PUBLIC 
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/"
+  PRIVATE 
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/Private/"
 )
 
-target_sources(rhi 
-  PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/Private/RHI.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/Private/IGraphicsRHI.cpp"
+target_sources(rhi PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/Private/RHI.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/Private/IGraphicsRHI.cpp"
 )
-
-# target_compile_definitions(rhi PRIVATE RHI_MODULE)
 
 generate_export_header(rhi
   BASE_NAME rhi

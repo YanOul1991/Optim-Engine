@@ -11,14 +11,13 @@ target_include_directories(core
     "${CMAKE_SOURCE_DIR}/Source/Core/"
 )
 
-target_sources(core
-  PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/System/LowLevel.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/System/Time.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/StandardTypes/String.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/StandardTypes/THashTable.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Debug/Private/Debug.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Debug/Private/Logging.cpp"
+target_sources(core PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/System/LowLevel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/System/Time.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/StandardTypes/String.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/StandardTypes/THashTable.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Debug/Private/Debug.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Debug/Private/Logging.cpp"
 )
 
 generate_export_header(core
