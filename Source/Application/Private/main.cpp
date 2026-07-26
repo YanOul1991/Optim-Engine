@@ -12,7 +12,7 @@
 #include "Core/StandardTypes/String.h"
 
 // Rendering module
-#include "Rendering/Rendering.h"
+#include "OptimEngine/Rendering/Rendering.h"
 
 // System module
 #include "System/System.h"
@@ -90,14 +90,14 @@ template <typename T, typename... ARGS> class TFunction final
  private:
   T (*p_func)(ARGS...);
 };
+// Delegate<float, int> someDelegate;
+// ExampleClass e;
+// someDelegate.SubscribeMemberFunction<&ExampleClass::Foo>(&e);
+// someDelegate.Broadcast(35.3478f, 999);
+// printf("Current C++ version: %s", GetCPPVersion());
 
 int main(int argc, char* argv[]) {
-  // Delegate<float, int> someDelegate;
-  // ExampleClass e;
-  // someDelegate.SubscribeMemberFunction<&ExampleClass::Foo>(&e);
-  // someDelegate.Broadcast(35.3478f, 999);
-  // printf("Current C++ version: %s", GetCPPVersion());
-
+  
   // Initalize the System module
   System::Initalize();
 

@@ -6,24 +6,19 @@ add_library(core)
 
 target_include_directories(core
   PUBLIC 
-    "${CMAKE_SOURCE_DIR}/Source/"
+    "${CMAKE_SOURCE_DIR}/Source/Core/Public/"
+    "${CMAKE_SOURCE_DIR}/Source/Core/Public/OptimEngine"
   PRIVATE
-    "${CMAKE_SOURCE_DIR}/Source/Core/"
+    "${CMAKE_SOURCE_DIR}/Source/Core/Private/"
 )
 
 target_sources(core PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/System/LowLevel.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/System/Time.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/StandardTypes/String.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/StandardTypes/THashTable.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Debug/Private/Debug.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Debug/Private/Logging.cpp"
-)
-
-generate_export_header(core
-  BASE_NAME core
-  EXPORT_MACRO_NAME CORE_API
-  EXPORT_FILE_NAME "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Minimal/Generated/CoreModuleGenerated.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/System/LowLevel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/System/Time.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/StandardTypes/String.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/StandardTypes/THashTable.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/Debug/Debug.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/Debug/Logging.cpp"
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

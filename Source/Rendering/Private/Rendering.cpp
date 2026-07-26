@@ -3,6 +3,7 @@
  */
 
 #include "Rendering/Rendering.h"
+#include "RHI/RHI.h"
 
 #include "VulkanRHI/VulkanRHI.h"
 
@@ -14,7 +15,7 @@ static struct RenderingGlobalData {
 } globalRendering;
 
 void Internal::Rendering::Initialize() {
-  
+  Internal::RHI::InitializeModule();
 }
 
 IRHI* Internal::Rendering::InstanciateRenderInterface() {

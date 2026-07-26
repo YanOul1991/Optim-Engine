@@ -3,6 +3,3 @@
 /[D-d]ebug/
 /[O-o]utput/
 /[C-c]ompiled/
-
-# Ingnore auto generated export macros headers
-Source/CoreMinimal/Generated/*

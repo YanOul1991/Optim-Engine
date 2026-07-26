@@ -10,8 +10,7 @@
 
 #pragma once
 
-#include "Core/CoreMinimal.h"
-#include "Core/StandardTypes/String.h"
+#include "OptimEngine/Core/CoreMinimal.h"
 
 namespace Internal::Debug {
 CORE_API void InternalDebugPrintF(const char* format, ...);

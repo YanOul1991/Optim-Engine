@@ -1,4 +1,4 @@
-#include "./THashTable.h"
+#include "Core/StandardTypes/THashTable.h"
 
 size_t __OptimInternal::HashMixer(uint64 x) {
   x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9;

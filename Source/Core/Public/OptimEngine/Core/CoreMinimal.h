@@ -5,11 +5,11 @@
 #include "Core/Minimal/Macros.h"
 
 // Generated Files
-#include "Core/Minimal/Generated/CoreModuleGenerated.h"
-#include "Core/Minimal/Generated/RenderModuleGenerated.h"
-#include "Core/Minimal/Generated/RhiModuleGenerated.h"
-#include "Core/Minimal/Generated/SystemModuleGenerated.h"
-#include "Core/Minimal/Generated/VulkanRhiModuleGenerated.h"
+#include "Core/Minimal/Generated/core_exports_generated.h"
+#include "Core/Minimal/Generated/rendering_exports_generated.h"
+#include "Core/Minimal/Generated/rhi_exports_generated.h"
+#include "Core/Minimal/Generated/system_exports_generated.h"
+#include "Core/Minimal/Generated/vulkanrhi_exports_generated.h"
 
 consteval const char* const GetCPPVersion() {
   if (__cplusplus == 202603l) {

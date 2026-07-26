@@ -4,12 +4,13 @@
 
 #pragma once
 
-#include "Core/CoreMinimal.h"
-#include "Core/StandardTypes/String.h"
-#include "Core/StandardTypes/TDynamicArray.h"
-#include "RHI/Interface/IRHI.h"
+#include "OptimEngine/Core/CoreMinimal.h"
+#include "OptimEngine/Core/StandardTypes/String.h"
+#include "OptimEngine/Core/StandardTypes/TDynamicArray.h"
+#include "OptimEngine/RHI/IRHI.h"
 
 namespace Internal::Rendering {
+  
 RENDERING_API void Initialize();
 
 RENDERING_API IRHI* InstanciateRenderInterface();

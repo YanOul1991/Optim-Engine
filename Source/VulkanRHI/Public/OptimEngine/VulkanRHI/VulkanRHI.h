@@ -5,7 +5,7 @@
 #pragma once
 
 #include "Core/CoreMinimal.h"
-#include "RHI/Interface/IRHI.h"
+#include "RHI/IRHI.h"
 
 class VULKANRHI_API VulkanRHI final : public IRHI
 {

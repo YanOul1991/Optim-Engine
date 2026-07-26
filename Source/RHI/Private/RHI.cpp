@@ -1,4 +1,4 @@
 #include "RHI/RHI.h"
 
-void InitializeModule() {
+void Internal::RHI::InitializeModule() {
 }

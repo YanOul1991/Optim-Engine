@@ -8,21 +8,15 @@ add_library(rhi)
 
 target_include_directories(rhi 
   PUBLIC 
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/Public/"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/Public/OptimEngine/"
   PRIVATE 
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/"
     "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/Private/"
 )
 
 target_sources(rhi PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/Private/RHI.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Source/RHI/Private/IGraphicsRHI.cpp"
-)
-
-generate_export_header(rhi
-  BASE_NAME rhi
-  EXPORT_MACRO_NAME RHI_API
-  EXPORT_FILE_NAME "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Minimal/Generated/RhiModuleGenerated.h"
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

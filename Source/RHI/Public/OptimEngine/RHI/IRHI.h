@@ -11,7 +11,7 @@
 class IRHI
 {
  public:
-  virtual ~IRHI() {
+  inline virtual ~IRHI() {
   }
   virtual void Initialize(TDynamicArray<String>& extraData) = 0;
   virtual void Update()                                     = 0;
