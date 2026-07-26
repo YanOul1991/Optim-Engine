@@ -11,7 +11,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
-set(BUILD_SHARED_LIBS ON)
 
 # All build file will be outputed to `output` directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/output")
@@ -26,28 +25,6 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${CMAKE_SOURCE_DIR}/output/lib")
 endforeach()
 
-# COMPILATION FLAGS      
-#   - Generate Debug Info
-#     (GCC/CLANG) -> g[0-3]
-#     (MSVC)
-#     
-#   - Optimization level
-#       -O[0-3]
-# 
-# LINKER FLAGS
-#   - rdynamic to all link steps
-#
-#   - Link-Time Optimizations: 
-#       (GCC/CLANG) -> -flto
-#       (MSVC)      -> /GL
-#
-if(MSVC)
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /MD")
-else()
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
-endif()
-
 include(GenerateExportHeader)
 
 # External system libraries
@@ -55,6 +32,7 @@ find_package(Vulkan REQUIRED)
 
 # VCPKG managed libraries
 find_package(SDL3 CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 # List all libraries in the `cmake` directory
 # then include files
@@ -87,10 +65,12 @@ target_link_libraries(optimengine PRIVATE
   system
 )
 
-# Move all dlls into the samke directory as the executable if not already there.
-add_custom_command(TARGET optimengine POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "$<TARGET_RUNTIME_DLLS:optimengine>"
-    "$<TARGET_FILE_DIR:optimengine>"
-  COMMAND_EXPAND_LISTS
-)
+if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+  # Move all dlls into the samke directory as the executable if not already there.
+  add_custom_command(TARGET optimengine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "$<TARGET_RUNTIME_DLLS:optimengine>"
+      "$<TARGET_FILE_DIR:optimengine>"
+    COMMAND_EXPAND_LISTS
+  )
+endif()

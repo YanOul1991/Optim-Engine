@@ -35,3 +35,7 @@ target_link_libraries(system PRIVATE
   SDL3::SDL3
   core
 )
+
+if(VCPKG_TARGET_TRIPLET MATCHES "static")
+  target_compile_definitions(system PRIVATE SDL_STATIC)
+endif()
