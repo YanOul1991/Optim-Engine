@@ -16,7 +16,4 @@ class VULKANRHI_API VulkanRHI final : public IRHI
   virtual void Initialize(TDynamicArray<String>& extraData) override final;
   virtual void Update() override final;
   virtual void Cleanup() override final;
-
- private:
-  // void CreateInstance();
 };

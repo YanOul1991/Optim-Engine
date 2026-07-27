@@ -21,3 +21,11 @@ using uint32 = __UINT32_TYPE__;
 using uint64 = __UINT64_TYPE__;
 using byte   = __UINT8_TYPE__;
 #endif
+
+#define NOCOPY(CLASS_NAME)                           \
+  CLASS_NAME(const CLASS_NAME&)            = delete; \
+  CLASS_NAME& operator=(const CLASS_NAME&) = delete;
+
+#define NOMOVE(CLASS_NAME)                      \
+  CLASS_NAME(CLASS_NAME&&)            = delete; \
+  CLASS_NAME& operator=(CLASS_NAME&&) = delete;

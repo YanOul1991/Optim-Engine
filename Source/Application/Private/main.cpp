@@ -8,44 +8,25 @@
 
 // Core module
 
-#include "Core/Memory/TUniquePtr.h"
-#include "Core/StandardTypes/String.h"
+#include "OptimEngine/Core/Memory/TUniquePtr.h"
+#include "OptimEngine/Core/StandardTypes/String.h"
+#include "OptimEngine/Core/Time/Time.h"
 
 // Rendering module
 #include "OptimEngine/Rendering/Rendering.h"
 
 // System module
-#include "System/System.h"
-#include "System/Window.h"
+#include "OptimEngine/System/System.h"
+#include "OptimEngine/System/Window.h"
+
+// FMT test
+#include <fmt/color.h>
 
 // STD HEADERS
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
-
-template <typename... ARGS> class Delegate final
-{
- public:
-  template <auto memberFunctionOffset> void SubscribeMemberFunction(auto* instance) {
-    subscriber = instance;
-    call       = [](void* pSubscriberInstance, ARGS... args) -> void {
-      (static_cast<decltype(instance)>(pSubscriberInstance)->*memberFunctionOffset)(args...);
-    };
-    std::cout << "Subscriber has.. subscribed!\n";
-  }
-
-  void Broadcast(ARGS... args) {
-    if (subscriber) {
-      call(subscriber, args...);
-      std::cout << "[Delegate] Broadcast function called\n";
-    }
-  }
-
- private:
-  void* subscriber = nullptr;
-  void (*call)(void* subscriberInstance, ARGS...);
-};
 
 class ExampleClass final
 {
@@ -90,20 +71,26 @@ template <typename T, typename... ARGS> class TFunction final
  private:
   T (*p_func)(ARGS...);
 };
-// Delegate<float, int> someDelegate;
-// ExampleClass e;
-// someDelegate.SubscribeMemberFunction<&ExampleClass::Foo>(&e);
-// someDelegate.Broadcast(35.3478f, 999);
-// printf("Current C++ version: %s", GetCPPVersion());
+
+class Bar
+{
+ public:
+  void Foo() {
+    fmt::println(fg(fmt::color::green) | fmt::emphasis::bold, "System Module has been initialized");
+  }
+};
 
 int main(int argc, char* argv[]) {
+  
+  Bar bar;
+  System::OnSystemModuleInitialized.SubscribeMemberFunction<&Bar::Foo>(&bar);
   
   // Initalize the System module
   System::Initalize();
 
   // Load the main window with the name of the application
-  Window           mainwindow = Window("Vulkan Engine Project");
-  
+  Window mainwindow = Window("Vulkan Engine Project");
+
   TUniquePtr<IRHI> pGraphicsRHI;
   pGraphicsRHI.SetPtr(Internal::Rendering::InstanciateRenderInterface());
 
@@ -111,8 +98,6 @@ int main(int argc, char* argv[]) {
     auto requiredVulkanExtensions = System::GetVulkanRequiredExtensions();
     pGraphicsRHI.GetRef().Initialize(requiredVulkanExtensions);
   }
-  
-  std::cout << "[APPLICATION] Starting Processing events\n";
 
   uint64 loopCycles = 0;
 

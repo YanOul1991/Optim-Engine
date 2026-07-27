@@ -31,7 +31,9 @@ bool System::Initalize() {
     return false;
   }
 
-  std::cout << "Module initialization status [System] : SUCESS\n";
+  // std::cout << "Module initialization status [System] : SUCESS\n";
+
+  OnSystemModuleInitialized.Broadcast();
   return true;
 }
 
@@ -39,17 +41,15 @@ TDynamicArray<String> System::GetVulkanRequiredExtensions() {
   
   uint32             vkInstanceCount = 0;
   const char* const* vkInstanceExtensions = SDL_Vulkan_GetInstanceExtensions(&vkInstanceCount);
-  std::cout << "[CALL]   System::GetVulkanRequiredExtensions()\n";
-  
+
   TDynamicArray<String> vulkanExtensions;
-  
+   
   if (vkInstanceExtensions) {
     for (size_t i = 0; i < vkInstanceCount; i++) {
       vulkanExtensions.EmplaceBack(vkInstanceExtensions[i]);
     }
   }
 
-  std::cout << "[RETURN] System::GetVulkanRequiredExtensions()\n";
   return vulkanExtensions;
 }
 

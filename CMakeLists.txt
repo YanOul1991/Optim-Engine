@@ -72,6 +72,7 @@ target_link_libraries(optimengine PRIVATE
   rhi
   rendering
   system
+  fmt::fmt
 )
 
 

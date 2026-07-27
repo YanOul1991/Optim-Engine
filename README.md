@@ -39,16 +39,21 @@ This project used the SDK version `1.4.350.0`.
 
 # Building the project
 
-To build the project, first run the CMake setup command:
+To build the project, first run the CMake setup command with one the 
+following presets :
+  * windows-debug
+  * windows-release
 
+Example:
 ```bash
-cmake -B build -S . --preset default
+cmake --preset windows-debug
 ```
 
-The simply run:
+The simply run the build command with the selected preset:
 
+Example
 ```bash
-cmake --build build
+cmake --build --preset windows-debug
 ```
 
 The generated files should be in an `output/` directory.

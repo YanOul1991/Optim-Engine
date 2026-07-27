@@ -4,11 +4,11 @@
 
 #include "VulkanRHI/VulkanRHI.h"
 
-#include "Core/System/Time.h"
 #include "OptVulkanDebug.h"
 
 #include <algorithm>
 #include <iostream>
+#include <map>
 #include <ranges>
 #include <vector>
 
@@ -52,7 +52,6 @@ static TDynamicArray<String> VerifyRequiredLayers() {
 
   // Validate all required layers and if they are supported.
   for (const char* const& reqLayer : requiredLayers) {
-    std::cout << "Verifying layer property: (" << reqLayer << ")\n";
     auto comparaisonFn = [&reqLayer](const vk::LayerProperties& property) {
       return strcmp(property.layerName, reqLayer) == 0;
     };
@@ -79,7 +78,7 @@ static TDynamicArray<String> VerifyRequiredLayers() {
 
 /**
  * TODO: Move this function into an external file.
- * 
+ *
  * @brief
  * In order to make `vk::InstanceCreateInfo` and `vk::raii::Instance()` work
  * as intended, must first transform the `TDynamicArray<String>` class into a
@@ -116,14 +115,14 @@ vk::raii::Instance CreateVulkanInstanceObject(TDynamicArray<String>& enabledExte
   }
 
   // Simple debug to check generated list objects.
-  if constexpr (true) {
-    std::cout << "Creating Vulkan instance with the following (" << ppExtensionNames.GetCount() << ") extensions:\n";
+  if constexpr (false) {
+    std::cout << "[VulkanRHI] Creating Vulkan instance with the following (" << ppExtensionNames.GetCount() << ") extensions:\n";
     for (auto&& extension : ppExtensionNames) {
-      std::cout << "------[" << extension << "]\n";
+      std::cout << "   " << extension << "\n";
     }
-    std::cout << "Creating Vulkan instance with the following (" << ppLayerNames.GetCount() << ") layers:\n";
+    std::cout << "[VulkanRHI] Creating Vulkan instance with the following (" << ppLayerNames.GetCount() << ") layers:\n";
     for (auto&& layer : ppLayerNames) {
-      std::cout << "------[" << layer << "]\n";
+      std::cout << "   " << layer << "\n";
     }
   }
 
@@ -139,6 +138,61 @@ vk::raii::Instance CreateVulkanInstanceObject(TDynamicArray<String>& enabledExte
   return vk::raii::Instance(VulkanObj::context, createInfo);
 };
 
+void SelectPhysicalDevice() {
+  /**
+   * vk::PhysicalDeviceProperties struct Documentation:
+   * https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceProperties.html
+   *
+   * Device Limits struct (vk::PhysicalDeviceLimits)
+   * https://docs.vulkan.org/spec/latest/chapters/limits.html
+   */
+
+  // Get a list of all found GPUs.
+  auto physicalDevices = VulkanObj::instance.enumeratePhysicalDevices();
+
+  // If there are no GPUs... then there is no rendering :(
+  if (physicalDevices.empty()) {
+    throw std::runtime_error("[VulkanRHI | Error] Failed to find GPUs with Vulkan Support.\n");
+  }
+
+  // A multimap of all potential GPUs that can be used.
+  // Each PhysicalDevice will be attributed a score depending
+  // on their properties and supported features.
+  // The one with the highest score will be used for rendering.
+  std::multimap<int64, vk::raii::PhysicalDevice> candidates;
+
+  for (const auto& gpu : physicalDevices) {
+    auto properties = gpu.getProperties();
+    auto features   = gpu.getFeatures();
+
+    int64 score = 0;
+
+    // Prioritize discreet GPU (dedicated graphics card) as they offer
+    // a peformance advantage.
+    if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+      score += 1000;
+    }
+
+    score += properties.limits.maxImageDimension2D;
+
+    // If the GPU does not support geometry shaders
+    // then the application simply cannot run.
+    if (features.geometryShader == false) {
+      continue;
+    }
+
+    candidates.insert(std::make_pair(score, gpu));
+  }
+
+  // If no valid candiate has been found then RIP.
+  if (candidates.empty() || candidates.rbegin()->first <= 0) {
+    throw std::runtime_error("[VulkanRHI | Error] Failed to found suitable GPU.\n");
+  }
+
+  // Else pick the last GPU of the candidate map, since the score are in ascending order.
+  VulkanObj::physicalDevice = candidates.rbegin()->second;
+}
+
 VulkanRHI::VulkanRHI() {
 }
 
@@ -146,9 +200,8 @@ VulkanRHI::~VulkanRHI() {
 }
 
 void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
-
-  std::cout << "Vulkan initialization...\n";
-  std::cout << "Vulkan API version min support: " << VK_API_VERSION_1_4 << '\n';
+  std::cout << "[VulkanRHI] Vulkan initialization...\n";
+  std::cout << "[VulkanRHI] Vulkan API version min support: " << VK_API_VERSION_1_4 << '\n';
 
   try {
     /**
@@ -168,7 +221,7 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
       };
 
       if (std::ranges::none_of(extensionProperties, comparaisonFn)) {
-        std::cout << "[Error]-The required SDL extension: (" << str.GetPointer() << ") is not supported by Vulkan.\n";
+        std::cout << "[VulkanRHI | Error]-The required SDL extension: (" << str.GetPointer() << ") is not supported by Vulkan.\n";
       }
     }
 
@@ -184,8 +237,8 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
     //
     // According to Vulkan documentation, if no `vk::Result::eErrorLayerNotPresent`
     // have been error thrown, then the instanciation is probably successful.
-    std::cout << (VulkanObj::instance != nullptr ? "[VulkanObj::instance] is valid!\n" : "Instance is NOT valid :(\n");
-    std::cout << "Vulkan initialized\n";
+    std::cout << "[VulkanRHI] " <<  (VulkanObj::instance != nullptr ? "VulkanObj::instance is valid!\n" : "Instance is NOT valid :(\n");
+    std::cout << "[VulkanRHI] Vulkan initialized\n";
 
     // Setup Debug messenger
     if constexpr (Optim::VK::enableValidationLayers) {
@@ -211,17 +264,23 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
         std::cout << "[VulkanRHI] Debug messenger FAILED to initialize.\n";
       }
     }
+
+    // Select the physical device
+    SelectPhysicalDevice();
+
+    if (VulkanObj::physicalDevice != nullptr) {
+      std::cout << "[VulkanRHI] GPU Sucessfully selected: " << VulkanObj::physicalDevice.getProperties().deviceName << '\n';
+    }
   }
   catch (const vk::SystemError& e) {
     std::cerr << "[Vulkan System Error]\n"
-    << e.what() << '\n';
+              << e.what() << '\n';
     return;
   }
   catch (const std::exception& e) {
-    std::cerr << e.what() << '\n';
+    std::cerr << "[VulkanRHI | Error] " << e.what() << '\n';
     return;
   }
-  std::cout << "[VK INITALIZATION EXIT]\n";
 }
 
 void VulkanRHI::Update() {

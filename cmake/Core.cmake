@@ -14,11 +14,11 @@ target_include_directories(core
 
 target_sources(core PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/System/LowLevel.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/System/Time.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/StandardTypes/String.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/StandardTypes/THashTable.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/Debug/Debug.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/Debug/Logging.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Private/Time/Time.cpp"
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
