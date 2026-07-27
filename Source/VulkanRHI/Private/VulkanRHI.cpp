@@ -24,6 +24,10 @@ static vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
 static std::vector<char const*> requiredLayers = {};
 
+static std::vector<const char*> requiredDeviceExtensions = {
+  vk::KHRSwapchainExtensionName
+};
+
 /**
  * @todo
  * Improve functions implementation to allow to implement other logic if
@@ -138,7 +142,7 @@ vk::raii::Instance CreateVulkanInstanceObject(TDynamicArray<String>& enabledExte
   return vk::raii::Instance(VulkanObj::context, createInfo);
 };
 
-void SelectPhysicalDevice() {
+vk::raii::PhysicalDevice SelectPhysicalDevice() {
   /**
    * vk::PhysicalDeviceProperties struct Documentation:
    * https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceProperties.html
@@ -149,6 +153,8 @@ void SelectPhysicalDevice() {
 
   // Get a list of all found GPUs.
   auto physicalDevices = VulkanObj::instance.enumeratePhysicalDevices();
+
+  std::cout << "[VulkanRHI] Selecting GPU:\n";
 
   // If there are no GPUs... then there is no rendering :(
   if (physicalDevices.empty()) {
@@ -162,8 +168,12 @@ void SelectPhysicalDevice() {
   std::multimap<int64, vk::raii::PhysicalDevice> candidates;
 
   for (const auto& gpu : physicalDevices) {
-    auto properties = gpu.getProperties();
-    auto features   = gpu.getFeatures();
+    auto properties          = gpu.getProperties();
+    auto features            = gpu.getFeatures();
+    auto queueFamilies       = gpu.getQueueFamilyProperties();
+    auto availableExtensions = gpu.enumerateDeviceExtensionProperties();
+
+    std::cout << "  Device: " << properties.deviceName << '\n';
 
     int64 score = 0;
 
@@ -181,16 +191,77 @@ void SelectPhysicalDevice() {
       continue;
     }
 
+    // Verify support for Vulkan 1.4 API.
+    // If the API is not supported then the GPU
+    // cannot be used.
+    bool supportsRequiredVulkanAPIVersion = (properties.apiVersion >= Optim::VK::ApiVersion);
+
+    if (supportsRequiredVulkanAPIVersion == false) {
+      continue;
+    }
+
+    bool supportsGraphics = std::ranges::any_of(queueFamilies, [](const vk::QueueFamilyProperties& qfp) {
+      return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics);
+    });
+
+    if (supportsGraphics == true) {
+      std::cout << "    Supports graphics: true\n";
+    }
+    else {
+      std::cout << "    Supports graphics: false\n";
+      continue;
+    }
+
+    // Check if all required extensions are supported
+    // by the GPU.
+    bool supportsAllExt = std::ranges::all_of(requiredDeviceExtensions, [&availableExtensions](const auto& requiredExt) {
+      return std::ranges::any_of(availableExtensions, [requiredExt](const vk::ExtensionProperties& availableDeviceExt) {
+        return strcmp(availableDeviceExt.extensionName, requiredExt);
+      });
+    });
+
+    if (supportsAllExt == true) {
+      std::cout << "    Supports all required extensions: true\n";
+    }
+    else {
+      std::cout << "    Supports all required extensions: false\n";
+      continue;
+    }
+
+    // Check required features.
+
+    auto testFeatures = gpu.getFeatures2();
+
+    /**
+     * TODO:
+     * Search more on `vk::raii::PhysicalDevice::getFeatures2`
+     */
+
+    auto features2 = gpu.getFeatures2<vk::PhysicalDeviceFeatures2,
+                                      vk::PhysicalDeviceVulkan11Features,
+                                      vk::PhysicalDeviceVulkan13Features,
+                                      vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+
+    bool supportsReqFeatures = features2.get<vk::PhysicalDeviceVulkan11Features>().shaderDrawParameters &&
+                               features2.get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
+                               features2.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
+
+    if (supportsReqFeatures == false) {
+      continue;
+    }
+
     candidates.insert(std::make_pair(score, gpu));
   }
 
   // If no valid candiate has been found then RIP.
   if (candidates.empty() || candidates.rbegin()->first <= 0) {
-    throw std::runtime_error("[VulkanRHI | Error] Failed to found suitable GPU.\n");
+    // throw std::runtime_error("[VulkanRHI | Error] Failed to found suitable GPU.\n");
+    return nullptr;
   }
-
-  // Else pick the last GPU of the candidate map, since the score are in ascending order.
-  VulkanObj::physicalDevice = candidates.rbegin()->second;
+  else {
+    // Else pick the last GPU of the candidate map, since the score are in ascending order.
+    return candidates.rbegin()->second;
+  }
 }
 
 VulkanRHI::VulkanRHI() {
@@ -237,7 +308,7 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
     //
     // According to Vulkan documentation, if no `vk::Result::eErrorLayerNotPresent`
     // have been error thrown, then the instanciation is probably successful.
-    std::cout << "[VulkanRHI] " <<  (VulkanObj::instance != nullptr ? "VulkanObj::instance is valid!\n" : "Instance is NOT valid :(\n");
+    std::cout << "[VulkanRHI] " << (VulkanObj::instance != nullptr ? "VulkanObj::instance is valid!\n" : "Instance is NOT valid :(\n");
     std::cout << "[VulkanRHI] Vulkan initialized\n";
 
     // Setup Debug messenger
@@ -266,7 +337,7 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
     }
 
     // Select the physical device
-    SelectPhysicalDevice();
+    VulkanObj::physicalDevice = SelectPhysicalDevice();
 
     if (VulkanObj::physicalDevice != nullptr) {
       std::cout << "[VulkanRHI] GPU Sucessfully selected: " << VulkanObj::physicalDevice.getProperties().deviceName << '\n';
