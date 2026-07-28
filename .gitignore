@@ -4,4 +4,6 @@
 /[O-o]utput/
 /[C-c]ompiled/
 
+/output/
+
 **/[G-g]enerated/
