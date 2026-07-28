@@ -9,20 +9,20 @@
 #  ifndef VULKANRHI_API
 #    ifdef vulkanrhi_EXPORTS
         /* We are building this library */
-#      define VULKANRHI_API __declspec(dllexport)
+#      define VULKANRHI_API __attribute__((visibility("default")))
 #    else
         /* We are using this library */
-#      define VULKANRHI_API __declspec(dllimport)
+#      define VULKANRHI_API __attribute__((visibility("default")))
 #    endif
 #  endif
 
 #  ifndef VULKANRHI_NO_EXPORT
-#    define VULKANRHI_NO_EXPORT 
+#    define VULKANRHI_NO_EXPORT __attribute__((visibility("hidden")))
 #  endif
 #endif
 
 #ifndef VULKANRHI_DEPRECATED
-#  define VULKANRHI_DEPRECATED __declspec(deprecated)
+#  define VULKANRHI_DEPRECATED __attribute__ ((__deprecated__))
 #endif
 
 #ifndef VULKANRHI_DEPRECATED_EXPORT

@@ -9,20 +9,20 @@
 #  ifndef SYSTEM_API
 #    ifdef system_EXPORTS
         /* We are building this library */
-#      define SYSTEM_API __declspec(dllexport)
+#      define SYSTEM_API __attribute__((visibility("default")))
 #    else
         /* We are using this library */
-#      define SYSTEM_API __declspec(dllimport)
+#      define SYSTEM_API __attribute__((visibility("default")))
 #    endif
 #  endif
 
 #  ifndef SYSTEM_NO_EXPORT
-#    define SYSTEM_NO_EXPORT 
+#    define SYSTEM_NO_EXPORT __attribute__((visibility("hidden")))
 #  endif
 #endif
 
 #ifndef SYSTEM_DEPRECATED
-#  define SYSTEM_DEPRECATED __declspec(deprecated)
+#  define SYSTEM_DEPRECATED __attribute__ ((__deprecated__))
 #endif
 
 #ifndef SYSTEM_DEPRECATED_EXPORT

@@ -3,3 +3,5 @@
 /[D-d]ebug/
 /[O-o]utput/
 /[C-c]ompiled/
+
+**/[G-g]enerated/
