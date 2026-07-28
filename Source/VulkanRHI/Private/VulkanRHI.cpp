@@ -15,10 +15,11 @@
 // Local namespace
 namespace VulkanObj {
 
-static vk::raii::Context                context;                  // Handle to Context
-static vk::raii::Instance               instance       = nullptr; // Handle to instance
-static vk::raii::PhysicalDevice         physicalDevice = nullptr; // Handle to graphics card
+static vk::raii::Context                context;                  // Context Handle
+static vk::raii::Instance               instance       = nullptr; // VkInstance Handle
+static vk::raii::PhysicalDevice         physicalDevice = nullptr; // Physical Device (GPU) handle
 static vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
+static vk::raii::Device                 device         = nullptr; // Logical Device Handle
 
 }; // namespace VulkanObj
 
@@ -264,6 +265,64 @@ vk::raii::PhysicalDevice SelectPhysicalDevice() {
   }
 }
 
+vk::raii::Device CreateLogicalDevice() {
+  /**
+   * Documentation for basic logical device creation:
+   *
+   * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
+   *
+   */
+  auto queueFamilyProperties = VulkanObj::physicalDevice.getQueueFamilyProperties();
+
+  // Find queue with graphics capabilities
+  auto graphicsQueueFamilyProperty = std::ranges::find_if(queueFamilyProperties, [](auto const& qfp) {
+    return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);
+  });
+
+  float queuePriority = 0.5f;
+
+  auto graphicsIndex = static_cast<uint32>(std::distance(queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
+
+  vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
+    .queueFamilyIndex = graphicsIndex,
+    .queueCount       = 1,
+    .pQueuePriorities = &queuePriority
+  };
+
+  // vk::PhysicalDeviceFeatures deviceFeatures;
+  // // Additional device features enabling
+  // vk::StructureChain<vk::PhysicalDeviceFeatures2,
+  //                    vk::PhysicalDeviceVulkan11Features,
+  //                    vk::PhysicalDeviceVulkan13Features,
+  //                    vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+  //   featureChaine;
+  //   featureChaine.get<vk::PhysicalDeviceVulkan11Features>().setShaderDrawParameters(true);
+  //   featureChaine.get<vk::PhysicalDeviceVulkan13Features>().setDynamicRendering(true);
+  //   featureChaine.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().setExtendedDynamicState(true);
+
+  // Create a chain of feature structures
+  vk::StructureChain<vk::PhysicalDeviceFeatures2,
+                     vk::PhysicalDeviceVulkan11Features,
+                     vk::PhysicalDeviceVulkan13Features,
+                     vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+    featureChain = {
+      {},                               // vk::PhysicalDeviceFeatures2 (empty for now)
+      { .shaderDrawParameters = true }, // Enable shader draw parameters from Vulkan 1.1
+      { .dynamicRendering = true },     // Enable dynamic rendering from Vulkan 1.3
+      { .extendedDynamicState = true }  // Enable extended dynamic state from the extension
+    };
+
+  vk::DeviceCreateInfo deviceCreateInfo{
+    .pNext                   = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
+    .queueCreateInfoCount    = 1,
+    .pQueueCreateInfos       = &deviceQueueCreateInfo,
+    .enabledExtensionCount   = static_cast<uint32>(requiredDeviceExtensions.size()),
+    .ppEnabledExtensionNames = requiredDeviceExtensions.data()
+  };
+
+  return vk::raii::Device(VulkanObj::physicalDevice, deviceCreateInfo);
+}
+
 VulkanRHI::VulkanRHI() {
 }
 
@@ -341,6 +400,13 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
 
     if (VulkanObj::physicalDevice != nullptr) {
       std::cout << "[VulkanRHI] GPU Sucessfully selected: " << VulkanObj::physicalDevice.getProperties().deviceName << '\n';
+    }
+    
+    // Create the logical device
+    VulkanObj::device = CreateLogicalDevice();
+
+    if (VulkanObj::device != nullptr) {
+      std::cout << "[VulkanRHI] Logical Device Sucessfully created " << '\n';
     }
   }
   catch (const vk::SystemError& e) {
