@@ -9,9 +9,7 @@
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_STATIC_LIBRARY_PREFIX": "",
-        "CMAKE_STATIC_LIBRARY_SUFFIX": "",
-        "CMAKE_SHARED_LIBRARY_PREFIX": "",
-        "CMAKE_SHARED_LIBRARY_SUFFIX": ""
+        "CMAKE_SHARED_LIBRARY_PREFIX": ""
       }
     },
     {
@@ -43,8 +41,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_SHARED_LIBS": "ON",
-        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic",
-        "VCPKG_CRT_LINKAGE": "dynamic"
+        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake/custom-triplets",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-debug"
       }
     }
   ],

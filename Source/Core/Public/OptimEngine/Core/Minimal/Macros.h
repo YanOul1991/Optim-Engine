@@ -29,3 +29,5 @@ using byte   = __UINT8_TYPE__;
 #define NOMOVE(CLASS_NAME)                      \
   CLASS_NAME(CLASS_NAME&&)            = delete; \
   CLASS_NAME& operator=(CLASS_NAME&&) = delete;
+
+// fe
