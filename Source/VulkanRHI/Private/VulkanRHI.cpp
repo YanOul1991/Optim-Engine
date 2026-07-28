@@ -20,6 +20,7 @@ static vk::raii::Instance               instance       = nullptr; // VkInstance 
 static vk::raii::PhysicalDevice         physicalDevice = nullptr; // Physical Device (GPU) handle
 static vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 static vk::raii::Device                 device         = nullptr; // Logical Device Handle
+static vk::raii::Queue                  graphicsQueue  = nullptr;
 
 }; // namespace VulkanObj
 
@@ -143,6 +144,11 @@ vk::raii::Instance CreateVulkanInstanceObject(TDynamicArray<String>& enabledExte
   return vk::raii::Instance(VulkanObj::context, createInfo);
 };
 
+/**
+ * TODO: Consider moving this function into an external file.
+ *
+ * Function to create the a logical device.
+ */
 vk::raii::PhysicalDevice SelectPhysicalDevice() {
   /**
    * vk::PhysicalDeviceProperties struct Documentation:
@@ -289,17 +295,6 @@ vk::raii::Device CreateLogicalDevice() {
     .pQueuePriorities = &queuePriority
   };
 
-  // vk::PhysicalDeviceFeatures deviceFeatures;
-  // // Additional device features enabling
-  // vk::StructureChain<vk::PhysicalDeviceFeatures2,
-  //                    vk::PhysicalDeviceVulkan11Features,
-  //                    vk::PhysicalDeviceVulkan13Features,
-  //                    vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
-  //   featureChaine;
-  //   featureChaine.get<vk::PhysicalDeviceVulkan11Features>().setShaderDrawParameters(true);
-  //   featureChaine.get<vk::PhysicalDeviceVulkan13Features>().setDynamicRendering(true);
-  //   featureChaine.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().setExtendedDynamicState(true);
-
   // Create a chain of feature structures
   vk::StructureChain<vk::PhysicalDeviceFeatures2,
                      vk::PhysicalDeviceVulkan11Features,
@@ -320,7 +315,11 @@ vk::raii::Device CreateLogicalDevice() {
     .ppEnabledExtensionNames = requiredDeviceExtensions.data()
   };
 
-  return vk::raii::Device(VulkanObj::physicalDevice, deviceCreateInfo);
+  auto retDevice = vk::raii::Device(VulkanObj::physicalDevice, deviceCreateInfo);
+
+  VulkanObj::graphicsQueue = vk::raii::Queue(retDevice, graphicsIndex, 0);
+
+  return retDevice;
 }
 
 VulkanRHI::VulkanRHI() {
@@ -401,12 +400,16 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
     if (VulkanObj::physicalDevice != nullptr) {
       std::cout << "[VulkanRHI] GPU Sucessfully selected: " << VulkanObj::physicalDevice.getProperties().deviceName << '\n';
     }
-    
+
     // Create the logical device
     VulkanObj::device = CreateLogicalDevice();
 
     if (VulkanObj::device != nullptr) {
-      std::cout << "[VulkanRHI] Logical Device Sucessfully created " << '\n';
+      std::cout << "[VulkanRHI] Logical Device Object Sucessfully created " << '\n';
+    }
+
+    if (VulkanObj::graphicsQueue != nullptr) {
+      std::cout << "[VulkanRHI] Graphics Queue Object Sucessfully created " << '\n';
     }
   }
   catch (const vk::SystemError& e) {
