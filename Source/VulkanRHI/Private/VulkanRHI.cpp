@@ -5,6 +5,7 @@
 #include "VulkanRHI/VulkanRHI.h"
 
 #include "OptVulkanDebug.h"
+#include "OptimVKSetup.h"
 
 #include <algorithm>
 #include <iostream>
@@ -18,9 +19,9 @@ namespace VulkanObj {
 static vk::raii::Context                context;                  // Context Handle
 static vk::raii::Instance               instance       = nullptr; // VkInstance Handle
 static vk::raii::PhysicalDevice         physicalDevice = nullptr; // Physical Device (GPU) handle
-static vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 static vk::raii::Device                 device         = nullptr; // Logical Device Handle
 static vk::raii::Queue                  graphicsQueue  = nullptr;
+static vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
 }; // namespace VulkanObj
 
@@ -149,127 +150,127 @@ vk::raii::Instance CreateVulkanInstanceObject(TDynamicArray<String>& enabledExte
  *
  * Function to create the a logical device.
  */
-vk::raii::PhysicalDevice SelectPhysicalDevice() {
-  /**
-   * vk::PhysicalDeviceProperties struct Documentation:
-   * https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceProperties.html
-   *
-   * Device Limits struct (vk::PhysicalDeviceLimits)
-   * https://docs.vulkan.org/spec/latest/chapters/limits.html
-   */
+// vk::raii::PhysicalDevice SelectPhysicalDevice() {
+//   /**
+//    * vk::PhysicalDeviceProperties struct Documentation:
+//    * https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceProperties.html
+//    *
+//    * Device Limits struct (vk::PhysicalDeviceLimits)
+//    * https://docs.vulkan.org/spec/latest/chapters/limits.html
+//    */
 
-  // Get a list of all found GPUs.
-  auto physicalDevices = VulkanObj::instance.enumeratePhysicalDevices();
+//   // Get a list of all found GPUs.
+//   auto physicalDevices = VulkanObj::instance.enumeratePhysicalDevices();
 
-  std::cout << "[VulkanRHI] Selecting GPU:\n";
+//   std::cout << "[VulkanRHI] Selecting GPU:\n";
 
-  // If there are no GPUs... then there is no rendering :(
-  if (physicalDevices.empty()) {
-    throw std::runtime_error("[VulkanRHI | Error] Failed to find GPUs with Vulkan Support.\n");
-  }
+//   // If there are no GPUs... then there is no rendering :(
+//   if (physicalDevices.empty()) {
+//     throw std::runtime_error("[VulkanRHI | Error] Failed to find GPUs with Vulkan Support.\n");
+//   }
 
-  // A multimap of all potential GPUs that can be used.
-  // Each PhysicalDevice will be attributed a score depending
-  // on their properties and supported features.
-  // The one with the highest score will be used for rendering.
-  std::multimap<int64, vk::raii::PhysicalDevice> candidates;
+//   // A multimap of all potential GPUs that can be used.
+//   // Each PhysicalDevice will be attributed a score depending
+//   // on their properties and supported features.
+//   // The one with the highest score will be used for rendering.
+//   std::multimap<int64, vk::raii::PhysicalDevice> candidates;
 
-  for (const auto& gpu : physicalDevices) {
-    auto properties          = gpu.getProperties();
-    auto features            = gpu.getFeatures();
-    auto queueFamilies       = gpu.getQueueFamilyProperties();
-    auto availableExtensions = gpu.enumerateDeviceExtensionProperties();
+//   for (const auto& gpu : physicalDevices) {
+//     auto properties          = gpu.getProperties();
+//     auto features            = gpu.getFeatures();
+//     auto queueFamilies       = gpu.getQueueFamilyProperties();
+//     auto availableExtensions = gpu.enumerateDeviceExtensionProperties();
 
-    std::cout << "  Device: " << properties.deviceName << '\n';
+//     std::cout << "  Device: " << properties.deviceName << '\n';
 
-    int64 score = 0;
+//     int64 score = 0;
 
-    // Prioritize discreet GPU (dedicated graphics card) as they offer
-    // a peformance advantage.
-    if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
-      score += 1000;
-    }
+//     // Prioritize discreet GPU (dedicated graphics card) as they offer
+//     // a peformance advantage.
+//     if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+//       score += 1000;
+//     }
 
-    score += properties.limits.maxImageDimension2D;
+//     score += properties.limits.maxImageDimension2D;
 
-    // If the GPU does not support geometry shaders
-    // then the application simply cannot run.
-    if (features.geometryShader == false) {
-      continue;
-    }
+//     // If the GPU does not support geometry shaders
+//     // then the application simply cannot run.
+//     if (features.geometryShader == false) {
+//       continue;
+//     }
 
-    // Verify support for Vulkan 1.4 API.
-    // If the API is not supported then the GPU
-    // cannot be used.
-    bool supportsRequiredVulkanAPIVersion = (properties.apiVersion >= Optim::VK::ApiVersion);
+//     // Verify support for Vulkan 1.4 API.
+//     // If the API is not supported then the GPU
+//     // cannot be used.
+//     bool supportsRequiredVulkanAPIVersion = (properties.apiVersion >= Optim::VK::ApiVersion);
 
-    if (supportsRequiredVulkanAPIVersion == false) {
-      continue;
-    }
+//     if (supportsRequiredVulkanAPIVersion == false) {
+//       continue;
+//     }
 
-    bool supportsGraphics = std::ranges::any_of(queueFamilies, [](const vk::QueueFamilyProperties& qfp) {
-      return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics);
-    });
+//     bool supportsGraphics = std::ranges::any_of(queueFamilies, [](const vk::QueueFamilyProperties& qfp) {
+//       return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics);
+//     });
 
-    if (supportsGraphics == true) {
-      std::cout << "    Supports graphics: true\n";
-    }
-    else {
-      std::cout << "    Supports graphics: false\n";
-      continue;
-    }
+//     if (supportsGraphics == true) {
+//       std::cout << "    Supports graphics: true\n";
+//     }
+//     else {
+//       std::cout << "    Supports graphics: false\n";
+//       continue;
+//     }
 
-    // Check if all required extensions are supported
-    // by the GPU.
-    bool supportsAllExt = std::ranges::all_of(requiredDeviceExtensions, [&availableExtensions](const auto& requiredExt) {
-      return std::ranges::any_of(availableExtensions, [requiredExt](const vk::ExtensionProperties& availableDeviceExt) {
-        return strcmp(availableDeviceExt.extensionName, requiredExt);
-      });
-    });
+//     // Check if all required extensions are supported
+//     // by the GPU.
+//     bool supportsAllExt = std::ranges::all_of(requiredDeviceExtensions, [&availableExtensions](const auto& requiredExt) {
+//       return std::ranges::any_of(availableExtensions, [requiredExt](const vk::ExtensionProperties& availableDeviceExt) {
+//         return strcmp(availableDeviceExt.extensionName, requiredExt);
+//       });
+//     });
 
-    if (supportsAllExt == true) {
-      std::cout << "    Supports all required extensions: true\n";
-    }
-    else {
-      std::cout << "    Supports all required extensions: false\n";
-      continue;
-    }
+//     if (supportsAllExt == true) {
+//       std::cout << "    Supports all required extensions: true\n";
+//     }
+//     else {
+//       std::cout << "    Supports all required extensions: false\n";
+//       continue;
+//     }
 
-    // Check required features.
+//     // Check required features.
 
-    auto testFeatures = gpu.getFeatures2();
+//     auto testFeatures = gpu.getFeatures2();
 
-    /**
-     * TODO:
-     * Search more on `vk::raii::PhysicalDevice::getFeatures2`
-     */
+//     /**
+//      * TODO:
+//      * Search more on `vk::raii::PhysicalDevice::getFeatures2`
+//      */
 
-    auto features2 = gpu.getFeatures2<vk::PhysicalDeviceFeatures2,
-                                      vk::PhysicalDeviceVulkan11Features,
-                                      vk::PhysicalDeviceVulkan13Features,
-                                      vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+//     auto features2 = gpu.getFeatures2<vk::PhysicalDeviceFeatures2,
+//                                       vk::PhysicalDeviceVulkan11Features,
+//                                       vk::PhysicalDeviceVulkan13Features,
+//                                       vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
 
-    bool supportsReqFeatures = features2.get<vk::PhysicalDeviceVulkan11Features>().shaderDrawParameters &&
-                               features2.get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
-                               features2.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
+//     bool supportsReqFeatures = features2.get<vk::PhysicalDeviceVulkan11Features>().shaderDrawParameters &&
+//                                features2.get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
+//                                features2.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
 
-    if (supportsReqFeatures == false) {
-      continue;
-    }
+//     if (supportsReqFeatures == false) {
+//       continue;
+//     }
 
-    candidates.insert(std::make_pair(score, gpu));
-  }
+//     candidates.insert(std::make_pair(score, gpu));
+//   }
 
-  // If no valid candiate has been found then RIP.
-  if (candidates.empty() || candidates.rbegin()->first <= 0) {
-    // throw std::runtime_error("[VulkanRHI | Error] Failed to found suitable GPU.\n");
-    return nullptr;
-  }
-  else {
-    // Else pick the last GPU of the candidate map, since the score are in ascending order.
-    return candidates.rbegin()->second;
-  }
-}
+//   // If no valid candiate has been found then RIP.
+//   if (candidates.empty() || candidates.rbegin()->first <= 0) {
+//     // throw std::runtime_error("[VulkanRHI | Error] Failed to found suitable GPU.\n");
+//     return nullptr;
+//   }
+//   else {
+//     // Else pick the last GPU of the candidate map, since the score are in ascending order.
+//     return candidates.rbegin()->second;
+//   }
+// }
 
 vk::raii::Device CreateLogicalDevice() {
   /**
@@ -394,8 +395,8 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
       }
     }
 
-    // Select the physical device
-    VulkanObj::physicalDevice = SelectPhysicalDevice();
+    // Get a handle to the most optimal physical device to use for rendering
+    VulkanObj::physicalDevice = Optim::VK::SelectPhysicalDevice(VulkanObj::instance);
 
     if (VulkanObj::physicalDevice != nullptr) {
       std::cout << "[VulkanRHI] GPU Sucessfully selected: " << VulkanObj::physicalDevice.getProperties().deviceName << '\n';

@@ -17,6 +17,7 @@ target_include_directories(vulkanrhi
 
 target_sources(vulkanrhi PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/Source/VulkanRHI/Private/VulkanRHI.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Source/VulkanRHI/Private/OptimVKSetup.cpp"
 )
 
 target_link_libraries(vulkanrhi PRIVATE
