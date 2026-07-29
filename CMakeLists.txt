@@ -19,10 +19,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/output/lib")
 
 # Multi-config override (Visual Studio, Xcode, Ninja Multi-Config)
 foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
-string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${CMAKE_SOURCE_DIR}/output")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${CMAKE_SOURCE_DIR}/output")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${CMAKE_SOURCE_DIR}/output/lib")
+  string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${CMAKE_SOURCE_DIR}/output")
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${CMAKE_SOURCE_DIR}/output")
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${CMAKE_SOURCE_DIR}/output/lib")
 endforeach()
 
 
@@ -56,13 +56,11 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ###############################################################################
 find_package(Vulkan REQUIRED)
 
-
 ###############################################################################
 # Vcpkg Managed Libraries
 ###############################################################################
 find_package(SDL3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-
 
 # List all libraries in the `cmake` directory
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -70,12 +68,19 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Functions
 include(functions/MakeExportHeaders)
 
+add_subdirectory("Source/VulkanRHI")
+add_subdirectory("Source/Core")
+add_subdirectory("Source/RHI")
+add_subdirectory("Source/Rendering")
+add_subdirectory("Source/System")
+add_subdirectory("Source/Application")
+
 # Modules
-include(Core)
-include(RHI)
-include(VulkanRHI)
-include(Rendering)
-include(System)
+# include(Core)
+# include(RHI)
+# include(VulkanRHI)
+# include(Rendering)
+# include(System)
 
 
 ###############################################################################
@@ -85,22 +90,21 @@ include(System)
 # it can depend on all of them, only link against its direct dependency
 # for easier management and debugging in case of issues.
 ###############################################################################
-add_executable(optimengine)
+# add_executable(optimengine)
 
-target_include_directories(optimengine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/Private")
+# target_include_directories(optimengine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/Private")
 
-target_sources(optimengine PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/Source/Application/Private/main.cpp"
-)
+# target_sources(optimengine PRIVATE
+#   "${CMAKE_CURRENT_SOURCE_DIR}/Source/Application/Private/main.cpp"
+# )
 
-target_link_libraries(optimengine PRIVATE
-  core
-  rhi
-  rendering
-  system
-  fmt::fmt
-)
-
+# target_link_libraries(optimengine PRIVATE
+#   core
+#   rhi
+#   rendering
+#   system
+#   fmt::fmt
+# )
 
 ###############################################################################
 # EXPORT MACROS GENERATION
@@ -110,49 +114,4 @@ make_export_headers(rendering)
 make_export_headers(rhi)
 make_export_headers(system)
 make_export_headers(vulkanrhi)
-
-
-###############################################################################
-# POST BUILD
-# 
-# On Windows, if in Debug, copy all required dlls into the same output
-# folder as the executable, if they are not already there.
-###############################################################################
-if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-  add_custom_command(TARGET optimengine POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "$<TARGET_RUNTIME_DLLS:optimengine>"
-      "$<TARGET_FILE_DIR:optimengine>"
-    COMMAND_EXPAND_LISTS
-  )
-endif()
-
-if(LINUX)
-  # add_custom_command(TARGET optimengine POST_BUILD
-  #   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  #       $<TARGET_FILE:SDL3::SDL3> 
-  #       $<TARGET_FILE_DIR:optimengine>/$<TARGET_FILE_NAME:SDL3::SDL3>
-  #   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  #       $<TARGET_FILE:fmt::fmt> 
-  #       $<TARGET_FILE_DIR:optimengine>/$<TARGET_FILE_NAME:fmt::fmt>
-  # )
-  add_custom_command(TARGET optimengine POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:SDL3::SDL3> 
-        "${PROJECT_SOURCE_DIR}/output/"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:fmt::fmt> 
-        "${PROJECT_SOURCE_DIR}/output/"
-)
-endif()
-# if(LINUX)
-# add_custom_command(TARGET optimengine POST_BUILD
-#   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#       $<TARGET_FILE:SDL3::SDL3> 
-#       $<TARGET_FILE_DIR:optimengine> #/libSDL3.so
-#   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#       $<TARGET_FILE:fmt::fmt> 
-#       $<TARGET_FILE_DIR:optimengine> #/libfmt.so
-# )
-# endif()
 
