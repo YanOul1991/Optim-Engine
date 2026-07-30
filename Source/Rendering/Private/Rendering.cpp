@@ -3,30 +3,26 @@
  */
 
 #include "Rendering/Rendering.h"
-#include "RHI/RHI.h"
 
+#include "RHI/RHI.h"
 #include "VulkanRHI/VulkanRHI.h"
 
 #include <cstdio>
 #include <cstdlib>
 
-static struct RenderingGlobalData {
-  IRHI* interfaceInstance = nullptr;
-} globalRendering;
+IRHI* activeModule;
 
-void Internal::Rendering::Initialize() {
+void Internal::Rendering::Initialize()
+{
   Internal::RHI::InitializeModule();
 }
 
-IRHI* Internal::Rendering::InstanciateRenderInterface() {
-  // Only create a new instance of a RHI if no instance
-  // exists already
-  if (globalRendering.interfaceInstance == nullptr) {
-    printf("Creating instance of VulkanRHI\n");
-    return new VulkanRHI();
-  }
-  return nullptr;
+IRHI* Internal::Rendering::InstanciateRenderInterface()
+{
+  activeModule = new VulkanRHI();
+  return activeModule;
 }
 
-void Internal::Rendering::Setup(TDynamicArray<String>& settings) {
+void Internal::Rendering::Setup(TDynamicArray<String>& settings)
+{
 }

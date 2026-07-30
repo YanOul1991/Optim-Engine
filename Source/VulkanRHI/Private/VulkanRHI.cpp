@@ -22,18 +22,6 @@ struct VulkanRHI::Impl
   RenderDevice renderDevice;
 };
 
-// static RenderDevice renderDevice;
-
-// Local namespace
-namespace VulkanObj
-{
-
-// static vk::raii::Context                context;                  // Context Handle
-// static vk::raii::Instance               instance       = nullptr; // VkInstance Handle
-// static vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
-
-}; // namespace VulkanObj
-
 static std::vector<char const*> requiredLayers = {};
 
 /**
@@ -174,10 +162,8 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
 
   try {
     // Verify SDL required extensions first.
-    // impl.Get().context.enumerateInstanceExtensionProperties();
 
     auto extensionProperties = impl.Get().context.enumerateInstanceExtensionProperties();
-    // auto extensionProperties = VulkanObj::context.enumerateInstanceExtensionProperties();
 
     for (auto&& str : paramSDLExt) {
       auto comparaisonFn = [str](vk::ExtensionProperties const& extentionProperty) {
@@ -190,11 +176,9 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
     }
 
     // Validate required layers.
-    // TDynamicArray<String> validatedLayers = VerifyRequiredLayers();
     TDynamicArray<String> validatedLayers = VerifyRequiredLayers(impl.Get().context);
 
-    // Create a vk::raii:instance with the given Extensions, Layers and
-    // `vk::ApplicationInfo` struct.
+    // Create vk::Instance
     impl.Get().instance = CreateVulkanInstanceObject(impl.Get().context, paramSDLExt, validatedLayers, Optim::VK::GetApplicationInfoStruct());
 
     // Simple verification to see if the `vk::raii::Instance` object
@@ -235,8 +219,10 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
 
     // Initialize the RenderDevice object
     impl.Get().renderDevice = Optim::VK::CreateDeviceContext(physicalDevice);
-
-    impl.Get().renderDevice.Validate();
+    
+    std::cout << "PhysicalDevice Initialization status: " << (impl.Get().renderDevice.physicalDevice != nullptr) << '\n';
+    std::cout << "LogicalDevice Initialization status : " << (impl.Get().renderDevice.logicalDevice != nullptr) << '\n';
+    std::cout << "GraphicsQueue Initialization status : " << (impl.Get().renderDevice.graphicsQueue != nullptr) << '\n';
   }
   catch (const vk::SystemError& e) {
     std::cerr << "[Vulkan System Error] " << e.what() << '\n';

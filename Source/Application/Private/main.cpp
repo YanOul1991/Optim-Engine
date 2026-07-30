@@ -91,8 +91,8 @@ int main(int argc, char* argv[]) {
   // Load the main window with the name of the application
   Window mainwindow = Window("Vulkan Engine Project");
 
-  TUniquePtr<IRHI> pGraphicsRHI;
-  pGraphicsRHI.SetPtr(Internal::Rendering::InstanciateRenderInterface());
+  // Create an instance of Rendering RHI.
+  TUniquePtr<IRHI> pGraphicsRHI(Internal::Rendering::InstanciateRenderInterface());
 
   if (true) {
     auto requiredVulkanExtensions = System::GetVulkanRequiredExtensions();

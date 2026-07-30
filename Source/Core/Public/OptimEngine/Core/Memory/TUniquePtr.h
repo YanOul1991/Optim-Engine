@@ -14,16 +14,28 @@ template <typename T> class TUniquePtr final
 {
  public:
   TUniquePtr()
+  {}
+
+  ~TUniquePtr()
   {
-    pRefObject = nullptr;
+    FreeData();
+  }
+
+  TUniquePtr(nullptr_t)
+  {}
+
+  TUniquePtr(T*& pointer)
+  {
+    pRefObject = pointer;
+    pointer    = nullptr;
+  }
+
+  TUniquePtr(T*&& pointer)
+  {
+    pRefObject = pointer;
   }
 
   TUniquePtr(const TUniquePtr&) = delete;
-
-  TUniquePtr(T* initalValue)
-  {
-    pRefObject = initalValue;
-  }
 
   TUniquePtr(TUniquePtr&& other)
   {
@@ -31,11 +43,6 @@ template <typename T> class TUniquePtr final
       pRefObject       = other.pRefObject;
       other.pRefObject = nullptr;
     }
-  }
-
-  ~TUniquePtr()
-  {
-    FreeData();
   }
 
   void SetPtr(T* initialValue)
@@ -46,14 +53,7 @@ template <typename T> class TUniquePtr final
     pRefObject = initialValue;
   }
 
-  /**
-   * @brief
-   * Transfer ownership of pointer to another instance of the unique pointer.
-   *
-   * If the other instance's underlying pointer is valid, then the default
-   * behaviour is to free it, before transfering ownership.
-   */
-  void TransferOwnership(TUniquePtr& other)
+  void TransferOwnershipTo(TUniquePtr& other)
   {
     if (&other == this) {
       return;
