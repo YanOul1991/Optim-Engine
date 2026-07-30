@@ -1,19 +1,11 @@
 #pragma once
 
 #include "OptimEngine/Core/CoreMinimal.h"
+#include "OptimVKTypes/OptimVKWrapperTypes.h"
 #include "VulkanMinimal.h"
 
 namespace Optim::VK
 {
-
-struct RenderDevice
-{
-  vk::raii::PhysicalDevice physicalDevice = nullptr;
-  vk::raii::Device         logicalDevice  = nullptr;
-  vk::raii::Queue          graphicsQueue  = nullptr;
-
-  uint32 graphicsQueueFamilyIndex = 0;
-};
 
 /**
  * @brief

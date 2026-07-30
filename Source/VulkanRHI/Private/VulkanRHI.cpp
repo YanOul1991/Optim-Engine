@@ -13,13 +13,15 @@
 #include <ranges>
 #include <vector>
 
+static RenderDevice renderDevice;
+
 // Local namespace
 namespace VulkanObj {
 
 static vk::raii::Context                context;                  // Context Handle
 static vk::raii::Instance               instance       = nullptr; // VkInstance Handle
 static vk::raii::PhysicalDevice         physicalDevice = nullptr; // Physical Device (GPU) handle
-static vk::raii::Device                 device         = nullptr; // Logical Device Handle
+// static vk::raii::Device                 device         = nullptr; // Logical Device Handle
 static vk::raii::Queue                  graphicsQueue  = nullptr;
 static vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
@@ -272,56 +274,56 @@ vk::raii::Instance CreateVulkanInstanceObject(TDynamicArray<String>& enabledExte
 //   }
 // }
 
-vk::raii::Device CreateLogicalDevice() {
-  /**
-   * Documentation for basic logical device creation:
-   *
-   * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
-   *
-   */
-  auto queueFamilyProperties = VulkanObj::physicalDevice.getQueueFamilyProperties();
+// vk::raii::Device CreateLogicalDevice() {
+//   /**
+//    * Documentation for basic logical device creation:
+//    *
+//    * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
+//    *
+//    */
+//   auto queueFamilyProperties = VulkanObj::physicalDevice.getQueueFamilyProperties();
 
-  // Find queue with graphics capabilities
-  auto graphicsQueueFamilyProperty = std::ranges::find_if(queueFamilyProperties, [](auto const& qfp) {
-    return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);
-  });
+//   // Find queue with graphics capabilities
+//   auto graphicsQueueFamilyProperty = std::ranges::find_if(queueFamilyProperties, [](auto const& qfp) {
+//     return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);
+//   });
 
-  float queuePriority = 0.5f;
+//   float queuePriority = 0.5f;
 
-  auto graphicsIndex = static_cast<uint32>(std::distance(queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
+//   auto graphicsIndex = static_cast<uint32>(std::distance(queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
 
-  vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
-    .queueFamilyIndex = graphicsIndex,
-    .queueCount       = 1,
-    .pQueuePriorities = &queuePriority
-  };
+//   vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
+//     .queueFamilyIndex = graphicsIndex,
+//     .queueCount       = 1,
+//     .pQueuePriorities = &queuePriority
+//   };
 
-  // Create a chain of feature structures
-  vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                     vk::PhysicalDeviceVulkan11Features,
-                     vk::PhysicalDeviceVulkan13Features,
-                     vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
-    featureChain = {
-      {},                               // vk::PhysicalDeviceFeatures2 (empty for now)
-      { .shaderDrawParameters = true }, // Enable shader draw parameters from Vulkan 1.1
-      { .dynamicRendering = true },     // Enable dynamic rendering from Vulkan 1.3
-      { .extendedDynamicState = true }  // Enable extended dynamic state from the extension
-    };
+//   // Create a chain of feature structures
+//   vk::StructureChain<vk::PhysicalDeviceFeatures2,
+//                      vk::PhysicalDeviceVulkan11Features,
+//                      vk::PhysicalDeviceVulkan13Features,
+//                      vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+//     featureChain = {
+//       {},                               // vk::PhysicalDeviceFeatures2 (empty for now)
+//       { .shaderDrawParameters = true }, // Enable shader draw parameters from Vulkan 1.1
+//       { .dynamicRendering = true },     // Enable dynamic rendering from Vulkan 1.3
+//       { .extendedDynamicState = true }  // Enable extended dynamic state from the extension
+//     };
 
-  vk::DeviceCreateInfo deviceCreateInfo{
-    .pNext                   = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
-    .queueCreateInfoCount    = 1,
-    .pQueueCreateInfos       = &deviceQueueCreateInfo,
-    .enabledExtensionCount   = static_cast<uint32>(requiredDeviceExtensions.size()),
-    .ppEnabledExtensionNames = requiredDeviceExtensions.data()
-  };
+//   vk::DeviceCreateInfo deviceCreateInfo{
+//     .pNext                   = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
+//     .queueCreateInfoCount    = 1,
+//     .pQueueCreateInfos       = &deviceQueueCreateInfo,
+//     .enabledExtensionCount   = static_cast<uint32>(requiredDeviceExtensions.size()),
+//     .ppEnabledExtensionNames = requiredDeviceExtensions.data()
+//   };
 
-  auto retDevice = vk::raii::Device(VulkanObj::physicalDevice, deviceCreateInfo);
+//   auto retDevice = vk::raii::Device(VulkanObj::physicalDevice, deviceCreateInfo);
 
-  VulkanObj::graphicsQueue = vk::raii::Queue(retDevice, graphicsIndex, 0);
+//   VulkanObj::graphicsQueue = vk::raii::Queue(retDevice, graphicsIndex, 0);
 
-  return retDevice;
-}
+//   return retDevice;
+// }
 
 VulkanRHI::VulkanRHI() {
 }
@@ -403,11 +405,15 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
     }
 
     // Create the logical device
-    VulkanObj::device = CreateLogicalDevice();
+    // VulkanObj::device = CreateLogicalDevice();
 
-    if (VulkanObj::device != nullptr) {
-      std::cout << "[VulkanRHI] Logical Device Object Sucessfully created " << '\n';
-    }
+    renderDevice = Optim::VK::CreateDeviceContext(VulkanObj::physicalDevice);
+
+    renderDevice.Validate();
+
+    // if (VulkanObj::device != nullptr) {
+    //   std::cout << "[VulkanRHI] Logical Device Object Sucessfully created " << '\n';
+    // }
 
     if (VulkanObj::graphicsQueue != nullptr) {
       std::cout << "[VulkanRHI] Graphics Queue Object Sucessfully created " << '\n';

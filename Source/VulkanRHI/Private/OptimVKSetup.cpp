@@ -87,3 +87,59 @@ vk::raii::PhysicalDevice Optim::VK::SelectPhysicalDevice(const vk::raii::Instanc
     return candidates.rbegin()->second;
   }
 }
+
+/**
+ * Documentation for basic logical device creation:
+ *
+ * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
+ *
+ */
+RenderDevice Optim::VK::CreateDeviceContext(const vk::raii::PhysicalDevice& physicalDevice)
+{
+  RenderDevice retRenderDevice;
+
+  // List all familiy queues properties.
+  auto queueFamiliyProperties = physicalDevice.getQueueFamilyProperties();
+
+  // Find the first queue with graphics capabilities
+  auto graphicsQueueFamilyProperty = std::ranges::find_if(queueFamiliyProperties, [](auto const& qfp) {
+    return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);
+  });
+
+  float  queuePriority = 0.5f;
+  uint32 queueIndex    = static_cast<uint32>(std::distance(queueFamiliyProperties.begin(), graphicsQueueFamilyProperty));
+
+  vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
+    .queueFamilyIndex = queueIndex,
+    .queueCount       = 1,
+    .pQueuePriorities = &queuePriority
+  };
+
+  // Create StructureChain object of feature structures.
+  vk::StructureChain<vk::PhysicalDeviceFeatures2,
+                     vk::PhysicalDeviceVulkan11Features,
+                     vk::PhysicalDeviceVulkan13Features,
+                     vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+    featureChain = {
+      {},                               // vk::PhysicalDeviceFeatures2 (empty for now)
+      { .shaderDrawParameters = true }, // Enable shader draw parameters from Vulkan 1.1
+      { .dynamicRendering = true },     // Enable dynamic rendering from Vulkan 1.3
+      { .extendedDynamicState = true }  // Enable extended dynamic state from the extension
+    };
+
+  vk::DeviceCreateInfo deviceCreateInfo{
+    .pNext                   = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
+    .queueCreateInfoCount    = 1,
+    .pQueueCreateInfos       = &deviceQueueCreateInfo,
+    .enabledExtensionCount   = static_cast<uint32>(requiredDeviceExtensions.size()),
+    .ppEnabledExtensionNames = requiredDeviceExtensions.data()
+  };
+
+  // Set logical first then use that member handle to create the graphics queue.
+  retRenderDevice.logicalDevice            = vk::raii::Device(physicalDevice, deviceCreateInfo);
+  retRenderDevice.physicalDevice           = physicalDevice;
+  retRenderDevice.graphicsQueue            = vk::raii::Queue(retRenderDevice.logicalDevice, queueIndex, 0);
+  retRenderDevice.graphicsQueueFamilyIndex = queueIndex;
+
+  return retRenderDevice;
+}
