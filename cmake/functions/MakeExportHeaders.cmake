@@ -4,44 +4,14 @@
 # Simply need to pass the module name as a parameter and it will generate 
 # consistant code for each one.
 
-# include(GenerateExportHeader)
-
-# function(make_export_headers module_name)
-#   string(TOUPPER "${module_name}" MODNAME_UPPER)
-  
-#   generate_export_header(${module_name}
-#     BASE_NAME ${module_name}
-#     EXPORT_MACRO_NAME "${MODNAME_UPPER}_API"
-#     EXPORT_FILE_NAME "${CMAKE_CURRENT_SOURCE_DIR}/Source/Core/Public/OptimEngine/Core/Minimal/Generated/${module_name}_exports_generated.h"
-#   )
-# endfunction()
-
-# add_library(engine_generated_headers INTERFACE)
-
-# function(export_headers target_name)
-#   string(TOUPPER "${target_name}" MODNAME_UPPER)
-
-#   set(GEN_DIR "${CMAKE_BINARY_DIR}/OptimEngine/Core/Minimal/Generated")
-#   set(GEN_FILE "${GEN_DIR}/${target_name}_exports_generated.h")
-  
-#   generate_export_header(${target_name}
-#     BASE_NAME ${target_name}
-#     EXPORT_MACRO_NAME "${MODNAME_UPPER}_API"
-#     EXPORT_FILE_NAME "${GEN_FILE}"
-#   )
-  
-#   # target_include_directories(engine_generated_headers INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
-# endfunction()
-
-# set(ENGINE_EXPORT_MACROS "" CACHE INTERNAL "Holds generated export macros")
-
 function(export_headers target_name)
     string(TOUPPER "${target_name}" MOD_UPPER)
 
+    # Add compile definition so the macro expands to the correct visibility 
+    # attribute in the correct module.
     target_compile_definitions(${target_name} PRIVATE "EXPORT_${MOD_UPPER}")
 
-
-    # Generate the exact standard C++ visibility blocks manually
+    # C++ visibility block template
     set(MACRO_BLOCK "
 // Export macros for ${target_name} module
 #if !defined(${MOD_UPPER}_API)
@@ -60,11 +30,7 @@ function(export_headers target_name)
 #  endif
 #endif")
 
-    # set(CURRENT_MACROS "${ENGINE_EXPORT_MACROS}\\${MACRO_BLOCK}")
-    # set(ENGINE_EXPORT_MACROS "${CURRENT_MACROS}" CACHE INTERNAL "Holds generated export macros")
-
     set_property(GLOBAL APPEND PROPERTY EXPORT_ENGINE_MACROS "${MACRO_BLOCK}")
-
 endfunction()
 
 # Defer generation of header file to make sure that every module registered their macros.

@@ -43,14 +43,6 @@ if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 if(LINUX)
-  # add_custom_command(TARGET optimengine POST_BUILD
-  #   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  #       $<TARGET_FILE:SDL3::SDL3> 
-  #       $<TARGET_FILE_DIR:optimengine>/$<TARGET_FILE_NAME:SDL3::SDL3>
-  #   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  #       $<TARGET_FILE:fmt::fmt> 
-  #       $<TARGET_FILE_DIR:optimengine>/$<TARGET_FILE_NAME:fmt::fmt>
-  # )
   add_custom_command(TARGET optimengine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:SDL3::SDL3> 
@@ -60,13 +52,3 @@ if(LINUX)
         "${PROJECT_SOURCE_DIR}/output/"
 )
 endif()
-# if(LINUX)
-# add_custom_command(TARGET optimengine POST_BUILD
-#   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#       $<TARGET_FILE:SDL3::SDL3> 
-#       $<TARGET_FILE_DIR:optimengine> #/libSDL3.so
-#   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#       $<TARGET_FILE:fmt::fmt> 
-#       $<TARGET_FILE_DIR:optimengine> #/libfmt.so
-# )
-# endif()
