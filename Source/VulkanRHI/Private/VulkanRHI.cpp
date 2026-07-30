@@ -22,7 +22,7 @@ struct VulkanRHI::Impl
   RenderDevice renderDevice;
 };
 
-static std::vector<char const*> requiredLayers = {};
+// static std::vector<char const*> requiredLayers = {};
 
 /**
  * @todo
@@ -37,45 +37,45 @@ static std::vector<char const*> requiredLayers = {};
  * @return
  * A `TDynamicArray<String>` containing all validated layers.
  */
-static TDynamicArray<String> VerifyRequiredLayers(const vk::raii::Context& context)
-{
-  // Create a list of validated and unsupported layers.
-  TDynamicArray<String>      validatedLayers;
-  TDynamicArray<const char*> unsupportedLayers;
+// static TDynamicArray<String> VerifyRequiredLayers(const vk::raii::Context& context)
+// {
+//   // Create a list of validated and unsupported layers.
+//   TDynamicArray<String>      validatedLayers;
+//   TDynamicArray<const char*> unsupportedLayers;
 
-  // Add the validation layers if enabled
-  if constexpr (Optim::VK::enableValidationLayers) {
-    requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
-  }
+//   // Add the validation layers if enabled
+//   if constexpr (Optim::VK::enableValidationLayers) {
+//     requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
+//   }
 
-  // Get list of all supported layers by Vulkan implementation.
-  auto vkLayerProperties = context.enumerateInstanceLayerProperties();
+//   // Get list of all supported layers by Vulkan implementation.
+//   auto vkLayerProperties = context.enumerateInstanceLayerProperties();
 
-  // Validate all required layers and if they are supported.
-  for (const char* const& reqLayer : requiredLayers) {
-    auto comparaisonFn = [&reqLayer](const vk::LayerProperties& property) {
-      return strcmp(property.layerName, reqLayer) == 0;
-    };
+//   // Validate all required layers and if they are supported.
+//   for (const char* const& reqLayer : requiredLayers) {
+//     auto comparaisonFn = [&reqLayer](const vk::LayerProperties& property) {
+//       return strcmp(property.layerName, reqLayer) == 0;
+//     };
 
-    // Add the layer to the appropriate list whether they are supported
-    // or not.
-    if (std::ranges::none_of(vkLayerProperties, comparaisonFn)) {
-      unsupportedLayers.EmplaceBack(reqLayer);
-    }
-    else {
-      validatedLayers.EmplaceBack(reqLayer);
-    }
-  }
+//     // Add the layer to the appropriate list whether they are supported
+//     // or not.
+//     if (std::ranges::none_of(vkLayerProperties, comparaisonFn)) {
+//       unsupportedLayers.EmplaceBack(reqLayer);
+//     }
+//     else {
+//       validatedLayers.EmplaceBack(reqLayer);
+//     }
+//   }
 
-  if (unsupportedLayers.GetCount() > 0) {
-    std::cout << "Warning the following layers properties are not supported:\n";
-    for (auto&& layer : unsupportedLayers) {
-      std::cout << "---(" << layer << ")\n";
-    }
-  }
+//   if (unsupportedLayers.GetCount() > 0) {
+//     std::cout << "Warning the following layers properties are not supported:\n";
+//     for (auto&& layer : unsupportedLayers) {
+//       std::cout << "---(" << layer << ")\n";
+//     }
+//   }
 
-  return validatedLayers;
-};
+//   return validatedLayers;
+// };
 
 /**
  * TODO: Move this function into an external file.
@@ -121,7 +121,7 @@ vk::raii::Instance CreateVulkanInstanceObject(
   }
 
   // Simple debug to check generated list objects.
-  if constexpr (false) {
+  if constexpr (true) {
     std::cout << "[VulkanRHI] Creating Vulkan instance with the following (" << ppExtensionNames.GetCount() << ") extensions:\n";
     for (auto&& extension : ppExtensionNames) {
       std::cout << "   " << extension << "\n";
@@ -175,11 +175,28 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
       }
     }
 
+    TDynamicArray<String> requiredLayers;
+
+    if constexpr (Optim::VK::enableValidationLayers) {
+      requiredLayers.EmplaceBack(String("VK_LAYER_KHRONOS_validation"));
+    }
+
     // Validate required layers.
-    TDynamicArray<String> validatedLayers = VerifyRequiredLayers(impl.Get().context);
+    // TDynamicArray<String> validatedLayers = VerifyRequiredLayers(impl.Get().context);
+    TDynamicArray<String> unsupportedLayers = Optim::VK::VerifyRequiredLayers(requiredLayers, impl.Get().context);
+
+    if (unsupportedLayers.GetCount() > 0) {
+      String errorMsg = String("[VulkanRHI | Error] The following layers are not supported by Vulkan:\n");
+
+      for (auto& layer : unsupportedLayers) {
+        errorMsg.Append(" * ").Append(layer);
+      }
+
+      throw std::runtime_error(errorMsg.GetPointer());
+    }
 
     // Create vk::Instance
-    impl.Get().instance = CreateVulkanInstanceObject(impl.Get().context, paramSDLExt, validatedLayers, Optim::VK::GetApplicationInfoStruct());
+    impl.Get().instance = CreateVulkanInstanceObject(impl.Get().context, paramSDLExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
 
     // Simple verification to see if the `vk::raii::Instance` object
     // is valid/initialized properly.
@@ -219,10 +236,20 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
 
     // Initialize the RenderDevice object
     impl.Get().renderDevice = Optim::VK::CreateDeviceContext(physicalDevice);
-    
-    std::cout << "PhysicalDevice Initialization status: " << (impl.Get().renderDevice.physicalDevice != nullptr) << '\n';
-    std::cout << "LogicalDevice Initialization status : " << (impl.Get().renderDevice.logicalDevice != nullptr) << '\n';
-    std::cout << "GraphicsQueue Initialization status : " << (impl.Get().renderDevice.graphicsQueue != nullptr) << '\n';
+
+    if (impl.Get().renderDevice.physicalDevice == nullptr) {
+      throw std::runtime_error("[VulkanRHI | Error] vk::PhyscialDevice object is null.");
+    }
+    if (impl.Get().renderDevice.logicalDevice == nullptr) {
+      throw std::runtime_error("[VulkanRHI | Error] vk::Device object is null.");
+    }
+    if (impl.Get().renderDevice.graphicsQueue == nullptr) {
+      throw std::runtime_error("[VulkanRHI | Error] vk::Queue object is null.");
+    }
+
+    // std::cout << "PhysicalDevice Initialization status: " << (impl.Get().renderDevice.physicalDevice != nullptr) << '\n';
+    // std::cout << "LogicalDevice Initialization status : " << (impl.Get().renderDevice.logicalDevice != nullptr) << '\n';
+    // std::cout << "GraphicsQueue Initialization status : " << (impl.Get().renderDevice.graphicsQueue != nullptr) << '\n';
   }
   catch (const vk::SystemError& e) {
     std::cerr << "[Vulkan System Error] " << e.what() << '\n';
