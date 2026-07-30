@@ -2,8 +2,9 @@
 
 #include "VulkanMinimal.h"
 
-namespace Optim::VK {
-  
+namespace Optim::VK::Debug
+{
+
 /**
  * @brief
  * DebugCallback function parameters
@@ -45,11 +46,30 @@ namespace Optim::VK {
 VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT      severity,
                                                vk::DebugUtilsMessageTypeFlagsEXT             messageType,
                                                const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                               void*                                         pUserData) {
+                                               void*                                         pUserData)
+{
 
   std::cerr << "Validation layer: type " << to_string(messageType) << "msg: " << pCallbackData->pMessage << '\n';
 
   return vk::False;
 }
 
-} // namespace Optim::VK
+inline vk::raii::DebugUtilsMessengerEXT CreateDebugMessenger(const vk::raii::Instance& instance)
+{
+  constexpr vk::DebugUtilsMessageSeverityFlagsEXT severityFlags(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+                                                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
+
+  constexpr vk::DebugUtilsMessageTypeFlagsEXT messageTypeFlags(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                                                               vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                                                               vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
+
+  constexpr vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfoEXT{
+    .messageSeverity = severityFlags,
+    .messageType     = messageTypeFlags,
+    .pfnUserCallback = &Optim::VK::Debug::DebugCallback
+  };
+  
+  return instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
+}
+
+} // namespace Optim::VK::Debug

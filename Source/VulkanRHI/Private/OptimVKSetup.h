@@ -103,7 +103,7 @@ inline vk::raii::Instance CreateVulkanInstanceObject(
   }
 
   // Simple debug to check generated list objects.
-  if constexpr (true) {
+  if constexpr (false) {
     std::cout << "[VulkanRHI] Creating Vulkan instance with the following (" << ppExtensionNames.GetCount() << ") extensions:\n";
     for (auto&& extension : ppExtensionNames) {
       std::cout << "   " << extension << "\n";

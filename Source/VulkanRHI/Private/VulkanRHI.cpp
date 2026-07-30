@@ -22,142 +22,47 @@ struct VulkanRHI::Impl
   RenderDevice renderDevice;
 };
 
-/**
- * @todo
- * Improve functions implementation to allow to implement other logic if
- * some layers are not supported.
- *
- * @brief
- * Verifies if all desired layers are supported by the Vulkan implementations.
- * For now if one or more layer is not validated, simply prints a message
- * listing them.
- *
- * @return
- * A `TDynamicArray<String>` containing all validated layers.
- */
-// static TDynamicArray<String> VerifyRequiredLayers(const vk::raii::Context& context)
-// {
-//   // Create a list of validated and unsupported layers.
-//   TDynamicArray<String>      validatedLayers;
-//   TDynamicArray<const char*> unsupportedLayers;
-
-//   // Add the validation layers if enabled
-//   if constexpr (Optim::VK::enableValidationLayers) {
-//     requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
-//   }
-
-//   // Get list of all supported layers by Vulkan implementation.
-//   auto vkLayerProperties = context.enumerateInstanceLayerProperties();
-
-//   // Validate all required layers and if they are supported.
-//   for (const char* const& reqLayer : requiredLayers) {
-//     auto comparaisonFn = [&reqLayer](const vk::LayerProperties& property) {
-//       return strcmp(property.layerName, reqLayer) == 0;
-//     };
-
-//     // Add the layer to the appropriate list whether they are supported
-//     // or not.
-//     if (std::ranges::none_of(vkLayerProperties, comparaisonFn)) {
-//       unsupportedLayers.EmplaceBack(reqLayer);
-//     }
-//     else {
-//       validatedLayers.EmplaceBack(reqLayer);
-//     }
-//   }
-
-//   if (unsupportedLayers.GetCount() > 0) {
-//     std::cout << "Warning the following layers properties are not supported:\n";
-//     for (auto&& layer : unsupportedLayers) {
-//       std::cout << "---(" << layer << ")\n";
-//     }
-//   }
-
-//   return validatedLayers;
-// };
-
-/**
- * TODO: Move this function into an external file.
- *
- * @brief
- * In order to make `vk::InstanceCreateInfo` and `vk::raii::Instance()` work
- * as intended, must first transform the `TDynamicArray<String>` class into a
- * `TDynamicArray<const char*>` to pass in the pointer to pointer required by
- * Vulkan.
- *
- * Use the `TDynamicArray::GetData()` function to get a raw constant pointer
- * to the internal buffer of raw strings (`const char* const*`) required
- * by the `vk::InstanceCreateInfo` struct.
- *
- * This function performs that operation then returns
- * a `vk::raii::Instance` object.
- */
-
-/*
-vk::raii::Instance CreateVulkanInstanceObject(
-  const vk::raii::Context& context,
-  TDynamicArray<String>&   enabledExtensionNames,
-  TDynamicArray<String>&   enabledLayerNames,
-  vk::ApplicationInfo&&    appInfo)
-{
-  TDynamicArray<const char*> ppExtensionNames;
-  TDynamicArray<const char*> ppLayerNames;
-
-  // List of raw c style pointers for extensions names
-  for (String& extention : enabledExtensionNames) {
-    ppExtensionNames.Push(extention.GetPointer());
-  }
-
-  // If using validation layers than add it to the extension list.
-  // Since the Vulkan API contains already `char*` to some
-  // extension names, it can simply be directly added here to
-  // the extension names list.
-  if constexpr (Optim::VK::enableValidationLayers) {
-    ppExtensionNames.Push(vk::EXTDebugUtilsExtensionName);
-  }
-
-  // List of raw c style pointers for layers names
-  for (String& layer : enabledLayerNames) {
-    ppLayerNames.Push(layer.GetPointer());
-  }
-
-  // Simple debug to check generated list objects.
-  if constexpr (true) {
-    std::cout << "[VulkanRHI] Creating Vulkan instance with the following (" << ppExtensionNames.GetCount() << ") extensions:\n";
-    for (auto&& extension : ppExtensionNames) {
-      std::cout << "   " << extension << "\n";
-    }
-    std::cout << "[VulkanRHI] Creating Vulkan instance with the following (" << ppLayerNames.GetCount() << ") layers:\n";
-    for (auto&& layer : ppLayerNames) {
-      std::cout << "   " << layer << "\n";
-    }
-  }
-
-  // Once the list for extension and layer have been generated, the appropriate
-  // data can be passed to the `vk::InstanceCreateInfo` struct.
-  vk::InstanceCreateInfo createInfo;
-  createInfo.pApplicationInfo        = &appInfo;
-  createInfo.enabledLayerCount       = ppLayerNames.GetCount();
-  createInfo.ppEnabledLayerNames     = ppLayerNames.GetData();
-  createInfo.enabledExtensionCount   = ppExtensionNames.GetCount();
-  createInfo.ppEnabledExtensionNames = ppExtensionNames.GetData();
-
-  return vk::raii::Instance(context, createInfo);
-};
-*/
-
 VulkanRHI::VulkanRHI() : impl(MakeUnique<Impl>())
 {}
 
 VulkanRHI::~VulkanRHI()
 {}
 
+/**
+ * Start by verifying required extensions. For now since only the SDL 
+ * required are used, the list containing them is being directly verified.
+ * 
+ * @todo
+ * When more extensions will be need then the required extensions verification 
+ * logic will be updated accordingly.
+ * 
+ * Make a list of string containing all required layers to be used which will 
+ * be passed as an argument for the `VerifyRequiredLayers` function. It will 
+ * return a list containing all the unsupported layers. 
+ * 
+ * If it is empty, everything is well. Else throw a runtime error listing 
+ * all the unsupported layers.
+ * 
+ * Once the extensions and layers have been validated, the 
+ * `Optim::VK::CreateVulkanInstanceObject()` function is being called to 
+ * finally create a vk::Instance object.
+ * 
+ * With the instance being created and validated, this function can now start
+ * checking for a GPU (vk::PhysicalDevice) to be used.
+ * 
+ * First call the `Optim::VK::SelectPhysicalDevice` function to get the most
+ * appropriate GPU to use for rendering. The prerequestists for the physical
+ * device selection are all defined inside the function. All properties, 
+ * extensions, queue families being used as prerequisits for GPU selection, 
+ * must ALL be supported, if nothing is found then the function returns 
+ * nullptr, then we throw an error.
+ * 
+ * Once that is confirmed we finally call `Optim::VK::CreateDeviceContext`
+ * which will create the actual logical device object (vk::Device).
+ */
 void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
 {
-  // std::cout << "[VulkanRHI] Vulkan initialization...\n";
-  // std::cout << "[VulkanRHI] Vulkan API version min support: " << VK_API_VERSION_1_4 << '\n';
-
   try {
-    // Verify SDL required extensions first.
 
     auto extensionProperties = impl.Get().context.enumerateInstanceExtensionProperties();
 
@@ -178,7 +83,6 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
     }
 
     // Validate required layers.
-    // TDynamicArray<String> validatedLayers = VerifyRequiredLayers(impl.Get().context);
     TDynamicArray<String> unsupportedLayers = Optim::VK::VerifyRequiredLayers(requiredLayers, impl.Get().context);
 
     if (unsupportedLayers.GetCount() > 0) {
@@ -193,46 +97,18 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
 
     // Create vk::Instance
     impl.Get().instance = Optim::VK::CreateVulkanInstanceObject(impl.Get().context, paramSDLExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
-
-    // Simple verification to see if the `vk::raii::Instance` object
-    // is valid/initialized properly.
-    //
-    // According to Vulkan documentation, if no `vk::Result::eErrorLayerNotPresent`
-    // have been error thrown, then the instanciation is probably successful.
-
-    // Setup Debug messenger
-    if constexpr (Optim::VK::enableValidationLayers) {
-      constexpr vk::DebugUtilsMessageSeverityFlagsEXT severityFlags(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                                                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
-
-      constexpr vk::DebugUtilsMessageTypeFlagsEXT messageTypeFlags(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                                                                   vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-                                                                   vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
-
-      constexpr vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfoEXT{
-        .messageSeverity = severityFlags,
-        .messageType     = messageTypeFlags,
-        .pfnUserCallback = &Optim::VK::DebugCallback
-      };
-
-      // VulkanObj::debugMessenger = VulkanObj::instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
-      impl.Get().debugMessenger = impl.Get().instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
-
-      if (impl.Get().debugMessenger == nullptr) {
-        throw std::runtime_error("[VulkanRHI | Error] Debug messenger FAILED to initialize.");
-      }
-    }
-
+    
     // Get a handle to the most optimal physical device to use for rendering
     auto physicalDevice = Optim::VK::SelectPhysicalDevice(impl.Get().instance);
-
+    
     if (physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
     }
-
+    
     // Initialize the RenderDevice object
     impl.Get().renderDevice = Optim::VK::CreateDeviceContext(physicalDevice);
-
+    
+    // Verify RenderDevice handles.
     if (impl.Get().renderDevice.physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] vk::PhyscialDevice object is null.");
     }
@@ -243,9 +119,14 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
       throw std::runtime_error("[VulkanRHI | Error] vk::Queue object is null.");
     }
 
-    // std::cout << "PhysicalDevice Initialization status: " << (impl.Get().renderDevice.physicalDevice != nullptr) << '\n';
-    // std::cout << "LogicalDevice Initialization status : " << (impl.Get().renderDevice.logicalDevice != nullptr) << '\n';
-    // std::cout << "GraphicsQueue Initialization status : " << (impl.Get().renderDevice.graphicsQueue != nullptr) << '\n';
+    // Setup Debug messenger
+    if constexpr (Optim::VK::enableValidationLayers) {
+      impl.Get().debugMessenger = Optim::VK::Debug::CreateDebugMessenger(impl.Get().instance);
+
+      if (impl.Get().debugMessenger == nullptr) {
+        throw std::runtime_error("[VulkanRHI | Error] Debug messenger FAILED to initialize.");
+      }
+    }
   }
   catch (const vk::SystemError& e) {
     std::cerr << "[Vulkan System Error] " << e.what() << '\n';
