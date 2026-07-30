@@ -3,13 +3,7 @@
 #include "VulkanMinimal.h"
 
 namespace Optim::VK {
-
-#if defined(NDEBUG)
-constexpr bool enableValidationLayers = false;
-#else
-constexpr bool enableValidationLayers = true;
-#endif
-
+  
 /**
  * @brief
  * DebugCallback function parameters

@@ -28,7 +28,6 @@ vk::raii::PhysicalDevice Optim::VK::SelectPhysicalDevice(const vk::raii::Instanc
 
   for (const auto& gpu : physicalDevices) {
     auto properties = gpu.getProperties();
-    // auto features            = gpu.getFeatures();
     auto queueFamilies       = gpu.getQueueFamilyProperties();
     auto availableExtensions = gpu.enumerateDeviceExtensionProperties();
 
@@ -39,12 +38,8 @@ vk::raii::PhysicalDevice Optim::VK::SelectPhysicalDevice(const vk::raii::Instanc
     if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
       score += 1000;
     }
-
+    
     score += properties.limits.maxImageDimension2D;
-
-    // if (features.geometryShader == false) {
-    //   continue;
-    // }
 
     // Verify support for Vulkan 1.4 API. If the API is not supported then the
     // GPU cannot be used.

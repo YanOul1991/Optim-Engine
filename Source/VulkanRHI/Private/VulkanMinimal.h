@@ -12,6 +12,12 @@ namespace Optim::VK {
 
 constexpr uint32 ApiVersion = vk::ApiVersion14;
 
+#if defined(NDEBUG)
+constexpr bool enableValidationLayers = false;
+#else
+constexpr bool enableValidationLayers = true;
+#endif
+
 constexpr vk::ApplicationInfo GetApplicationInfoStruct() {
   vk::ApplicationInfo appInfo;
   appInfo.pApplicationName   = "Vulkan Learning";

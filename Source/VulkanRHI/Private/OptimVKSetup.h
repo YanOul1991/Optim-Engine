@@ -73,4 +73,57 @@ inline TDynamicArray<String> VerifyRequiredLayers(const TDynamicArray<String>& r
   return unsupportedLayers;
 }
 
+using StringList = TDynamicArray<String>;
+
+inline vk::raii::Instance CreateVulkanInstanceObject(
+  const vk::raii::Context& context,
+  TDynamicArray<String>&   enabledExtensionNames,
+  TDynamicArray<String>&   enabledLayerNames,
+  vk::ApplicationInfo&&    appInfo)
+{
+    TDynamicArray<const char*> ppExtensionNames;
+  TDynamicArray<const char*> ppLayerNames;
+
+  // List of raw c style pointers for extensions names
+  for (String& extention : enabledExtensionNames) {
+    ppExtensionNames.Push(extention.GetPointer());
+  }
+
+  // If using validation layers than add it to the extension list.
+  // Since the Vulkan API contains already `char*` to some
+  // extension names, it can simply be directly added here to
+  // the extension names list.
+  if constexpr (Optim::VK::enableValidationLayers) {
+    ppExtensionNames.Push(vk::EXTDebugUtilsExtensionName);
+  }
+
+  // List of raw c style pointers for layers names
+  for (String& layer : enabledLayerNames) {
+    ppLayerNames.Push(layer.GetPointer());
+  }
+
+  // Simple debug to check generated list objects.
+  if constexpr (true) {
+    std::cout << "[VulkanRHI] Creating Vulkan instance with the following (" << ppExtensionNames.GetCount() << ") extensions:\n";
+    for (auto&& extension : ppExtensionNames) {
+      std::cout << "   " << extension << "\n";
+    }
+    std::cout << "[VulkanRHI] Creating Vulkan instance with the following (" << ppLayerNames.GetCount() << ") layers:\n";
+    for (auto&& layer : ppLayerNames) {
+      std::cout << "   " << layer << "\n";
+    }
+  }
+
+  // Once the list for extension and layer have been generated, the appropriate
+  // data can be passed to the `vk::InstanceCreateInfo` struct.
+  vk::InstanceCreateInfo createInfo;
+  createInfo.pApplicationInfo        = &appInfo;
+  createInfo.enabledLayerCount       = ppLayerNames.GetCount();
+  createInfo.ppEnabledLayerNames     = ppLayerNames.GetData();
+  createInfo.enabledExtensionCount   = ppExtensionNames.GetCount();
+  createInfo.ppEnabledExtensionNames = ppExtensionNames.GetData();
+
+  return vk::raii::Instance(context, createInfo);
+}
+
 }; // namespace Optim::VK

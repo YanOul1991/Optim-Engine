@@ -22,8 +22,6 @@ struct VulkanRHI::Impl
   RenderDevice renderDevice;
 };
 
-// static std::vector<char const*> requiredLayers = {};
-
 /**
  * @todo
  * Improve functions implementation to allow to implement other logic if
@@ -93,6 +91,8 @@ struct VulkanRHI::Impl
  * This function performs that operation then returns
  * a `vk::raii::Instance` object.
  */
+
+/*
 vk::raii::Instance CreateVulkanInstanceObject(
   const vk::raii::Context& context,
   TDynamicArray<String>&   enabledExtensionNames,
@@ -143,17 +143,13 @@ vk::raii::Instance CreateVulkanInstanceObject(
 
   return vk::raii::Instance(context, createInfo);
 };
+*/
 
 VulkanRHI::VulkanRHI() : impl(MakeUnique<Impl>())
-{
-  if (!impl.IsValid()) {
-    std::cout << "Impl is nullptr,\n";
-  }
-}
+{}
 
 VulkanRHI::~VulkanRHI()
-{
-}
+{}
 
 void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
 {
@@ -178,7 +174,7 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
     TDynamicArray<String> requiredLayers;
 
     if constexpr (Optim::VK::enableValidationLayers) {
-      requiredLayers.EmplaceBack(String("VK_LAYER_KHRONOS_validation"));
+      requiredLayers.EmplaceBack("VK_LAYER_KHRONOS_validation");
     }
 
     // Validate required layers.
@@ -196,7 +192,7 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
     }
 
     // Create vk::Instance
-    impl.Get().instance = CreateVulkanInstanceObject(impl.Get().context, paramSDLExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
+    impl.Get().instance = Optim::VK::CreateVulkanInstanceObject(impl.Get().context, paramSDLExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
 
     // Simple verification to see if the `vk::raii::Instance` object
     // is valid/initialized properly.

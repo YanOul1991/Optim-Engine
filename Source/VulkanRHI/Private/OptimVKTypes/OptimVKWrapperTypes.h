@@ -2,11 +2,6 @@
 
 #include "VulkanMinimal.h"
 
-#include <iostream>
-
-/**
- * Wrapper struct for device context
- */
 struct RenderDevice
 {
   vk::raii::PhysicalDevice physicalDevice = nullptr;
