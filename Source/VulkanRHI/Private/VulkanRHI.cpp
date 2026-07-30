@@ -4,7 +4,7 @@
 
 #include "VulkanRHI/VulkanRHI.h"
 
-#include "OptVulkanDebug.h"
+#include "OptimVKDebug.h"
 #include "OptimVKSetup.h"
 
 #include <algorithm>

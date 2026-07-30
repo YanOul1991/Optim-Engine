@@ -16,7 +16,9 @@
 #      define VULKANRHI_API
 #    endif
 #  endif
-#endif;
+#endif
+
+
 // Export macros for core module
 #if !defined(CORE_API)
 #  if defined(EXPORT_CORE)
@@ -32,7 +34,9 @@
 #      define CORE_API
 #    endif
 #  endif
-#endif;
+#endif
+
+
 // Export macros for rhi module
 #if !defined(RHI_API)
 #  if defined(EXPORT_RHI)
@@ -48,7 +52,9 @@
 #      define RHI_API
 #    endif
 #  endif
-#endif;
+#endif
+
+
 // Export macros for rendering module
 #if !defined(RENDERING_API)
 #  if defined(EXPORT_RENDERING)
@@ -64,7 +70,9 @@
 #      define RENDERING_API
 #    endif
 #  endif
-#endif;
+#endif
+
+
 // Export macros for system module
 #if !defined(SYSTEM_API)
 #  if defined(EXPORT_SYSTEM)
@@ -81,3 +89,4 @@
 #    endif
 #  endif
 #endif
+

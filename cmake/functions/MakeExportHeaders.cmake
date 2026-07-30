@@ -28,7 +28,7 @@ function(export_headers target_name)
 #      define ${MOD_UPPER}_API
 #    endif
 #  endif
-#endif")
+#endif\n\n")
 
     set_property(GLOBAL APPEND PROPERTY EXPORT_ENGINE_MACROS "${MACRO_BLOCK}")
 endfunction()
@@ -41,10 +41,12 @@ function(generate_master_header)
     # Add any extra global data you want in the future here (e.g., build timestamps)
     set(HEADER_CONTENT "// THIS FILE IS AUTO-GENERATED.\n")
     string(APPEND HEADER_CONTENT "#pragma once\n")
-    string(APPEND HEADER_CONTENT "${COLLECTED_MACROS}")
+    string(APPEND HEADER_CONTENT ${COLLECTED_MACROS})
+
+    message(STATUS "Core module location: ${OPTIM_CORE_MODULE_LOCATION}")
 
     # Write the file directly into the Core module's binary directory layout
-    set(OUTPUT_FILE "${CMAKE_SOURCE_DIR}/Source/Core/Public/OptimEngine/Core/Minimal/ModuleExportMacros.h")
+    set(OUTPUT_FILE "${OPTIM_CORE_MODULE_LOCATION}/Public/OptimEngine/Core/Minimal/ModuleExportMacros.h")
     
     file(GENERATE OUTPUT "${OUTPUT_FILE}" CONTENT "${HEADER_CONTENT}")
 endfunction()

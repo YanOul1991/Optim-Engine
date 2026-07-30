@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 4.2)
 
 project(OptimEngine VERSION 1.0.0)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -75,11 +75,3 @@ add_subdirectory("Source/Rendering")
 add_subdirectory("Source/System")
 add_subdirectory("Source/Application")
 
-###############################################################################
-# EXPORT MACROS GENERATION
-###############################################################################
-# make_export_headers(core)
-# make_export_headers(rendering)
-# make_export_headers(rhi)
-# make_export_headers(system)
-# make_export_headers(vulkanrhi)
