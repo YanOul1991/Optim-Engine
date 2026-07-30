@@ -13,34 +13,37 @@
 template <typename T> class TUniquePtr final
 {
  public:
-  TUniquePtr() = default;
+  TUniquePtr()
+  {
+    pRefObject = nullptr;
+  }
 
-  explicit TUniquePtr(const TUniquePtr&) = delete;
+  TUniquePtr(const TUniquePtr&) = delete;
 
-  explicit TUniquePtr(T* initalValue) {
+  TUniquePtr(T* initalValue)
+  {
     pRefObject = initalValue;
   }
 
-  explicit TUniquePtr(TUniquePtr&& other) {
+  TUniquePtr(TUniquePtr&& other)
+  {
     if (&other != this) {
       pRefObject       = other.pRefObject;
       other.pRefObject = nullptr;
     }
   }
 
-  ~TUniquePtr() {
+  ~TUniquePtr()
+  {
     FreeData();
   }
 
-  void SetPtr(T* initialValue) {
+  void SetPtr(T* initialValue)
+  {
     if (pRefObject != nullptr) {
       delete pRefObject;
     }
     pRefObject = initialValue;
-  }
-
-  TUniquePtr&& Move() {
-    return static_cast<TUniquePtr&&>(*this);
   }
 
   /**
@@ -50,7 +53,8 @@ template <typename T> class TUniquePtr final
    * If the other instance's underlying pointer is valid, then the default
    * behaviour is to free it, before transfering ownership.
    */
-  void TransferOwnership(TUniquePtr& other) {
+  void TransferOwnership(TUniquePtr& other)
+  {
     if (&other == this) {
       return;
     }
@@ -64,7 +68,8 @@ template <typename T> class TUniquePtr final
 
   TUniquePtr operator=(const TUniquePtr&) = delete;
 
-  TUniquePtr& operator=(TUniquePtr&& other) {
+  TUniquePtr& operator=(TUniquePtr&& other)
+  {
     if (&other != this) {
       pRefObject       = other.pRefObject;
       other.pRefObject = nullptr;
@@ -72,30 +77,36 @@ template <typename T> class TUniquePtr final
     return *this;
   }
 
-  void FreeData() {
+  void FreeData()
+  {
     if (pRefObject != nullptr) {
       delete pRefObject;
     }
     pRefObject = nullptr;
   }
 
-  operator bool() const {
+  operator bool() const
+  {
     return pRefObject != nullptr;
   }
 
-  bool operator==(nullptr_t) {
+  bool operator==(nullptr_t)
+  {
     return pRefObject == nullptr;
   }
 
-  bool IsValid() const {
+  bool IsValid() const
+  {
     return pRefObject != nullptr;
   }
 
-  T* GetPtr() {
+  T* GetPtr()
+  {
     return pRefObject;
   }
 
-  T& GetRef() {
+  T& Get()
+  {
     assert(pRefObject != nullptr && "[Assertion failure] TUniquePtr | Trying to dereference a null pointer.\n");
     return *pRefObject;
   }
@@ -103,3 +114,8 @@ template <typename T> class TUniquePtr final
  private:
   T* pRefObject = nullptr;
 };
+
+template <typename T> TUniquePtr<T> MakeUnique()
+{
+  return TUniquePtr<T>(new T());
+}

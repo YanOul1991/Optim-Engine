@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
 
   if (true) {
     auto requiredVulkanExtensions = System::GetVulkanRequiredExtensions();
-    pGraphicsRHI.GetRef().Initialize(requiredVulkanExtensions);
+    pGraphicsRHI.Get().Initialize(requiredVulkanExtensions);
   }
 
   uint64 loopCycles = 0;

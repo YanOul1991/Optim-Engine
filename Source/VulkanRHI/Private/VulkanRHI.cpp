@@ -13,25 +13,28 @@
 #include <ranges>
 #include <vector>
 
-static RenderDevice renderDevice;
+struct VulkanRHI::Impl
+{
+  vk::raii::Context                context;
+  vk::raii::Instance               instance       = nullptr;
+  vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
+
+  RenderDevice renderDevice;
+};
+
+// static RenderDevice renderDevice;
 
 // Local namespace
-namespace VulkanObj {
+namespace VulkanObj
+{
 
-static vk::raii::Context                context;                  // Context Handle
-static vk::raii::Instance               instance       = nullptr; // VkInstance Handle
-static vk::raii::PhysicalDevice         physicalDevice = nullptr; // Physical Device (GPU) handle
-// static vk::raii::Device                 device         = nullptr; // Logical Device Handle
-static vk::raii::Queue                  graphicsQueue  = nullptr;
-static vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
+// static vk::raii::Context                context;                  // Context Handle
+// static vk::raii::Instance               instance       = nullptr; // VkInstance Handle
+// static vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
 }; // namespace VulkanObj
 
 static std::vector<char const*> requiredLayers = {};
-
-static std::vector<const char*> requiredDeviceExtensions = {
-  vk::KHRSwapchainExtensionName
-};
 
 /**
  * @todo
@@ -46,7 +49,8 @@ static std::vector<const char*> requiredDeviceExtensions = {
  * @return
  * A `TDynamicArray<String>` containing all validated layers.
  */
-static TDynamicArray<String> VerifyRequiredLayers() {
+static TDynamicArray<String> VerifyRequiredLayers(const vk::raii::Context& context)
+{
   // Create a list of validated and unsupported layers.
   TDynamicArray<String>      validatedLayers;
   TDynamicArray<const char*> unsupportedLayers;
@@ -57,7 +61,7 @@ static TDynamicArray<String> VerifyRequiredLayers() {
   }
 
   // Get list of all supported layers by Vulkan implementation.
-  auto vkLayerProperties = VulkanObj::context.enumerateInstanceLayerProperties();
+  auto vkLayerProperties = context.enumerateInstanceLayerProperties();
 
   // Validate all required layers and if they are supported.
   for (const char* const& reqLayer : requiredLayers) {
@@ -101,7 +105,12 @@ static TDynamicArray<String> VerifyRequiredLayers() {
  * This function performs that operation then returns
  * a `vk::raii::Instance` object.
  */
-vk::raii::Instance CreateVulkanInstanceObject(TDynamicArray<String>& enabledExtensionNames, TDynamicArray<String>& enabledLayerNames, vk::ApplicationInfo&& appInfo) {
+vk::raii::Instance CreateVulkanInstanceObject(
+  const vk::raii::Context& context,
+  TDynamicArray<String>&   enabledExtensionNames,
+  TDynamicArray<String>&   enabledLayerNames,
+  vk::ApplicationInfo&&    appInfo)
+{
   TDynamicArray<const char*> ppExtensionNames;
   TDynamicArray<const char*> ppLayerNames;
 
@@ -144,208 +153,31 @@ vk::raii::Instance CreateVulkanInstanceObject(TDynamicArray<String>& enabledExte
   createInfo.enabledExtensionCount   = ppExtensionNames.GetCount();
   createInfo.ppEnabledExtensionNames = ppExtensionNames.GetData();
 
-  return vk::raii::Instance(VulkanObj::context, createInfo);
+  return vk::raii::Instance(context, createInfo);
 };
 
-/**
- * TODO: Consider moving this function into an external file.
- *
- * Function to create the a logical device.
- */
-// vk::raii::PhysicalDevice SelectPhysicalDevice() {
-//   /**
-//    * vk::PhysicalDeviceProperties struct Documentation:
-//    * https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceProperties.html
-//    *
-//    * Device Limits struct (vk::PhysicalDeviceLimits)
-//    * https://docs.vulkan.org/spec/latest/chapters/limits.html
-//    */
-
-//   // Get a list of all found GPUs.
-//   auto physicalDevices = VulkanObj::instance.enumeratePhysicalDevices();
-
-//   std::cout << "[VulkanRHI] Selecting GPU:\n";
-
-//   // If there are no GPUs... then there is no rendering :(
-//   if (physicalDevices.empty()) {
-//     throw std::runtime_error("[VulkanRHI | Error] Failed to find GPUs with Vulkan Support.\n");
-//   }
-
-//   // A multimap of all potential GPUs that can be used.
-//   // Each PhysicalDevice will be attributed a score depending
-//   // on their properties and supported features.
-//   // The one with the highest score will be used for rendering.
-//   std::multimap<int64, vk::raii::PhysicalDevice> candidates;
-
-//   for (const auto& gpu : physicalDevices) {
-//     auto properties          = gpu.getProperties();
-//     auto features            = gpu.getFeatures();
-//     auto queueFamilies       = gpu.getQueueFamilyProperties();
-//     auto availableExtensions = gpu.enumerateDeviceExtensionProperties();
-
-//     std::cout << "  Device: " << properties.deviceName << '\n';
-
-//     int64 score = 0;
-
-//     // Prioritize discreet GPU (dedicated graphics card) as they offer
-//     // a peformance advantage.
-//     if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
-//       score += 1000;
-//     }
-
-//     score += properties.limits.maxImageDimension2D;
-
-//     // If the GPU does not support geometry shaders
-//     // then the application simply cannot run.
-//     if (features.geometryShader == false) {
-//       continue;
-//     }
-
-//     // Verify support for Vulkan 1.4 API.
-//     // If the API is not supported then the GPU
-//     // cannot be used.
-//     bool supportsRequiredVulkanAPIVersion = (properties.apiVersion >= Optim::VK::ApiVersion);
-
-//     if (supportsRequiredVulkanAPIVersion == false) {
-//       continue;
-//     }
-
-//     bool supportsGraphics = std::ranges::any_of(queueFamilies, [](const vk::QueueFamilyProperties& qfp) {
-//       return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics);
-//     });
-
-//     if (supportsGraphics == true) {
-//       std::cout << "    Supports graphics: true\n";
-//     }
-//     else {
-//       std::cout << "    Supports graphics: false\n";
-//       continue;
-//     }
-
-//     // Check if all required extensions are supported
-//     // by the GPU.
-//     bool supportsAllExt = std::ranges::all_of(requiredDeviceExtensions, [&availableExtensions](const auto& requiredExt) {
-//       return std::ranges::any_of(availableExtensions, [requiredExt](const vk::ExtensionProperties& availableDeviceExt) {
-//         return strcmp(availableDeviceExt.extensionName, requiredExt);
-//       });
-//     });
-
-//     if (supportsAllExt == true) {
-//       std::cout << "    Supports all required extensions: true\n";
-//     }
-//     else {
-//       std::cout << "    Supports all required extensions: false\n";
-//       continue;
-//     }
-
-//     // Check required features.
-
-//     auto testFeatures = gpu.getFeatures2();
-
-//     /**
-//      * TODO:
-//      * Search more on `vk::raii::PhysicalDevice::getFeatures2`
-//      */
-
-//     auto features2 = gpu.getFeatures2<vk::PhysicalDeviceFeatures2,
-//                                       vk::PhysicalDeviceVulkan11Features,
-//                                       vk::PhysicalDeviceVulkan13Features,
-//                                       vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-
-//     bool supportsReqFeatures = features2.get<vk::PhysicalDeviceVulkan11Features>().shaderDrawParameters &&
-//                                features2.get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
-//                                features2.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
-
-//     if (supportsReqFeatures == false) {
-//       continue;
-//     }
-
-//     candidates.insert(std::make_pair(score, gpu));
-//   }
-
-//   // If no valid candiate has been found then RIP.
-//   if (candidates.empty() || candidates.rbegin()->first <= 0) {
-//     // throw std::runtime_error("[VulkanRHI | Error] Failed to found suitable GPU.\n");
-//     return nullptr;
-//   }
-//   else {
-//     // Else pick the last GPU of the candidate map, since the score are in ascending order.
-//     return candidates.rbegin()->second;
-//   }
-// }
-
-// vk::raii::Device CreateLogicalDevice() {
-//   /**
-//    * Documentation for basic logical device creation:
-//    *
-//    * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
-//    *
-//    */
-//   auto queueFamilyProperties = VulkanObj::physicalDevice.getQueueFamilyProperties();
-
-//   // Find queue with graphics capabilities
-//   auto graphicsQueueFamilyProperty = std::ranges::find_if(queueFamilyProperties, [](auto const& qfp) {
-//     return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);
-//   });
-
-//   float queuePriority = 0.5f;
-
-//   auto graphicsIndex = static_cast<uint32>(std::distance(queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
-
-//   vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
-//     .queueFamilyIndex = graphicsIndex,
-//     .queueCount       = 1,
-//     .pQueuePriorities = &queuePriority
-//   };
-
-//   // Create a chain of feature structures
-//   vk::StructureChain<vk::PhysicalDeviceFeatures2,
-//                      vk::PhysicalDeviceVulkan11Features,
-//                      vk::PhysicalDeviceVulkan13Features,
-//                      vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
-//     featureChain = {
-//       {},                               // vk::PhysicalDeviceFeatures2 (empty for now)
-//       { .shaderDrawParameters = true }, // Enable shader draw parameters from Vulkan 1.1
-//       { .dynamicRendering = true },     // Enable dynamic rendering from Vulkan 1.3
-//       { .extendedDynamicState = true }  // Enable extended dynamic state from the extension
-//     };
-
-//   vk::DeviceCreateInfo deviceCreateInfo{
-//     .pNext                   = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
-//     .queueCreateInfoCount    = 1,
-//     .pQueueCreateInfos       = &deviceQueueCreateInfo,
-//     .enabledExtensionCount   = static_cast<uint32>(requiredDeviceExtensions.size()),
-//     .ppEnabledExtensionNames = requiredDeviceExtensions.data()
-//   };
-
-//   auto retDevice = vk::raii::Device(VulkanObj::physicalDevice, deviceCreateInfo);
-
-//   VulkanObj::graphicsQueue = vk::raii::Queue(retDevice, graphicsIndex, 0);
-
-//   return retDevice;
-// }
-
-VulkanRHI::VulkanRHI() {
+VulkanRHI::VulkanRHI() : impl(MakeUnique<Impl>())
+{
+  if (!impl.IsValid()) {
+    std::cout << "Impl is nullptr,\n";
+  }
 }
 
-VulkanRHI::~VulkanRHI() {
+VulkanRHI::~VulkanRHI()
+{
 }
 
-void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
-  std::cout << "[VulkanRHI] Vulkan initialization...\n";
-  std::cout << "[VulkanRHI] Vulkan API version min support: " << VK_API_VERSION_1_4 << '\n';
+void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
+{
+  // std::cout << "[VulkanRHI] Vulkan initialization...\n";
+  // std::cout << "[VulkanRHI] Vulkan API version min support: " << VK_API_VERSION_1_4 << '\n';
 
   try {
-    /**
-     * Verify SDL required extensions first.
-     *
-     * If they are valid the create a vulkan Instance object.
-     *
-     * TODO:
-     * Consider putting extension validation into a function like
-     * `VerifyRequiredLayers()`
-     */
-    auto extensionProperties = VulkanObj::context.enumerateInstanceExtensionProperties();
+    // Verify SDL required extensions first.
+    // impl.Get().context.enumerateInstanceExtensionProperties();
+
+    auto extensionProperties = impl.Get().context.enumerateInstanceExtensionProperties();
+    // auto extensionProperties = VulkanObj::context.enumerateInstanceExtensionProperties();
 
     for (auto&& str : paramSDLExt) {
       auto comparaisonFn = [str](vk::ExtensionProperties const& extentionProperty) {
@@ -358,19 +190,18 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
     }
 
     // Validate required layers.
-    TDynamicArray<String> validatedLayers = VerifyRequiredLayers();
+    // TDynamicArray<String> validatedLayers = VerifyRequiredLayers();
+    TDynamicArray<String> validatedLayers = VerifyRequiredLayers(impl.Get().context);
 
     // Create a vk::raii:instance with the given Extensions, Layers and
     // `vk::ApplicationInfo` struct.
-    VulkanObj::instance = CreateVulkanInstanceObject(paramSDLExt, validatedLayers, Optim::VK::GetApplicationInfoStruct());
+    impl.Get().instance = CreateVulkanInstanceObject(impl.Get().context, paramSDLExt, validatedLayers, Optim::VK::GetApplicationInfoStruct());
 
     // Simple verification to see if the `vk::raii::Instance` object
     // is valid/initialized properly.
     //
     // According to Vulkan documentation, if no `vk::Result::eErrorLayerNotPresent`
     // have been error thrown, then the instanciation is probably successful.
-    std::cout << "[VulkanRHI] " << (VulkanObj::instance != nullptr ? "VulkanObj::instance is valid!\n" : "Instance is NOT valid :(\n");
-    std::cout << "[VulkanRHI] Vulkan initialized\n";
 
     // Setup Debug messenger
     if constexpr (Optim::VK::enableValidationLayers) {
@@ -387,41 +218,28 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
         .pfnUserCallback = &Optim::VK::DebugCallback
       };
 
-      VulkanObj::debugMessenger = VulkanObj::instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
+      // VulkanObj::debugMessenger = VulkanObj::instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
+      impl.Get().debugMessenger = impl.Get().instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
 
-      if (VulkanObj::debugMessenger != nullptr) {
-        std::cout << "[VulkanRHI] Debug messenger successfully initialized.\n";
-      }
-      else {
-        std::cout << "[VulkanRHI] Debug messenger FAILED to initialize.\n";
+      if (impl.Get().debugMessenger == nullptr) {
+        throw std::runtime_error("[VulkanRHI | Error] Debug messenger FAILED to initialize.");
       }
     }
 
     // Get a handle to the most optimal physical device to use for rendering
-    VulkanObj::physicalDevice = Optim::VK::SelectPhysicalDevice(VulkanObj::instance);
+    auto physicalDevice = Optim::VK::SelectPhysicalDevice(impl.Get().instance);
 
-    if (VulkanObj::physicalDevice != nullptr) {
-      std::cout << "[VulkanRHI] GPU Sucessfully selected: " << VulkanObj::physicalDevice.getProperties().deviceName << '\n';
+    if (physicalDevice == nullptr) {
+      throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
     }
 
-    // Create the logical device
-    // VulkanObj::device = CreateLogicalDevice();
+    // Initialize the RenderDevice object
+    impl.Get().renderDevice = Optim::VK::CreateDeviceContext(physicalDevice);
 
-    renderDevice = Optim::VK::CreateDeviceContext(VulkanObj::physicalDevice);
-
-    renderDevice.Validate();
-
-    // if (VulkanObj::device != nullptr) {
-    //   std::cout << "[VulkanRHI] Logical Device Object Sucessfully created " << '\n';
-    // }
-
-    if (VulkanObj::graphicsQueue != nullptr) {
-      std::cout << "[VulkanRHI] Graphics Queue Object Sucessfully created " << '\n';
-    }
+    impl.Get().renderDevice.Validate();
   }
   catch (const vk::SystemError& e) {
-    std::cerr << "[Vulkan System Error]\n"
-              << e.what() << '\n';
+    std::cerr << "[Vulkan System Error] " << e.what() << '\n';
     return;
   }
   catch (const std::exception& e) {
@@ -430,7 +248,9 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt) {
   }
 }
 
-void VulkanRHI::Update() {
+void VulkanRHI::Update()
+{
 }
-void VulkanRHI::Cleanup() {
+void VulkanRHI::Cleanup()
+{
 }
