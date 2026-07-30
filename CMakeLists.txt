@@ -75,43 +75,11 @@ add_subdirectory("Source/Rendering")
 add_subdirectory("Source/System")
 add_subdirectory("Source/Application")
 
-# Modules
-# include(Core)
-# include(RHI)
-# include(VulkanRHI)
-# include(Rendering)
-# include(System)
-
-
-###############################################################################
-# EXECUTABLE
-# 
-# For the module(shared objects) depenencies of the executable, while
-# it can depend on all of them, only link against its direct dependency
-# for easier management and debugging in case of issues.
-###############################################################################
-# add_executable(optimengine)
-
-# target_include_directories(optimengine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/Private")
-
-# target_sources(optimengine PRIVATE
-#   "${CMAKE_CURRENT_SOURCE_DIR}/Source/Application/Private/main.cpp"
-# )
-
-# target_link_libraries(optimengine PRIVATE
-#   core
-#   rhi
-#   rendering
-#   system
-#   fmt::fmt
-# )
-
 ###############################################################################
 # EXPORT MACROS GENERATION
 ###############################################################################
-make_export_headers(core)
-make_export_headers(rendering)
-make_export_headers(rhi)
-make_export_headers(system)
-make_export_headers(vulkanrhi)
-
+# make_export_headers(core)
+# make_export_headers(rendering)
+# make_export_headers(rhi)
+# make_export_headers(system)
+# make_export_headers(vulkanrhi)

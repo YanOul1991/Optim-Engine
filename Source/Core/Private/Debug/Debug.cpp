@@ -119,7 +119,7 @@ void PrintLineNumber(void* addr) {
 #endif
 }
 
-CORE_API void Debug::PrintCallStack() {
+void Debug::PrintCallStack() {
 #if !defined(PLATFORM_WINDOWS)
   void*  array[50];
   int    size     = backtrace(array, 50);

@@ -29,3 +29,5 @@ target_link_libraries(vulkanrhi PRIVATE
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   target_compile_options(vulkanrhi PRIVATE -fvisibility=hidden)
 endif()
+
+export_headers(vulkanrhi)

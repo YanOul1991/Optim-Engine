@@ -24,3 +24,5 @@ target_sources(core PRIVATE
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   target_compile_options(core PRIVATE -fvisibility=hidden)
 endif()
+
+export_headers(core)

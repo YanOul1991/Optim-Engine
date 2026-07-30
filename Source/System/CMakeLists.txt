@@ -32,3 +32,5 @@ endif()
 if(VCPKG_TARGET_TRIPLET MATCHES "static")
   target_compile_definitions(system PRIVATE SDL_STATIC)
 endif()
+
+export_headers(system)

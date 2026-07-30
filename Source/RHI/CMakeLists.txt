@@ -26,3 +26,5 @@ target_link_libraries(rhi PRIVATE
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   target_compile_options(rhi PRIVATE -fvisibility=hidden)
 endif()
+
+export_headers(rhi)

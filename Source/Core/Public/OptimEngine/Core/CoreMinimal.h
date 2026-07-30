@@ -3,13 +3,14 @@
 #include "Core/Minimal/Concepts.h"
 #include "Core/Minimal/Intrinsics.h"
 #include "Core/Minimal/Macros.h"
+#include "Core/Minimal/ModuleExportMacros.h"
 
 // Generated Files
-#include "Core/Minimal/Generated/core_exports_generated.h"
-#include "Core/Minimal/Generated/rendering_exports_generated.h"
-#include "Core/Minimal/Generated/rhi_exports_generated.h"
-#include "Core/Minimal/Generated/system_exports_generated.h"
-#include "Core/Minimal/Generated/vulkanrhi_exports_generated.h"
+// #include "OptimEngine/Core/Minimal/Generated/core_exports_generated.h"
+// #include "OptimEngine/Core/Minimal/Generated/rendering_exports_generated.h"
+// #include "OptimEngine/Core/Minimal/Generated/rhi_exports_generated.h"
+// #include "OptimEngine/Core/Minimal/Generated/system_exports_generated.h"
+// #include "OptimEngine/Core/Minimal/Generated/vulkanrhi_exports_generated.h"
 
 consteval const char* const GetCPPVersion() {
   if (__cplusplus == 202603l) {
