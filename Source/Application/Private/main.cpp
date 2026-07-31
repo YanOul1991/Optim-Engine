@@ -7,13 +7,14 @@
  */
 
 // Core module
-
 #include "OptimEngine/Core/Memory/TUniquePtr.h"
 #include "OptimEngine/Core/StandardTypes/String.h"
 #include "OptimEngine/Core/Time/Time.h"
 
-// Rendering module
+// Graphics related modules
+#include "OptimEngine/RHI/RHI.h"
 #include "OptimEngine/Rendering/Rendering.h"
+#include "OptimEngine/VulkanRHI/VulkanRHI.h"
 
 // System module
 #include "OptimEngine/System/System.h"
@@ -31,7 +32,8 @@
 class ExampleClass final
 {
  public:
-  void Foo(float paramFloat, int paramInt) {
+  void Foo(float paramFloat, int paramInt)
+  {
     std::cout << "Foo function from ExampleClass class has been called\n";
     std::cout << "Passed params: " << paramFloat << " & " << paramInt << '\n';
   }
@@ -44,27 +46,33 @@ class ExampleClass final
 template <typename T, typename... ARGS> class TFunction final
 {
  public:
-  TFunction() {
+  TFunction()
+  {
   }
 
-  TFunction(auto pFunction) {
+  TFunction(auto pFunction)
+  {
     p_func = pFunction;
   }
 
-  auto operator=(auto pFunction) {
+  auto operator=(auto pFunction)
+  {
     p_func = pFunction;
     return this;
   }
 
-  bool IsValid() const {
+  bool IsValid() const
+  {
     return p_func != nullptr;
   }
 
-  operator bool() const {
+  operator bool() const
+  {
     return p_func != nullptr;
   }
 
-  T operator()(ARGS... args) const {
+  T operator()(ARGS... args) const
+  {
     return p_func(args...);
   }
 
@@ -75,29 +83,34 @@ template <typename T, typename... ARGS> class TFunction final
 class Bar
 {
  public:
-  void Foo() {
+  void Foo()
+  {
     fmt::println(fg(fmt::color::green) | fmt::emphasis::bold, "System Module has been initialized");
   }
 };
 
-int main(int argc, char* argv[]) {
-  
+int main(int argc, char* argv[])
+{
   Bar bar;
   System::OnSystemModuleInitialized.SubscribeMemberFunction<&Bar::Foo>(&bar);
-  
+
   // Initalize the System module
   System::Initalize();
 
   // Load the main window with the name of the application
   Window mainWindow = Window("Vulkan Engine Project");
 
-  // Create an instance of Rendering RHI.
-  TUniquePtr<IRHI> pGraphicsRHI(Internal::Rendering::InstanciateRenderInterface());
+  Internal::RenderModule rhiBackend(new VulkanRHI());
 
-  if (true) {
-    auto requiredVulkanExtensions = System::GetVulkanRequiredExtensions();
-    pGraphicsRHI.Get().Initialize(mainWindow.GetSDLWindowHandle());
-  }
+  rhiBackend.rhi.GetPtr()->Initialize(mainWindow.GetSDLWindowHandle());
+
+  // Create an instance of Rendering RHI.
+  // TUniquePtr<IRHI> pGraphicsRHI(Internal::Rendering::InstanciateRenderInterface());
+
+  // if (true) {
+  //   auto requiredVulkanExtensions = System::GetVulkanRequiredExtensions();
+  //   pGraphicsRHI.Get().Initialize(mainWindow.GetSDLWindowHandle());
+  // }
 
   uint64 loopCycles = 0;
 

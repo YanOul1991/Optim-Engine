@@ -1,9 +1,10 @@
 # VulkanRHI module
 #
 # Module dependecies :
-#   - rhi
-#   - core
-#   - Vulkan
+#   * Vulkan::Vulkan
+#   * SDL3::SDL3
+#   * rhi
+#   * core
 
 add_library(vulkanrhi)
 

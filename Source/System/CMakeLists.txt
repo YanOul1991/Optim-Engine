@@ -1,8 +1,8 @@
 # System module
 #
 # Module dependecies :
-#   - core
-#   - SDL (Third party)
+#   * SDL3::SDL3
+#   * core
 
 add_library(system)
 

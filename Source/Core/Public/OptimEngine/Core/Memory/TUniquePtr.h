@@ -84,26 +84,12 @@ template <typename T> class TUniquePtr final
     }
     pRefObject = nullptr;
   }
+  
+  bool operator==(nullptr_t) { return pRefObject == nullptr; }
 
-  operator bool() const
-  {
-    return pRefObject != nullptr;
-  }
+  bool IsValid() const { return pRefObject != nullptr; }
 
-  bool operator==(nullptr_t)
-  {
-    return pRefObject == nullptr;
-  }
-
-  bool IsValid() const
-  {
-    return pRefObject != nullptr;
-  }
-
-  T* GetPtr()
-  {
-    return pRefObject;
-  }
+  T* GetPtr() const { return pRefObject; }
 
   T& Get()
   {

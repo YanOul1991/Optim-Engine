@@ -1,9 +1,8 @@
 # Rendering module
 #
 # Module dependencies :
-#   * core
 #   * rhi
-#   * vulkanrhi
+#   * core
 #
 
 add_library(rendering)
@@ -21,9 +20,8 @@ target_sources(rendering PRIVATE
 )
 
 target_link_libraries(rendering PRIVATE 
-  core
   rhi
-  vulkanrhi
+  core
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

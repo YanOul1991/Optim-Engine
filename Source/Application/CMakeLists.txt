@@ -5,10 +5,11 @@
 # for easier management and debugging in case of issues.
 # 
 # Module dependencies:
-#   * core
-#   * rhi
-#   * rendering
 #   * system
+#   * rhi
+#   * vulkanrhi
+#   * rendering
+#   * core
 #   * fmt::fmt
 
 add_executable(optimengine)
@@ -20,10 +21,11 @@ target_sources(optimengine PRIVATE
 )
 
 target_link_libraries(optimengine PRIVATE
-  core
-  rhi
-  rendering
   system
+  rhi
+  vulkanrhi
+  rendering
+  core
   fmt::fmt
 )
 
