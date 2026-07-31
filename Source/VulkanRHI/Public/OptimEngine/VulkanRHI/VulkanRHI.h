@@ -18,7 +18,7 @@ class VULKANRHI_API VulkanRHI final : public IRHI
   VulkanRHI(const VulkanRHI&)            = delete;
   VulkanRHI& operator=(const VulkanRHI&) = delete;
 
-  virtual void Initialize(TDynamicArray<String>& extraData) override final;
+  virtual void Initialize(TDynamicArray<String>& extraData, const Window& windowSurface) override final;
   virtual void Update() override final;
   virtual void Cleanup() override final;
 

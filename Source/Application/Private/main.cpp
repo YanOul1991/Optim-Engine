@@ -89,14 +89,14 @@ int main(int argc, char* argv[]) {
   System::Initalize();
 
   // Load the main window with the name of the application
-  Window mainwindow = Window("Vulkan Engine Project");
+  Window mainWindow = Window("Vulkan Engine Project");
 
   // Create an instance of Rendering RHI.
   TUniquePtr<IRHI> pGraphicsRHI(Internal::Rendering::InstanciateRenderInterface());
 
   if (true) {
     auto requiredVulkanExtensions = System::GetVulkanRequiredExtensions();
-    pGraphicsRHI.Get().Initialize(requiredVulkanExtensions);
+    pGraphicsRHI.Get().Initialize(requiredVulkanExtensions, mainWindow);
   }
 
   uint64 loopCycles = 0;

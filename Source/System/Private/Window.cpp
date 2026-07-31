@@ -4,40 +4,36 @@
 
 #define SDL_MAIN_HANDLED
 
+#include "System/Window.h"
+
+#include "SDL3/SDL.h"
+
 #if defined(_WIN32) || defined(_WIN64)
+#  include <Windows.h>
 #  pragma comment(lib, "setupapi.lib")
 #  pragma comment(lib, "winmm.lib")
 #  pragma comment(lib, "imm32.lib")
 #  pragma comment(lib, "version.lib")
 #endif
 
-#include "System/Window.h"
-
-// #include "Core/StandardTypes/TDynamicArray.h"
-#include "SDL3/SDL.h"
-
 // Main window
 SDL_Window* s_mainWindow = nullptr;
 
-// Default SDL window  flags
-static constexpr SDL_WindowFlags s_defaultWindowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_VULKAN;
-
-Window::Window(const char* windowName) {
-  s_mainWindow = SDL_CreateWindow(windowName, 1280, 720, s_defaultWindowFlags);
+Window::Window(const char* windowName)
+{
+  s_mainWindow = SDL_CreateWindow(windowName, 1280, 720, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_VULKAN);
 
   if (s_mainWindow) {
     m_WindowID = SDL_GetWindowID(s_mainWindow);
   }
 }
 
-uint32 Window::GetWindowID() const {
-  return m_WindowID;
+Window::~Window()
+{
+  SDL_DestroyWindow(s_mainWindow);
 }
 
-Window::operator bool() const {
+bool Window::IsValid() const
+{
   return s_mainWindow != nullptr;
-}
-
-bool Window::IsValid() const {
-  return operator bool();
 }

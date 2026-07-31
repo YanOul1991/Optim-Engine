@@ -17,8 +17,6 @@ RENDERING_API void Initialize();
 
 RENDERING_API IRHI* InstanciateRenderInterface();
 
-RENDERING_API TUniquePtr<IRHI> InitRHI();
-
 RENDERING_API void Setup(TDynamicArray<String>& settings);
 
 } // namespace Internal::Rendering

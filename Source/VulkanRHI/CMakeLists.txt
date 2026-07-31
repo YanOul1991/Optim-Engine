@@ -22,8 +22,10 @@ target_sources(vulkanrhi PRIVATE
 
 target_link_libraries(vulkanrhi PRIVATE
   Vulkan::Vulkan
+  SDL3::SDL3
   rhi
   core
+  system
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

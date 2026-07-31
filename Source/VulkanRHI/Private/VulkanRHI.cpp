@@ -4,9 +4,15 @@
 
 #include "VulkanRHI/VulkanRHI.h"
 
+#include "OptimEngine/System/Window.h"
 #include "OptimVKDebug.h"
 #include "OptimVKSetup.h"
 
+// SDL
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
+
+// STD
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -17,6 +23,7 @@ struct VulkanRHI::Impl
 {
   vk::raii::Context                context;
   vk::raii::Instance               instance       = nullptr;
+  vk::raii::SurfaceKHR             surface        = nullptr;
   vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
   RenderDevice renderDevice;
@@ -29,44 +36,61 @@ VulkanRHI::~VulkanRHI()
 {}
 
 /**
- * Start by verifying required extensions. For now since only the SDL 
+ * Start by verifying required extensions. For now since only the SDL
  * required are used, the list containing them is being directly verified.
- * 
+ *
  * @todo
- * When more extensions will be need then the required extensions verification 
+ * When more extensions will be need then the required extensions verification
  * logic will be updated accordingly.
- * 
- * Make a list of string containing all required layers to be used which will 
- * be passed as an argument for the `VerifyRequiredLayers` function. It will 
- * return a list containing all the unsupported layers. 
- * 
- * If it is empty, everything is well. Else throw a runtime error listing 
+ *
+ * Make a list of string containing all required layers to be used which will
+ * be passed as an argument for the `VerifyRequiredLayers` function. It will
+ * return a list containing all the unsupported layers.
+ *
+ * If it is empty, everything is well. Else throw a runtime error listing
  * all the unsupported layers.
- * 
- * Once the extensions and layers have been validated, the 
- * `Optim::VK::CreateVulkanInstanceObject()` function is being called to 
+ *
+ * Once the extensions and layers have been validated, the
+ * `Optim::VK::CreateVulkanInstanceObject()` function is being called to
  * finally create a vk::Instance object.
- * 
+ *
  * With the instance being created and validated, this function can now start
  * checking for a GPU (vk::PhysicalDevice) to be used.
- * 
+ *
  * First call the `Optim::VK::SelectPhysicalDevice` function to get the most
  * appropriate GPU to use for rendering. The prerequestists for the physical
- * device selection are all defined inside the function. All properties, 
- * extensions, queue families being used as prerequisits for GPU selection, 
- * must ALL be supported, if nothing is found then the function returns 
+ * device selection are all defined inside the function. All properties,
+ * extensions, queue families being used as prerequisits for GPU selection,
+ * must ALL be supported, if nothing is found then the function returns
  * nullptr, then we throw an error.
- * 
+ *
  * Once that is confirmed we finally call `Optim::VK::CreateDeviceContext`
  * which will create the actual logical device object (vk::Device).
  */
-void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
+void VulkanRHI::Initialize(TDynamicArray<String>& old_paramSDLExt, const Window& windowSurface)
 {
   try {
+    SDL_Window* targetWindow = SDL_GetWindowFromID(windowSurface.GetWindowID());
 
+    /**
+     * REQUIRED EXTENSIONS VERIFICATION
+     */
+    // Get list of all extensions required by SDL to create an vkInstance object.
+    uint32             vkInstanceExtCount = 0;
+    const char* const* ppVkInstanceExt    = SDL_Vulkan_GetInstanceExtensions(&vkInstanceExtCount);
+
+    TDynamicArray<String> reqInstanceExt;
+
+    if (ppVkInstanceExt) {
+      for (size_t i = 0; i < vkInstanceExtCount; i++) {
+        reqInstanceExt.EmplaceBack(ppVkInstanceExt[i]);
+      }
+    }
+
+    // Get list of all supported extension by current Vulkan API.
     auto extensionProperties = impl.Get().context.enumerateInstanceExtensionProperties();
 
-    for (auto&& str : paramSDLExt) {
+    for (auto&& str : reqInstanceExt) {
       auto comparaisonFn = [str](vk::ExtensionProperties const& extentionProperty) {
         return strcmp(extentionProperty.extensionName, str.GetPointer()) == 0;
       };
@@ -75,6 +99,10 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
         std::cout << "[VulkanRHI | Error]-The required SDL extension: (" << str.GetPointer() << ") is not supported by Vulkan.\n";
       }
     }
+
+    /**
+     * REQUIRED LAYERS VERIFICATION
+     */
 
     TDynamicArray<String> requiredLayers;
 
@@ -95,19 +123,33 @@ void VulkanRHI::Initialize(TDynamicArray<String>& paramSDLExt)
       throw std::runtime_error(errorMsg.GetPointer());
     }
 
-    // Create vk::Instance
-    impl.Get().instance = Optim::VK::CreateVulkanInstanceObject(impl.Get().context, paramSDLExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
-    
+    // Initialize vkInstance object
+    impl.Get().instance = Optim::VK::CreateVulkanInstanceObject(impl.Get().context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
+
+    VkSurfaceKHR rawSurface = VK_NULL_HANDLE;
+
+    if (!SDL_Vulkan_CreateSurface(targetWindow, *impl.Get().instance, nullptr, &rawSurface)) {
+      throw std::runtime_error(SDL_GetError());
+    }
+
+    impl.Get().surface = vk::raii::SurfaceKHR(impl.Get().instance, rawSurface);
+
+    if (impl.Get().surface == nullptr) {
+      throw std::runtime_error("[VulkanRHI | Error] Failed to initialize VkSurfaceKHR object.");
+    }
+
+    // PHYSCIAL DEVICE SELECTION AND LOGICAL DEVICE INITIALIZATION
+
     // Get a handle to the most optimal physical device to use for rendering
     auto physicalDevice = Optim::VK::SelectPhysicalDevice(impl.Get().instance);
-    
+
     if (physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
     }
-    
+
     // Initialize the RenderDevice object
     impl.Get().renderDevice = Optim::VK::CreateDeviceContext(physicalDevice);
-    
+
     // Verify RenderDevice handles.
     if (impl.Get().renderDevice.physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] vk::PhyscialDevice object is null.");

@@ -13,25 +13,11 @@
 #include <iostream>
 
 bool System::Initalize() {
-  /**
-   * INITALIZATION:
-   *
-   * [SDL Initalization]
-   *
-   * Initalize SDL with following flags :
-   *  - SDL_INIT_EVENTS
-   *  - SDL_INIT_VIDEO
-   *
-   * After successful SDL initalization, instanciate the default system
-   * window for rendering.
-   */
   if (!SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO)) {
     String errorMsg = String("[RUNTIME ERROR]\n").Append("  SDL has failed to initalize\n").Append("  [Error message]\n").Append(SDL_GetError());
     fprintf(stderr, "%s", errorMsg.GetPointer());
     return false;
   }
-
-  // std::cout << "Module initialization status [System] : SUCESS\n";
 
   OnSystemModuleInitialized.Broadcast();
   return true;
@@ -61,7 +47,7 @@ bool System::ProcessEvents() {
       return false;
     }
   }
-
+  
   SDL_Delay(1);
   return true;
 }
