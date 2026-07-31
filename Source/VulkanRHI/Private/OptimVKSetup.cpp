@@ -108,11 +108,10 @@ RenderDevice Optim::VK::CreateRenderDevice(const vk::raii::PhysicalDevice& physi
 
     if ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) && physicalDevice.getSurfaceSupportKHR(qfpIndex, *vkSurface)) {
       queueIndex = qfpIndex;
-      std::cout << "Found queue family that supports both graphics and present.\n";
       break;
     }
   }
-
+  
   if (queueIndex == ~0) {
     throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
   }

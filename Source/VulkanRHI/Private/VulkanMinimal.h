@@ -2,13 +2,6 @@
 
 #include "OptimEngine/Core/CoreMinimal.h"
 
-#if defined(PLATFORM_WINDOWS)
-#  define VK_USE_PLATFORM_WIN32_KHR
-#elif defined(PLATFORM_LINUX)
-#  define VK_USE_PLATFORM_X11_KHR
-#  define VK_USE_PLATFORM_WAYLAND_KHR
-#endif
-
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 
 #if defined(__INTELISENSE__) || !defined(USE_CPP20_MODULES)
