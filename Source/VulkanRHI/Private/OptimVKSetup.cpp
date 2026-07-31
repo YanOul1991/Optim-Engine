@@ -105,18 +105,12 @@ RenderDevice Optim::VK::CreateDeviceContext(const vk::raii::PhysicalDevice& phys
   // List all familiy queues properties.
   auto queueFamiliyProperties = physicalDevice.getQueueFamilyProperties();
 
-  // Find the first queue with graphics capabilities
-  // auto   graphicsQueueFamilyProperty = std::ranges::find_if(queueFamiliyProperties, [](auto const& qfp) {
-  //   return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);
-  // });
-  // uint32 queueIndex                  = static_cast<uint32>(std::distance(queueFamiliyProperties.begin(), graphicsQueueFamilyProperty));
-
+  // Get Queue Family that supports both graphics and present.
   uint32 queueIndex = ~0;
-
+  
   for (uint32 qfpIndex = 0; qfpIndex < queueFamiliyProperties.size(); qfpIndex++) {
     auto const& qfp = queueFamiliyProperties[qfpIndex];
-    
-    // Get Queue Family that supports both graphics and present.
+
     if ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) && physicalDevice.getSurfaceSupportKHR(qfpIndex, *vkSurface)) {
       queueIndex = qfpIndex;
       std::cout << "Found queue family that supports both graphics and present.\n";

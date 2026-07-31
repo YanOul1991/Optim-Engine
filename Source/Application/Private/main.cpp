@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
 
   if (true) {
     auto requiredVulkanExtensions = System::GetVulkanRequiredExtensions();
-    pGraphicsRHI.Get().Initialize(requiredVulkanExtensions, mainWindow);
+    pGraphicsRHI.Get().Initialize(mainWindow.GetSDLWindowHandle());
   }
 
   uint64 loopCycles = 0;

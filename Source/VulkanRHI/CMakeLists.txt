@@ -25,7 +25,6 @@ target_link_libraries(vulkanrhi PRIVATE
   SDL3::SDL3
   rhi
   core
-  system
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

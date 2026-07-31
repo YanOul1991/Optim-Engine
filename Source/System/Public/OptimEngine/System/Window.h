@@ -7,11 +7,12 @@ class SYSTEM_API Window final
  public:
   Window(const char* windowName);
   ~Window();
-
-  uint32 GetWindowID() const { return m_WindowID; }
-
-  bool IsValid() const;
+  
+  uint32 GetWindowID() const { return windowId; }
+  void* GetSDLWindowHandle() const { return pSDLWindow; }
+  bool IsValid() const { return pSDLWindow != nullptr; }
 
  private:
-  uint32 m_WindowID;
+  uint32 windowId;
+  void*  pSDLWindow;
 };

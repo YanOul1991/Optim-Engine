@@ -4,7 +4,6 @@
 
 #include "VulkanRHI/VulkanRHI.h"
 
-#include "OptimEngine/System/Window.h"
 #include "OptimVKDebug.h"
 #include "OptimVKSetup.h"
 
@@ -67,10 +66,10 @@ VulkanRHI::~VulkanRHI()
  * Once that is confirmed we finally call `Optim::VK::CreateDeviceContext`
  * which will create the actual logical device object (vk::Device).
  */
-void VulkanRHI::Initialize(TDynamicArray<String>& old_paramSDLExt, const Window& windowSurface)
+void VulkanRHI::Initialize(void* pWindow)
 {
   try {
-    SDL_Window* targetWindow = SDL_GetWindowFromID(windowSurface.GetWindowID());
+    SDL_Window* targetWindow = static_cast<SDL_Window*>(pWindow);
 
     /**
      * REQUIRED EXTENSIONS VERIFICATION
