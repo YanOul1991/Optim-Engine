@@ -141,14 +141,14 @@ void VulkanRHI::Initialize(TDynamicArray<String>& old_paramSDLExt, const Window&
     // PHYSCIAL DEVICE SELECTION AND LOGICAL DEVICE INITIALIZATION
 
     // Get a handle to the most optimal physical device to use for rendering
-    auto physicalDevice = Optim::VK::SelectPhysicalDevice(impl.Get().instance);
+    auto physicalDevice = Optim::VK::SelectPhysicalDevice(impl.Get().instance, impl.Get().surface);
 
     if (physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
     }
 
     // Initialize the RenderDevice object
-    impl.Get().renderDevice = Optim::VK::CreateDeviceContext(physicalDevice);
+    impl.Get().renderDevice = Optim::VK::CreateDeviceContext(physicalDevice, impl.Get().surface);
 
     // Verify RenderDevice handles.
     if (impl.Get().renderDevice.physicalDevice == nullptr) {

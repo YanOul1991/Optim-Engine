@@ -11,7 +11,7 @@ static std::vector<const char*> requiredDeviceExtensions = {
   vk::KHRSwapchainExtensionName
 };
 
-vk::raii::PhysicalDevice Optim::VK::SelectPhysicalDevice(const vk::raii::Instance& vkInstance)
+vk::raii::PhysicalDevice Optim::VK::SelectPhysicalDevice(const vk::raii::Instance& vkInstance, const vk::raii::SurfaceKHR& vkSurface)
 {
   // Get a list of all GPUs found by Vulkan.
   auto physicalDevices = vkInstance.enumeratePhysicalDevices();
@@ -27,9 +27,9 @@ vk::raii::PhysicalDevice Optim::VK::SelectPhysicalDevice(const vk::raii::Instanc
   std::multimap<int64, vk::raii::PhysicalDevice> candidates;
 
   for (const auto& gpu : physicalDevices) {
-    auto properties = gpu.getProperties();
-    auto queueFamilies       = gpu.getQueueFamilyProperties();
-    auto availableExtensions = gpu.enumerateDeviceExtensionProperties();
+    auto properties             = gpu.getProperties();
+    auto queueFamiliyProperties = gpu.getQueueFamilyProperties();
+    auto availableExtensions    = gpu.enumerateDeviceExtensionProperties();
 
     int64 score = 0;
 
@@ -38,16 +38,27 @@ vk::raii::PhysicalDevice Optim::VK::SelectPhysicalDevice(const vk::raii::Instanc
     if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
       score += 1000;
     }
-    
+
     score += properties.limits.maxImageDimension2D;
 
     // Verify support for Vulkan 1.4 API. If the API is not supported then the
     // GPU cannot be used.
     bool supportsVulkan1_4 = (properties.apiVersion >= Optim::VK::ApiVersion);
 
-    bool supportsGraphics = std::ranges::any_of(queueFamilies, [](const vk::QueueFamilyProperties& qfp) {
-      return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics);
-    });
+    bool supportsReqQueueFamily = false;
+    for (uint32 qfpIndex = 0; qfpIndex < queueFamiliyProperties.size(); qfpIndex++) {
+      auto const& qfp = queueFamiliyProperties[qfpIndex];
+
+      // Get Queue Family that supports both graphics and present.
+      if ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) && gpu.getSurfaceSupportKHR(qfpIndex, *vkSurface)) {
+        supportsReqQueueFamily = true;
+        break;
+      }
+    }
+
+    // bool supportsGraphics = std::ranges::any_of(queueFamiliyProperties, [](const vk::QueueFamilyProperties& qfp) {
+    //   return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics);
+    // });
 
     // Check if all required extensions are supported by the GPU.
     bool supportsExtensions = std::ranges::all_of(requiredDeviceExtensions, [&availableExtensions](const auto& requiredExt) {
@@ -67,7 +78,7 @@ vk::raii::PhysicalDevice Optim::VK::SelectPhysicalDevice(const vk::raii::Instanc
                             features2.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
 
     // If all the requirements are validated then then add handle to the list of potential condidates with a score.
-    if (supportsVulkan1_4 && supportsGraphics && supportsExtensions && supportsFeatures) {
+    if (supportsVulkan1_4 && supportsReqQueueFamily && supportsExtensions && supportsFeatures) {
       candidates.insert(std::make_pair(score, gpu));
     }
   }
@@ -89,26 +100,33 @@ vk::raii::PhysicalDevice Optim::VK::SelectPhysicalDevice(const vk::raii::Instanc
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
  *
  */
-RenderDevice Optim::VK::CreateDeviceContext(const vk::raii::PhysicalDevice& physicalDevice)
+RenderDevice Optim::VK::CreateDeviceContext(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface)
 {
-  RenderDevice retRenderDevice;
-
   // List all familiy queues properties.
   auto queueFamiliyProperties = physicalDevice.getQueueFamilyProperties();
 
   // Find the first queue with graphics capabilities
-  auto graphicsQueueFamilyProperty = std::ranges::find_if(queueFamiliyProperties, [](auto const& qfp) {
-    return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);
-  });
+  // auto   graphicsQueueFamilyProperty = std::ranges::find_if(queueFamiliyProperties, [](auto const& qfp) {
+  //   return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);
+  // });
+  // uint32 queueIndex                  = static_cast<uint32>(std::distance(queueFamiliyProperties.begin(), graphicsQueueFamilyProperty));
 
-  float  queuePriority = 0.5f;
-  uint32 queueIndex    = static_cast<uint32>(std::distance(queueFamiliyProperties.begin(), graphicsQueueFamilyProperty));
+  uint32 queueIndex = ~0;
 
-  vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
-    .queueFamilyIndex = queueIndex,
-    .queueCount       = 1,
-    .pQueuePriorities = &queuePriority
-  };
+  for (uint32 qfpIndex = 0; qfpIndex < queueFamiliyProperties.size(); qfpIndex++) {
+    auto const& qfp = queueFamiliyProperties[qfpIndex];
+    
+    // Get Queue Family that supports both graphics and present.
+    if ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) && physicalDevice.getSurfaceSupportKHR(qfpIndex, *vkSurface)) {
+      queueIndex = qfpIndex;
+      std::cout << "Found queue family that supports both graphics and present.\n";
+      break;
+    }
+  }
+
+  if (queueIndex == ~0) {
+    throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
+  }
 
   // Create StructureChain object of feature structures.
   vk::StructureChain<vk::PhysicalDeviceFeatures2,
@@ -122,6 +140,15 @@ RenderDevice Optim::VK::CreateDeviceContext(const vk::raii::PhysicalDevice& phys
       { .extendedDynamicState = true }  // Enable extended dynamic state from the extension
     };
 
+  // Create the device.
+  float queuePriority = 0.5f;
+
+  vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
+    .queueFamilyIndex = queueIndex,
+    .queueCount       = 1,
+    .pQueuePriorities = &queuePriority
+  };
+
   vk::DeviceCreateInfo deviceCreateInfo{
     .pNext                   = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
     .queueCreateInfoCount    = 1,
@@ -130,11 +157,11 @@ RenderDevice Optim::VK::CreateDeviceContext(const vk::raii::PhysicalDevice& phys
     .ppEnabledExtensionNames = requiredDeviceExtensions.data()
   };
 
-  // Set logical first then use that member handle to create the graphics queue.
+  // Return RenderDevice object
+  RenderDevice retRenderDevice;
   retRenderDevice.logicalDevice            = vk::raii::Device(physicalDevice, deviceCreateInfo);
   retRenderDevice.physicalDevice           = physicalDevice;
   retRenderDevice.graphicsQueue            = vk::raii::Queue(retRenderDevice.logicalDevice, queueIndex, 0);
   retRenderDevice.graphicsQueueFamilyIndex = queueIndex;
-
   return retRenderDevice;
 }

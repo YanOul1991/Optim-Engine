@@ -27,7 +27,7 @@ namespace Optim::VK
  * Device Limits struct (vk::PhysicalDeviceLimits)
  * https://docs.vulkan.org/spec/latest/chapters/limits.html
  */
-vk::raii::PhysicalDevice SelectPhysicalDevice(const vk::raii::Instance& vkInstance);
+vk::raii::PhysicalDevice SelectPhysicalDevice(const vk::raii::Instance& vkInstance, const vk::raii::SurfaceKHR& vkSurface);
 
 /**
  * Documentation for basic logical device creation:
@@ -35,7 +35,7 @@ vk::raii::PhysicalDevice SelectPhysicalDevice(const vk::raii::Instance& vkInstan
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
  *
  */
-RenderDevice CreateDeviceContext(const vk::raii::PhysicalDevice& physicalDevice);
+RenderDevice CreateDeviceContext(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface);
 
 /**
  * @todo
