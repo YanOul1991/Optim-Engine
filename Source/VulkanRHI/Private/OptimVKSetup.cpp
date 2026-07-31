@@ -100,7 +100,7 @@ vk::raii::PhysicalDevice Optim::VK::SelectVkPhysicalDevice(const vk::raii::Insta
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
  *
  */
-RenderDevice Optim::VK::CreateDeviceContext(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface)
+RenderDevice Optim::VK::CreateRenderDevice(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface)
 {
   // List all familiy queues properties.
   auto queueFamiliyProperties = physicalDevice.getQueueFamilyProperties();

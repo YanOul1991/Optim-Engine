@@ -28,16 +28,16 @@ struct VulkanRHI::Impl
   RenderDevice renderDevice;
 };
 
-inline vk::raii::SurfaceKHR CreateVkSurfaceKHR(const vk::raii::Instance& instance, SDL_Window*& sdlwindow)
-{
-  VkSurfaceKHR rawSurface = VK_NULL_HANDLE;
+// inline vk::raii::SurfaceKHR CreateVkSurfaceKHR(const vk::raii::Instance& instance, SDL_Window*& sdlwindow)
+// {
+//   VkSurfaceKHR rawSurface = VK_NULL_HANDLE;
 
-  if (!SDL_Vulkan_CreateSurface(sdlwindow, *instance, nullptr, &rawSurface)) {
-    throw std::runtime_error(SDL_GetError());
-  }
+//   if (!SDL_Vulkan_CreateSurface(sdlwindow, *instance, nullptr, &rawSurface)) {
+//     throw std::runtime_error(SDL_GetError());
+//   }
 
-  return vk::raii::SurfaceKHR(instance, rawSurface);
-}
+//   return vk::raii::SurfaceKHR(instance, rawSurface);
+// }
 
 VulkanRHI::VulkanRHI() : impl(MakeUnique<Impl>())
 {}
@@ -60,28 +60,26 @@ VulkanRHI::~VulkanRHI()
  * all the unsupported layers.
  *
  * Once the extensions and layers have been validated, the
- * `Optim::VK::CreateVulkanInstanceObject()` function is being called to
+ * `Optim::VK::CreateVkInstance()` function is being called to
  * finally create a vk::Instance object.
  *
  * With the instance being created and validated, this function can now start
  * checking for a GPU (vk::PhysicalDevice) to be used.
  *
- * First call the `Optim::VK::SelectPhysicalDevice` function to get the most
+ * First call the `Optim::VK::SelectVkPhysicalDevice` function to get the most
  * appropriate GPU to use for rendering. The prerequestists for the physical
  * device selection are all defined inside the function. All properties,
  * extensions, queue families being used as prerequisits for GPU selection,
  * must ALL be supported, if nothing is found then the function returns
  * nullptr, then we throw an error.
  *
- * Once that is confirmed we finally call `Optim::VK::CreateDeviceContext`
+ * Once that is confirmed we finally call `Optim::VK::CreateRenderDevice`
  * which will create the actual logical device object (vk::Device).
  */
 void VulkanRHI::Initialize(void* pSDL_Window)
 {
   try {
     SDL_Window* sdlwindow = static_cast<SDL_Window*>(pSDL_Window);
-
-    // REQUIRED EXTENSIONS VERIFICATION
 
     TDynamicArray<String> reqInstanceExt;
 
@@ -109,16 +107,15 @@ void VulkanRHI::Initialize(void* pSDL_Window)
       auto comparaisonFn = [str](vk::ExtensionProperties const& extentionProperty) {
         return strcmp(extentionProperty.extensionName, str.GetPointer()) == 0;
       };
-
       if (std::ranges::none_of(extensionProperties, comparaisonFn)) {
         std::cout << "[VulkanRHI | Error]-The required SDL extension: (" << str.GetPointer() << ") is not supported by Vulkan.\n";
       }
     }
 
-    // REQUIRED LAYERS VERIFICATION
-
+    // Required Layers Verification
     TDynamicArray<String> requiredLayers;
 
+    // Add "VK_LAYER_KHRONOS_validation" if validation layers are enabled
     if constexpr (Optim::VK::enableValidationLayers) {
       requiredLayers.EmplaceBack("VK_LAYER_KHRONOS_validation");
     }
@@ -134,30 +131,26 @@ void VulkanRHI::Initialize(void* pSDL_Window)
       throw std::runtime_error(errorMsg.GetPointer());
     }
 
-    // Initialize VkInstance
+    // Create VkInstance object
     impl.Get().instance = Optim::VK::CreateVkInstance(impl.Get().context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
     if (impl.Get().instance == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to initialize VkInstance object.");
     }
 
-    // Initialize VKSurfaceKHR
-    impl.Get().surface = CreateVkSurfaceKHR(impl.Get().instance, sdlwindow);
-
+    // Create VKSurfaceKHR object
+    impl.Get().surface = Optim::VK::CreateVkSurfaceKHR(impl.Get().instance, sdlwindow);
     if (impl.Get().surface == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to initialize VkSurfaceKHR object.");
     }
 
-    // PHYSCIAL DEVICE SELECTION AND LOGICAL DEVICE INITIALIZATION
-
-    // Get a handle to the most optimal physical device to use for rendering
+    // Select most optimal VkPhysicalDevice object
     auto physicalDevice = Optim::VK::SelectVkPhysicalDevice(impl.Get().instance, impl.Get().surface);
-
     if (physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
     }
 
-    // Initialize the RenderDevice object then verify RenderDevice handles.
-    impl.Get().renderDevice = Optim::VK::CreateDeviceContext(physicalDevice, impl.Get().surface);
+    // Create RenderDevice object
+    impl.Get().renderDevice = Optim::VK::CreateRenderDevice(physicalDevice, impl.Get().surface);
 
     if (impl.Get().renderDevice.physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] vk::PhyscialDevice object is null.");
@@ -169,10 +162,9 @@ void VulkanRHI::Initialize(void* pSDL_Window)
       throw std::runtime_error("[VulkanRHI | Error] vk::Queue object is null.");
     }
 
-    // Setup Debug messenger
+    // Create VkDebugUtilsMessengerEXT object if validation layers are enabled
     if constexpr (Optim::VK::enableValidationLayers) {
-      impl.Get().debugMessenger = Optim::VK::Debug::CreateDebugMessenger(impl.Get().instance);
-
+      impl.Get().debugMessenger = Optim::VK::Debug::CreateVkDebugUtilsMessengerEXT(impl.Get().instance);
       if (impl.Get().debugMessenger == nullptr) {
         throw std::runtime_error("[VulkanRHI | Error] Debug messenger FAILED to initialize.");
       }

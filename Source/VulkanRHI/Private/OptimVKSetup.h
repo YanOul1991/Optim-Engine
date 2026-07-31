@@ -5,7 +5,10 @@
 #include "OptimEngine/Core/StandardTypes/TDynamicArray.h"
 #include "OptimVKTypes/OptimVKWrapperTypes.h"
 #include "VulkanMinimal.h"
-
+// SDL
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
+// STD
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -14,6 +17,23 @@
 
 namespace Optim::VK
 {
+
+/**
+ * Creates VkSurfaceKHR object.
+ */
+inline vk::raii::SurfaceKHR CreateVkSurfaceKHR(const vk::raii::Instance& instance, SDL_Window*& sdlwindow)
+{
+  // Use the SDL function to create the surface as it abstracts the need 
+  // to perform platform specific operations, figuring out the display service,
+  // defining the correct macros, calling the correct vulkan functions, etc.
+  VkSurfaceKHR rawSurface = VK_NULL_HANDLE;
+
+  if (!SDL_Vulkan_CreateSurface(sdlwindow, *instance, nullptr, &rawSurface)) {
+    throw std::runtime_error(SDL_GetError());
+  }
+
+  return vk::raii::SurfaceKHR(instance, rawSurface);
+}
 
 /**
  * @brief
@@ -35,13 +55,9 @@ vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance& vkInst
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
  *
  */
-RenderDevice CreateDeviceContext(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface);
+RenderDevice CreateRenderDevice(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface);
 
 /**
- * @todo
- * Improve functions implementation to allow to implement other logic if some
- * layers are not supported.
- *
  * @brief
  * Verifies if all desired layers are supported by the Vulkan implementation.
  * For now if one or more layer is not validated, simply prints a message
@@ -86,20 +102,11 @@ inline vk::raii::Instance CreateVkInstance(
   for (String& extention : enabledExtensionNames) {
     ppExtensionNames.Push(extention.GetPointer());
   }
-  
+
   // List of raw c style pointers for layers names
   for (String& layer : enabledLayerNames) {
     ppLayerNames.Push(layer.GetPointer());
   }
-
-  // // If using validation layers than add it to the extension list.
-  // // Since the Vulkan API contains already `char*` to some
-  // // extension names, it can simply be directly added here to
-  // // the extension names list.
-  // if constexpr (Optim::VK::enableValidationLayers) {
-  //   ppExtensionNames.Push(vk::EXTDebugUtilsExtensionName);
-  // }
-
 
   // Simple debug to check generated list objects.
   if constexpr (true) {

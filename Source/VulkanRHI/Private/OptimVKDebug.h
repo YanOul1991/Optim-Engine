@@ -54,7 +54,7 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSeverityFlag
   return vk::False;
 }
 
-inline vk::raii::DebugUtilsMessengerEXT CreateDebugMessenger(const vk::raii::Instance& instance)
+inline vk::raii::DebugUtilsMessengerEXT CreateVkDebugUtilsMessengerEXT(const vk::raii::Instance& instance)
 {
   constexpr vk::DebugUtilsMessageSeverityFlagsEXT severityFlags(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
                                                                 vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
