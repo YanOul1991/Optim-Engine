@@ -56,10 +56,6 @@ vk::raii::PhysicalDevice Optim::VK::SelectVkPhysicalDevice(const vk::raii::Insta
       }
     }
 
-    // bool supportsGraphics = std::ranges::any_of(queueFamiliyProperties, [](const vk::QueueFamilyProperties& qfp) {
-    //   return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics);
-    // });
-
     // Check if all required extensions are supported by the GPU.
     bool supportsExtensions = std::ranges::all_of(requiredDeviceExtensions, [&availableExtensions](const auto& requiredExt) {
       return std::ranges::any_of(availableExtensions, [requiredExt](const vk::ExtensionProperties& availableDeviceExt) {
@@ -84,12 +80,11 @@ vk::raii::PhysicalDevice Optim::VK::SelectVkPhysicalDevice(const vk::raii::Insta
   }
 
   // If no valid candiate has been found then RIP.
+  // Else pick the last GPU of the candidate map, since the score are in ascending order.
   if (candidates.empty() || candidates.rbegin()->first <= 0) {
-    // throw std::runtime_error("[VulkanRHI | Error] Failed to found suitable GPU.\n");
     return nullptr;
   }
   else {
-    // Else pick the last GPU of the candidate map, since the score are in ascending order.
     return candidates.rbegin()->second;
   }
 }
@@ -107,7 +102,7 @@ RenderDevice Optim::VK::CreateRenderDevice(const vk::raii::PhysicalDevice& physi
 
   // Get Queue Family that supports both graphics and present.
   uint32 queueIndex = ~0;
-  
+
   for (uint32 qfpIndex = 0; qfpIndex < queueFamiliyProperties.size(); qfpIndex++) {
     auto const& qfp = queueFamiliyProperties[qfpIndex];
 

@@ -28,17 +28,6 @@ struct VulkanRHI::Impl
   RenderDevice renderDevice;
 };
 
-// inline vk::raii::SurfaceKHR CreateVkSurfaceKHR(const vk::raii::Instance& instance, SDL_Window*& sdlwindow)
-// {
-//   VkSurfaceKHR rawSurface = VK_NULL_HANDLE;
-
-//   if (!SDL_Vulkan_CreateSurface(sdlwindow, *instance, nullptr, &rawSurface)) {
-//     throw std::runtime_error(SDL_GetError());
-//   }
-
-//   return vk::raii::SurfaceKHR(instance, rawSurface);
-// }
-
 VulkanRHI::VulkanRHI() : impl(MakeUnique<Impl>())
 {}
 

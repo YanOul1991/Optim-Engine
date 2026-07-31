@@ -37,28 +37,6 @@ inline vk::raii::SurfaceKHR CreateVkSurfaceKHR(const vk::raii::Instance& instanc
 
 /**
  * @brief
- * Check all available GPUs on system and gets the most appropriate one
- * from predefined prerequisists such as properties, supported features,
- * queueFamilies and extensions.
- *
- * vk::PhysicalDeviceProperties struct Documentation:
- * https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceProperties.html
- *
- * Device Limits struct (vk::PhysicalDeviceLimits)
- * https://docs.vulkan.org/spec/latest/chapters/limits.html
- */
-vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance& vkInstance, const vk::raii::SurfaceKHR& vkSurface);
-
-/**
- * Documentation for basic logical device creation:
- *
- * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
- *
- */
-RenderDevice CreateRenderDevice(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface);
-
-/**
- * @brief
  * Verifies if all desired layers are supported by the Vulkan implementation.
  * For now if one or more layer is not validated, simply prints a message
  * listing them.
@@ -129,8 +107,30 @@ inline vk::raii::Instance CreateVkInstance(
     .enabledExtensionCount   = static_cast<uint32>(ppExtensionNames.GetCount()),
     .ppEnabledExtensionNames = ppExtensionNames.GetData()
   };
-
+  
   return vk::raii::Instance(context, createInfo);
 }
+
+/**
+ * @brief
+ * Check all available GPUs on system and gets the most appropriate one
+ * from predefined prerequisists such as properties, supported features,
+ * queueFamilies and extensions.
+ *
+ * vk::PhysicalDeviceProperties struct Documentation:
+ * https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceProperties.html
+ *
+ * Device Limits struct (vk::PhysicalDeviceLimits)
+ * https://docs.vulkan.org/spec/latest/chapters/limits.html
+ */
+vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance& vkInstance, const vk::raii::SurfaceKHR& vkSurface);
+
+/**
+ * Documentation for basic logical device creation:
+ *
+ * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
+ *
+ */
+RenderDevice CreateRenderDevice(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface);
 
 }; // namespace Optim::VK
