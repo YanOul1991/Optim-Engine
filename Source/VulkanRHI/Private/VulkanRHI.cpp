@@ -38,7 +38,6 @@ VulkanRHI::~VulkanRHI()
  * Start by verifying required extensions. For now since only the SDL
  * required are used, the list containing them is being directly verified.
  *
- * @todo
  * When more extensions will be need then the required extensions verification
  * logic will be updated accordingly.
  *
@@ -71,19 +70,19 @@ void VulkanRHI::Initialize(void* pWindow)
   try {
     SDL_Window* targetWindow = static_cast<SDL_Window*>(pWindow);
 
-    /**
-     * REQUIRED EXTENSIONS VERIFICATION
-     */
-    // Get list of all extensions required by SDL to create an vkInstance object.
+    // REQUIRED EXTENSIONS VERIFICATION
+    TDynamicArray<String> reqInstanceExt;
+
+    // Get list of all extensions required by SDL to create an vkInstance
+    // object, then add them to the required extensions list.
     uint32             vkInstanceExtCount = 0;
     const char* const* ppVkInstanceExt    = SDL_Vulkan_GetInstanceExtensions(&vkInstanceExtCount);
 
-    TDynamicArray<String> reqInstanceExt;
-
-    if (ppVkInstanceExt) {
-      for (size_t i = 0; i < vkInstanceExtCount; i++) {
-        reqInstanceExt.EmplaceBack(ppVkInstanceExt[i]);
-      }
+    if (ppVkInstanceExt == nullptr) {
+      throw std::runtime_error(SDL_GetError());
+    }
+    for (size_t i = 0; i < vkInstanceExtCount; i++) {
+      reqInstanceExt.EmplaceBack(ppVkInstanceExt[i]);
     }
 
     // Get list of all supported extension by current Vulkan API.
@@ -99,9 +98,7 @@ void VulkanRHI::Initialize(void* pWindow)
       }
     }
 
-    /**
-     * REQUIRED LAYERS VERIFICATION
-     */
+    // REQUIRED LAYERS VERIFICATION
 
     TDynamicArray<String> requiredLayers;
 
@@ -114,14 +111,12 @@ void VulkanRHI::Initialize(void* pWindow)
 
     if (unsupportedLayers.GetCount() > 0) {
       String errorMsg = String("[VulkanRHI | Error] The following layers are not supported by Vulkan:\n");
-
       for (auto& layer : unsupportedLayers) {
         errorMsg.Append(" * ").Append(layer);
       }
-
       throw std::runtime_error(errorMsg.GetPointer());
     }
-
+    
     // Initialize vkInstance object
     impl.Get().instance = Optim::VK::CreateVulkanInstanceObject(impl.Get().context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
 
@@ -146,10 +141,9 @@ void VulkanRHI::Initialize(void* pWindow)
       throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
     }
 
-    // Initialize the RenderDevice object
+    // Initialize the RenderDevice object then verify RenderDevice handles.
     impl.Get().renderDevice = Optim::VK::CreateDeviceContext(physicalDevice, impl.Get().surface);
 
-    // Verify RenderDevice handles.
     if (impl.Get().renderDevice.physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] vk::PhyscialDevice object is null.");
     }

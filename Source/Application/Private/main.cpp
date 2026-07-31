@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
 {
   Bar bar;
   System::OnSystemModuleInitialized.SubscribeMemberFunction<&Bar::Foo>(&bar);
-
+  
   // Initalize the System module
   System::Initalize();
 
@@ -103,14 +103,6 @@ int main(int argc, char* argv[])
   Internal::RenderModule rhiBackend(new VulkanRHI());
 
   rhiBackend.rhi.GetPtr()->Initialize(mainWindow.GetSDLWindowHandle());
-
-  // Create an instance of Rendering RHI.
-  // TUniquePtr<IRHI> pGraphicsRHI(Internal::Rendering::InstanciateRenderInterface());
-
-  // if (true) {
-  //   auto requiredVulkanExtensions = System::GetVulkanRequiredExtensions();
-  //   pGraphicsRHI.Get().Initialize(mainWindow.GetSDLWindowHandle());
-  // }
 
   uint64 loopCycles = 0;
 
