@@ -11,7 +11,7 @@ static std::vector<const char*> requiredDeviceExtensions = {
   vk::KHRSwapchainExtensionName
 };
 
-vk::raii::PhysicalDevice Optim::VK::SelectPhysicalDevice(const vk::raii::Instance& vkInstance, const vk::raii::SurfaceKHR& vkSurface)
+vk::raii::PhysicalDevice Optim::VK::SelectVkPhysicalDevice(const vk::raii::Instance& vkInstance, const vk::raii::SurfaceKHR& vkSurface)
 {
   // Get a list of all GPUs found by Vulkan.
   auto physicalDevices = vkInstance.enumeratePhysicalDevices();
