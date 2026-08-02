@@ -112,6 +112,8 @@ int main(int argc, char* argv[])
 
   std::cout << "Cycles count: " << loopCycles << '\n';
 
+  mainWindow.~Window();
+  
   System::Quit();
 
   return 0;

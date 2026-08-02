@@ -4,7 +4,7 @@
 
 #define SDL_MAIN_HANDLED
 
-#include "System/Window.h"
+#include "OptimEngine/System/Window.h"
 
 #include "SDL3/SDL.h"
 
@@ -25,7 +25,7 @@ Window::Window(const char* windowName) : windowId(~0), pSDLWindow(nullptr)
   }
 }
 
-Window::~Window() 
+Window::~Window()
 {
   SDL_DestroyWindow(static_cast<SDL_Window*>(pSDLWindow));
 }
