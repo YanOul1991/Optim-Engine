@@ -31,9 +31,6 @@ struct VulkanRHI::VulkanContext
   vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
   RenderDevice                     renderDevice;
   SwapChainContext                 swapChainContext;
-
-  // vk::raii::SwapchainKHR swapChain = nullptr;
-  // std::vector<vk::Image> swapChainImages;
 };
 
 VulkanRHI::VulkanRHI() : pVkContext(MakeUnique<VulkanContext>())
@@ -82,34 +79,41 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
 
     TDynamicArray<String> reqInstanceExt;
 
+    // Add all extensions required by SDL to create a VkSurfaceKHR object.
+    Optim::VK::AddSDLRequiredExtensions(reqInstanceExt);
+
     // Get list of all extensions required by SDL to create an vkInstance
     // object, then add them to the required extensions list.
-    uint32             vkInstanceExtCount = 0;
-    const char* const* ppVkInstanceExt    = SDL_Vulkan_GetInstanceExtensions(&vkInstanceExtCount);
+    // uint32             vkInstanceExtCount = 0;
+    // const char* const* ppVkInstanceExt    = SDL_Vulkan_GetInstanceExtensions(&vkInstanceExtCount);
 
-    if (ppVkInstanceExt == nullptr) {
-      throw std::runtime_error(SDL_GetError());
-    }
+    // if (ppVkInstanceExt == nullptr) {
+    //   throw std::runtime_error(SDL_GetError());
+    // }
 
-    for (size_t i = 0; i < vkInstanceExtCount; i++) {
-      reqInstanceExt.EmplaceBack(ppVkInstanceExt[i]);
-    }
+    // for (size_t i = 0; i < vkInstanceExtCount; i++) {
+    //   reqInstanceExt.EmplaceBack(ppVkInstanceExt[i]);
+    // }
 
+    // Add "VK_EXT_debug_utils" extension if validation layers are enabled
     if constexpr (Optim::VK::enableValidationLayers) {
       reqInstanceExt.EmplaceBack(vk::EXTDebugUtilsExtensionName);
     }
 
-    // Get list of all supported extension by current Vulkan API.
-    auto extensionProperties = ctx.context.enumerateInstanceExtensionProperties();
-
-    for (auto&& str : reqInstanceExt) {
-      auto comparaisonFn = [str](vk::ExtensionProperties const& extentionProperty) {
-        return strcmp(extentionProperty.extensionName, str.GetPointer()) == 0;
-      };
-      if (std::ranges::none_of(extensionProperties, comparaisonFn)) {
-        std::cout << "[VulkanRHI | Error]-The required SDL extension: (" << str.GetPointer() << ") is not supported by Vulkan.\n";
-      }
+    if (!Optim::VK::ValidateRequiredExtensions(reqInstanceExt, ctx.context)) {
+      throw std::runtime_error("[VulkanRHI | Error] Required extensions are not supported by Vulkan.");
     }
+
+    // Get list of all supported extension by current Vulkan API.
+    // auto extensionProperties = ctx.context.enumerateInstanceExtensionProperties();
+    // for (auto&& str : reqInstanceExt) {
+    //   auto comparaisonFn = [str](vk::ExtensionProperties const& extentionProperty) {
+    //     return strcmp(extentionProperty.extensionName, str.GetPointer()) == 0;
+    //   };
+    //   if (std::ranges::none_of(extensionProperties, comparaisonFn)) {
+    //     std::cout << "[VulkanRHI | Error]-The required SDL extension: (" << str.GetPointer() << ") is not supported by Vulkan.\n";
+    //   }
+    // }
 
     // Required Layers Verification
     TDynamicArray<String> requiredLayers;
@@ -119,16 +123,19 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
       requiredLayers.EmplaceBack("VK_LAYER_KHRONOS_validation");
     }
 
-    // Validate required layers.
-    TDynamicArray<String> unsupportedLayers = Optim::VK::VerifyRequiredLayers(requiredLayers, ctx.context);
-
-    if (unsupportedLayers.GetCount() > 0) {
-      String errorMsg = String("[VulkanRHI | Error] The following layers are not supported by Vulkan:\n");
-      for (auto& layer : unsupportedLayers) {
-        errorMsg.Append(" * ").Append(layer);
-      }
-      throw std::runtime_error(errorMsg.GetPointer());
+    if (Optim::VK::ValidateRequiredLayers(requiredLayers, ctx.context) == false) {
+      throw std::runtime_error("[VulkanRHI | Error] Required layers are not supported by Vulkan.");
     }
+
+    // Validate required layers.
+    // TDynamicArray<String> unsupportedLayers = Optim::VK::VerifyRequiredLayers(requiredLayers, ctx.context);
+    // if (unsupportedLayers.GetCount() > 0) {
+    //   String errorMsg = String("[VulkanRHI | Error] The following layers are not supported by Vulkan:\n");
+    //   for (auto& layer : unsupportedLayers) {
+    //     errorMsg.Append(" * ").Append(layer);
+    //   }
+    //   throw std::runtime_error(errorMsg.GetPointer());
+    // }
 
     // Create VkInstance object
     ctx.instance = Optim::VK::CreateVkInstance(ctx.context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());

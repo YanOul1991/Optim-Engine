@@ -90,43 +90,43 @@ uint32 Optim::VK::SelectSwapChainMinImageCount(const vk::SurfaceCapabilitiesKHR&
  *
  * Vulkan Tutorial Example:
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/01_Presentation/01_Swap_chain.html#_querying_details_of_swap_chain_support
+ vk::raii::SwapchainKHR Optim::VK::CreateVkSwapChainKHR(const vk::raii::Device&         device,
+                                                        const vk::raii::PhysicalDevice& physicalDevice,
+                                                        const vk::raii::SurfaceKHR&     surface,
+                                                        SDL_Window*                     pWindow)
+ {
+   // Get surface available basic capabilities
+   auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
+   // Get surface available formats
+   auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
+   // Get surface available present modes
+   auto surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
+ 
+   // Select optimal settings
+   auto swapChainFormat        = Optim::VK::SelectSwapChainVkSurfaceKHRFormat(surfaceFormats);
+   auto swapChainPresentMode   = Optim::VK::SelectSwapChainVkPresentModeKHR(surfacePresentModes);
+   auto swapChainExtent        = Optim::VK::SelectSwapChainVkExtend2D(surfaceCapabilities, pWindow);
+   auto swapChainMinImageCount = Optim::VK::SelectSwapChainMinImageCount(surfaceCapabilities);
+ 
+   // Swap Chain create info
+   vk::SwapchainCreateInfoKHR swapChainCreateInfo{
+     .surface          = *surface,
+     .minImageCount    = swapChainMinImageCount,
+     .imageFormat      = swapChainFormat.format,
+     .imageColorSpace  = swapChainFormat.colorSpace,
+     .imageExtent      = swapChainExtent,
+     .imageArrayLayers = 1,
+     .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment,
+     .imageSharingMode = vk::SharingMode::eExclusive,
+     .preTransform     = surfaceCapabilities.currentTransform,
+     .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+     .presentMode      = swapChainPresentMode,
+     .clipped          = true
+   };
+ 
+   return vk::raii::SwapchainKHR(device, swapChainCreateInfo);
+ }
  */
-vk::raii::SwapchainKHR Optim::VK::CreateVkSwapChainKHR(const vk::raii::Device&         device,
-                                                       const vk::raii::PhysicalDevice& physicalDevice,
-                                                       const vk::raii::SurfaceKHR&     surface,
-                                                       SDL_Window*                     pWindow)
-{
-  // Get surface available basic capabilities
-  auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
-  // Get surface available formats
-  auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
-  // Get surface available present modes
-  auto surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
-
-  // Select optimal settings
-  auto swapChainFormat        = Optim::VK::SelectSwapChainVkSurfaceKHRFormat(surfaceFormats);
-  auto swapChainPresentMode   = Optim::VK::SelectSwapChainVkPresentModeKHR(surfacePresentModes);
-  auto swapChainExtent        = Optim::VK::SelectSwapChainVkExtend2D(surfaceCapabilities, pWindow);
-  auto swapChainMinImageCount = Optim::VK::SelectSwapChainMinImageCount(surfaceCapabilities);
-
-  // Swap Chain create info
-  vk::SwapchainCreateInfoKHR swapChainCreateInfo{
-    .surface          = *surface,
-    .minImageCount    = swapChainMinImageCount,
-    .imageFormat      = swapChainFormat.format,
-    .imageColorSpace  = swapChainFormat.colorSpace,
-    .imageExtent      = swapChainExtent,
-    .imageArrayLayers = 1,
-    .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment,
-    .imageSharingMode = vk::SharingMode::eExclusive,
-    .preTransform     = surfaceCapabilities.currentTransform,
-    .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-    .presentMode      = swapChainPresentMode,
-    .clipped          = true
-  };
-
-  return vk::raii::SwapchainKHR(device, swapChainCreateInfo);
-}
 
 SwapChainContext Optim::VK::CreateSwapChainContext(const vk::raii::Device &device, const vk::raii::PhysicalDevice &physicalDevice, const vk::raii::SurfaceKHR &surface, SDL_Window *pWindow)
 {

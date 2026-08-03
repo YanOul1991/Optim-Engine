@@ -7,7 +7,7 @@ struct SDL_Window;
 
 namespace Optim::VK
 {
-    
+
 vk::SurfaceFormatKHR SelectSwapChainVkSurfaceKHRFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
 
 /**
@@ -37,6 +37,27 @@ vk::Extent2D SelectSwapChainVkExtend2D(const vk::SurfaceCapabilitiesKHR& capabil
 uint32 SelectSwapChainMinImageCount(const vk::SurfaceCapabilitiesKHR& capabilities);
 
 /**
+ * THIS FUNCTION IS DEPRECATED. Use `CreateSwapChainContext` instead.
+ *
+ * Querying details of swap chain support.
+ *
+ * Settings to determine:
+ *   * Surface format (color depth)
+ *   * Presentation mode (conditions for "swapping" images to the screen)
+ *   * Swap extent (resolution of images in swapchain)
+ *
+ * Vulkan Tutorial Example:
+ * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/01_Presentation/01_Swap_chain.html#_querying_details_of_swap_chain_support
+ * 
+ [[deprecated("This function may be removed in the future. Use `CreateSwapChainContext` instead.")]]
+ vk::raii::SwapchainKHR CreateVkSwapChainKHR(const vk::raii::Device&         device,
+                                             const vk::raii::PhysicalDevice& physicalDevice,
+                                             const vk::raii::SurfaceKHR&     surface,
+                                             SDL_Window*                     pWindow);
+ */
+
+
+/**
  * Querying details of swap chain support.
  *
  * Settings to determine:
@@ -47,13 +68,9 @@ uint32 SelectSwapChainMinImageCount(const vk::SurfaceCapabilitiesKHR& capabiliti
  * Vulkan Tutorial Example:
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/01_Presentation/01_Swap_chain.html#_querying_details_of_swap_chain_support
  */
-vk::raii::SwapchainKHR CreateVkSwapChainKHR(const vk::raii::Device&         device,
-                                            const vk::raii::PhysicalDevice& physicalDevice,
-                                            const vk::raii::SurfaceKHR&     surface,
-                                            SDL_Window*                     pWindow);
 
 SwapChainContext CreateSwapChainContext(const vk::raii::Device&         device,
-                                         const vk::raii::PhysicalDevice& physicalDevice,
-                                         const vk::raii::SurfaceKHR&     surface,
-                                         SDL_Window*                     pWindow);                                            
+                                        const vk::raii::PhysicalDevice& physicalDevice,
+                                        const vk::raii::SurfaceKHR&     surface,
+                                        SDL_Window*                     pWindow);
 } // namespace Optim::VK
