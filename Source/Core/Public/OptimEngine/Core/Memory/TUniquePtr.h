@@ -12,90 +12,50 @@
 
 template <typename T> class TUniquePtr final
 {
- public:
-  TUniquePtr()
-  {}
-
-  ~TUniquePtr()
-  {
-    FreeData();
-  }
-
-  TUniquePtr(nullptr_t)
-  {}
-
-  TUniquePtr(T*& pointer)
-  {
-    pRefObject = pointer;
-    pointer    = nullptr;
-  }
-
-  TUniquePtr(T*&& pointer)
-  {
-    pRefObject = pointer;
-  }
-
+  public:
+  TUniquePtr() = default;
+  explicit TUniquePtr(T* ptr) noexcept : pRefObject(ptr) {}
+  ~TUniquePtr() { Reset(); }
+  
   TUniquePtr(const TUniquePtr&) = delete;
-
-  TUniquePtr(TUniquePtr&& other)
-  {
-    if (&other != this) {
-      pRefObject       = other.pRefObject;
-      other.pRefObject = nullptr;
-    }
-  }
-
-  void SetPtr(T* initialValue)
-  {
-    if (pRefObject != nullptr) {
-      delete pRefObject;
-    }
-    pRefObject = initialValue;
-  }
-
-  void TransferOwnershipTo(TUniquePtr& other)
-  {
-    if (&other == this) {
-      return;
-    }
-
-    if (other.pRefObject != nullptr) {
-      other.FreeData();
-      other.pRefObject = pRefObject;
-      pRefObject       = nullptr;
-    }
-  }
-
   TUniquePtr operator=(const TUniquePtr&) = delete;
 
-  TUniquePtr& operator=(TUniquePtr&& other)
+  TUniquePtr(TUniquePtr&& other) noexcept 
   {
-    if (&other != this) {
-      pRefObject       = other.pRefObject;
-      other.pRefObject = nullptr;
+    if (this != &other) {
+      Reset(other.Release());
+    }
+  }
+
+  TUniquePtr& operator=(TUniquePtr&& other) noexcept
+  {
+    if (this != &other) {
+      Reset(other.Release());
     }
     return *this;
   }
 
-  void FreeData()
+  void Reset(T* ptr = nullptr)
   {
     if (pRefObject != nullptr) {
       delete pRefObject;
     }
-    pRefObject = nullptr;
+    pRefObject = ptr;
   }
-  
-  bool operator==(nullptr_t) { return pRefObject == nullptr; }
 
-  bool IsValid() const { return pRefObject != nullptr; }
-
-  T* GetPtr() const { return pRefObject; }
-
-  T& Get()
+  T* Release()
   {
-    assert(pRefObject != nullptr && "[Assertion failure] TUniquePtr | Trying to dereference a null pointer.\n");
-    return *pRefObject;
+    T* temp = pRefObject;
+    pRefObject = nullptr;
+    return temp;
   }
+
+  T& GetRef() { return *pRefObject; }
+  T* GetPtr() const { return pRefObject; }
+  bool operator==(nullptr_t) { return pRefObject == nullptr; }
+  bool IsValid() const { return pRefObject != nullptr; }
+  T* operator->() const { return pRefObject; }
+  T& operator*() const { return *pRefObject; }
 
  private:
   T* pRefObject = nullptr;

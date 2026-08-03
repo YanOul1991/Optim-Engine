@@ -233,7 +233,7 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     }
 
     // Get list of all supported extension by current Vulkan API.
-    auto extensionProperties = impl.Get().context.enumerateInstanceExtensionProperties();
+    auto extensionProperties = impl.GetRef().context.enumerateInstanceExtensionProperties();
 
     for (auto&& str : reqInstanceExt) {
       auto comparaisonFn = [str](vk::ExtensionProperties const& extentionProperty) {
@@ -253,7 +253,7 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     }
 
     // Validate required layers.
-    TDynamicArray<String> unsupportedLayers = Optim::VK::VerifyRequiredLayers(requiredLayers, impl.Get().context);
+    TDynamicArray<String> unsupportedLayers = Optim::VK::VerifyRequiredLayers(requiredLayers, impl.GetRef().context);
 
     if (unsupportedLayers.GetCount() > 0) {
       String errorMsg = String("[VulkanRHI | Error] The following layers are not supported by Vulkan:\n");
@@ -264,52 +264,52 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     }
 
     // Create VkInstance object
-    impl.Get().instance = Optim::VK::CreateVkInstance(impl.Get().context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
-    if (impl.Get().instance == nullptr) {
+    impl.GetRef().instance = Optim::VK::CreateVkInstance(impl.GetRef().context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
+    if (impl.GetRef().instance == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to initialize VkInstance object.");
     }
 
     // Create VkDebugUtilsMessengerEXT object if validation layers are enabled
     if constexpr (Optim::VK::enableValidationLayers) {
-      impl.Get().debugMessenger = Optim::VK::Debug::CreateVkDebugUtilsMessengerEXT(impl.Get().instance);
-      if (impl.Get().debugMessenger == nullptr) {
+      impl.GetRef().debugMessenger = Optim::VK::Debug::CreateVkDebugUtilsMessengerEXT(impl.GetRef().instance);
+      if (impl.GetRef().debugMessenger == nullptr) {
         throw std::runtime_error("[VulkanRHI | Error] Debug messenger FAILED to initialize.");
       }
     }
 
     // Create VKSurfaceKHR object
-    impl.Get().surface = Optim::VK::CreateVkSurfaceKHR(impl.Get().instance, sdlwindow);
-    if (impl.Get().surface == nullptr) {
+    impl.GetRef().surface = Optim::VK::CreateVkSurfaceKHR(impl.GetRef().instance, sdlwindow);
+    if (impl.GetRef().surface == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to initialize VkSurfaceKHR object.");
     }
 
     // Select most optimal VkPhysicalDevice object
-    auto physicalDevice = Optim::VK::SelectVkPhysicalDevice(impl.Get().instance, impl.Get().surface);
+    auto physicalDevice = Optim::VK::SelectVkPhysicalDevice(impl.GetRef().instance, impl.GetRef().surface);
     if (physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
     }
 
     // Create RenderDevice object
-    impl.Get().renderDevice = Optim::VK::CreateRenderDevice(physicalDevice, impl.Get().surface);
+    impl.GetRef().renderDevice = Optim::VK::CreateRenderDevice(physicalDevice, impl.GetRef().surface);
 
-    if (impl.Get().renderDevice.physicalDevice == nullptr) {
+    if (impl.GetRef().renderDevice.physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] vk::PhyscialDevice object is null.");
     }
-    if (impl.Get().renderDevice.logicalDevice == nullptr) {
+    if (impl.GetRef().renderDevice.logicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] vk::Device object is null.");
     }
-    if (impl.Get().renderDevice.graphicsQueue == nullptr) {
+    if (impl.GetRef().renderDevice.graphicsQueue == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] vk::Queue object is null.");
     }
 
     // Swap chain creation
-    impl.Get().swapChain = Optim::VK::CreateVkSwapChainKHR(
-      impl.Get().renderDevice.logicalDevice,
-      impl.Get().renderDevice.physicalDevice,
-      impl.Get().surface,
+    impl.GetRef().swapChain = Optim::VK::CreateVkSwapChainKHR(
+      impl.GetRef().renderDevice.logicalDevice,
+      impl.GetRef().renderDevice.physicalDevice,
+      impl.GetRef().surface,
       sdlwindow);
 
-    if (impl.Get().swapChain == nullptr) {
+    if (impl.GetRef().swapChain == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to create VkSwapChainKHR object.");
     }
   }
