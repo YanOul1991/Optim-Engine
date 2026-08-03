@@ -23,6 +23,10 @@
 #include <ranges>
 #include <vector>
 
+/**
+ * @brief 
+ * Structure to hold all Vulkan context objects.
+ */
 struct VulkanRHI::VulkanContext
 {
   vk::raii::Context                context;
@@ -39,36 +43,10 @@ VulkanRHI::VulkanRHI() : pVkContext(MakeUnique<VulkanContext>())
 VulkanRHI::~VulkanRHI()
 {}
 
+
 /**
- * Start by verifying required extensions. For now since only the SDL
- * required are used, the list containing them is being directly verified.
- *
- * When more extensions will be need then the required extensions verification
- * logic will be updated accordingly.
- *
- * Make a list of string containing all required layers to be used which will
- * be passed as an argument for the `VerifyRequiredLayers` function. It will
- * return a list containing all the unsupported layers.
- *
- * If it is empty, everything is well. Else throw a runtime error listing
- * all the unsupported layers.
- *
- * Once the extensions and layers have been validated, the
- * `Optim::VK::CreateVkInstance()` function is being called to
- * finally create a vk::Instance object.
- *
- * With the instance being created and validated, this function can now start
- * checking for a GPU (vk::PhysicalDevice) to be used.
- *
- * First call the `Optim::VK::SelectVkPhysicalDevice` function to get the most
- * appropriate GPU to use for rendering. The prerequestists for the physical
- * device selection are all defined inside the function. All properties,
- * extensions, queue families being used as prerequisits for GPU selection,
- * must ALL be supported, if nothing is found then the function returns
- * nullptr, then we throw an error.
- *
- * Once that is confirmed we finally call `Optim::VK::CreateRenderDevice`
- * which will create the actual logical device object (vk::Device).
+ * @brief
+ * Initializes the VulkanRHI object and all required Vulkan objects.
  */
 void VulkanRHI::Initialize(void* param_pSDLWindow)
 {
@@ -82,19 +60,6 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     // Add all extensions required by SDL to create a VkSurfaceKHR object.
     Optim::VK::AddSDLRequiredExtensions(reqInstanceExt);
 
-    // Get list of all extensions required by SDL to create an vkInstance
-    // object, then add them to the required extensions list.
-    // uint32             vkInstanceExtCount = 0;
-    // const char* const* ppVkInstanceExt    = SDL_Vulkan_GetInstanceExtensions(&vkInstanceExtCount);
-
-    // if (ppVkInstanceExt == nullptr) {
-    //   throw std::runtime_error(SDL_GetError());
-    // }
-
-    // for (size_t i = 0; i < vkInstanceExtCount; i++) {
-    //   reqInstanceExt.EmplaceBack(ppVkInstanceExt[i]);
-    // }
-
     // Add "VK_EXT_debug_utils" extension if validation layers are enabled
     if constexpr (Optim::VK::enableValidationLayers) {
       reqInstanceExt.EmplaceBack(vk::EXTDebugUtilsExtensionName);
@@ -103,17 +68,6 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     if (!Optim::VK::ValidateRequiredExtensions(reqInstanceExt, ctx.context)) {
       throw std::runtime_error("[VulkanRHI | Error] Required extensions are not supported by Vulkan.");
     }
-
-    // Get list of all supported extension by current Vulkan API.
-    // auto extensionProperties = ctx.context.enumerateInstanceExtensionProperties();
-    // for (auto&& str : reqInstanceExt) {
-    //   auto comparaisonFn = [str](vk::ExtensionProperties const& extentionProperty) {
-    //     return strcmp(extentionProperty.extensionName, str.GetPointer()) == 0;
-    //   };
-    //   if (std::ranges::none_of(extensionProperties, comparaisonFn)) {
-    //     std::cout << "[VulkanRHI | Error]-The required SDL extension: (" << str.GetPointer() << ") is not supported by Vulkan.\n";
-    //   }
-    // }
 
     // Required Layers Verification
     TDynamicArray<String> requiredLayers;
@@ -126,16 +80,6 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     if (Optim::VK::ValidateRequiredLayers(requiredLayers, ctx.context) == false) {
       throw std::runtime_error("[VulkanRHI | Error] Required layers are not supported by Vulkan.");
     }
-
-    // Validate required layers.
-    // TDynamicArray<String> unsupportedLayers = Optim::VK::VerifyRequiredLayers(requiredLayers, ctx.context);
-    // if (unsupportedLayers.GetCount() > 0) {
-    //   String errorMsg = String("[VulkanRHI | Error] The following layers are not supported by Vulkan:\n");
-    //   for (auto& layer : unsupportedLayers) {
-    //     errorMsg.Append(" * ").Append(layer);
-    //   }
-    //   throw std::runtime_error(errorMsg.GetPointer());
-    // }
 
     // Create VkInstance object
     ctx.instance = Optim::VK::CreateVkInstance(ctx.context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
@@ -169,46 +113,14 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
       throw std::runtime_error("[VulkanRHI | Error] Failed to create RenderDevice object.");
     }
 
-    /*
-    if (ctx.renderDevice.physicalDevice == nullptr) {
-      throw std::runtime_error("[VulkanRHI | Error] vk::PhyscialDevice object is null.");
-    }
-    if (ctx.renderDevice.logicalDevice == nullptr) {
-      throw std::runtime_error("[VulkanRHI | Error] vk::Device object is null.");
-    }
-    if (ctx.renderDevice.graphicsQueue == nullptr) {
-      throw std::runtime_error("[VulkanRHI | Error] vk::Queue object is null.");
-    }
-    */
-
-    /*
-    // Swap chain creation
-    ctx.swapChain = Optim::VK::CreateVkSwapChainKHR(ctx.renderDevice.logicalDevice, ctx.renderDevice.physicalDevice, ctx.surface, sdlwindow);
-    if (ctx.swapChain == nullptr) {
-      throw std::runtime_error("[VulkanRHI | Error] Failed to create VkSwapChainKHR object.");
-    }
-
-    // Get swap chain images
-    ctx.swapChainImages = ctx.swapChain.getImages();
-    if (ctx.swapChainImages.empty()) {
-      throw std::runtime_error("[VulkanRHI | Error] Failed to get swap chain images.");
-    }
-
-    // Check if the swap chain images are valid
-    for (const auto& image : ctx.swapChainImages) {
-      if (image == nullptr) {
-        throw std::runtime_error("[VulkanRHI | Error] Swap chain image is null.");
-      }
-    }
-    */
-
+    // Create SwapChainContext object
     ctx.swapChainContext = Optim::VK::CreateSwapChainContext(ctx.renderDevice.logicalDevice, ctx.renderDevice.physicalDevice, ctx.surface, sdlwindow);
     if (!ctx.swapChainContext.IsValid()) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to create swap chain context.");
     }
   }
   catch (const vk::SystemError& e) {
-    std::cerr << "[Vulkan System Error] " << e.what() << '\n';
+    std::cerr << "[Vulkan | Error] " << e.what() << '\n';
     return;
   }
   catch (const std::exception& e) {

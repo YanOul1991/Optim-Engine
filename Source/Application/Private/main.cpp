@@ -29,80 +29,6 @@
 #include <iostream>
 #include <vector>
 
-/*
-#if PLATFORM_WINDOWS
-#  include <windows.h>
-// windows.h goes first ^^^^^
-#  include <dbghelp.h>
-#  pragma comment(lib, "dbghelp.lib")
-#endif
-
-void PrintCallStack()
-{
-  void* stack[62];
-  // 1. Capture stack frames (skip 0 frames, capture up to 62)
-  USHORT frames = CaptureStackBackTrace(0, 62, stack, NULL);
-
-  HANDLE process = GetCurrentProcess();
-
-  // 2. Initialize symbol handler and load the .pdb file automatically
-  SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME);
-  SymInitialize(process, NULL, TRUE);
-
-  // Allocate memory for symbol info
-  SYMBOL_INFO* symbol  = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
-  symbol->MaxNameLen   = 255;
-  symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-
-  IMAGEHLP_LINE64 line;
-  line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-  DWORD displacement;
-
-  std::cout << "\n========== CALL STACK ==========\n";
-  for (USHORT i = 0; i < frames; i++) {
-    DWORD64 address = (DWORD64)(stack[i]);
-
-    // Translate address -> Function Name
-    BOOL hasSymbol = SymFromAddr(process, address, 0, symbol);
-
-    // Translate address -> File Name & Line Number
-    BOOL hasLine = SymGetLineFromAddr64(process, address, &displacement, &line);
-
-    if (hasSymbol && hasLine) {
-      std::cout << "[" << i << "] " << symbol->Name
-                << "() -> " << line.FileName
-                << ":" << line.LineNumber << "\n";
-    }
-    else if (hasSymbol) {
-      std::cout << "[" << i << "] " << symbol->Name << "()\n";
-    }
-    else {
-      std::cout << "[" << i << "] 0x" << std::hex << address << std::dec << "\n";
-    }
-  }
-  std::cout << "================================\n\n";
-
-  free(symbol);
-  SymCleanup(process);
-}
-LONG WINAPI CrashHandler(EXCEPTION_POINTERS* exceptionInfo)
-{
-  HANDLE file = CreateFileA("crashdump.dmp", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-  if (file != INVALID_HANDLE_VALUE) {
-    MINIDUMP_EXCEPTION_INFORMATION info;
-    info.ThreadId          = GetCurrentThreadId();
-    info.ExceptionPointers = exceptionInfo;
-    info.ClientPointers    = TRUE;
-
-    // Write the crash dump
-    MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), file, MiniDumpNormal, &info, NULL, NULL);
-    CloseHandle(file);
-  }
-  PrintCallStack();
-  return EXCEPTION_EXECUTE_HANDLER;
-}
-*/
-
 class Bar
 {
  public:
@@ -114,15 +40,9 @@ class Bar
 
 int main(int argc, char* argv[])
 {
-  // SetUnhandledExceptionFilter(CrashHandler);
-
   Bar bar;
   System::OnSystemModuleInitialized.SubscribeMemberFunction<&Bar::Foo>(&bar);
-
-  // // --- Simulating a crash ---
-  // int* badPointer = nullptr;
-  // *badPointer     = 42; // Access Violation!
-
+  
   // Initalize the System module
   System::Initalize();
 

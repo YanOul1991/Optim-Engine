@@ -111,7 +111,7 @@ RenderDevice Optim::VK::CreateRenderDevice(const vk::raii::PhysicalDevice& physi
       break;
     }
   }
-  
+
   if (queueIndex == ~0) {
     throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
   }
@@ -147,9 +147,9 @@ RenderDevice Optim::VK::CreateRenderDevice(const vk::raii::PhysicalDevice& physi
 
   // Return RenderDevice object
   RenderDevice retRenderDevice;
-  retRenderDevice.logicalDevice            = vk::raii::Device(physicalDevice, deviceCreateInfo);
-  retRenderDevice.physicalDevice           = physicalDevice;
-  retRenderDevice.graphicsQueue            = vk::raii::Queue(retRenderDevice.logicalDevice, queueIndex, 0);
-  retRenderDevice.graphicsQueueFamilyIndex = queueIndex;
+  retRenderDevice.logicalDevice    = vk::raii::Device(physicalDevice, deviceCreateInfo);
+  retRenderDevice.physicalDevice   = physicalDevice;
+  retRenderDevice.queueFamily      = vk::raii::Queue(retRenderDevice.logicalDevice, queueIndex, 0);
+  retRenderDevice.queueFamilyIndex = queueIndex;
   return retRenderDevice;
 }

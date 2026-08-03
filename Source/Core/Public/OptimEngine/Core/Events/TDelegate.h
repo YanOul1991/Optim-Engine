@@ -3,16 +3,6 @@
 #include "OptimEngine/Core/CoreMinimal.h"
 #include <iostream>
 
-
-/**
- * Example usage: 
- * ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
- *  Delegate<float, int> someDelegate;
- *  ExampleClass e;
- *  someDelegate.SubscribeMemberFunction<&ExampleClass::Foo>(&e);
- *  someDelegate.Broadcast(35.3478f, 999);
- * ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
- */
 template <typename... ARGS> class TDelegate final
 {
  public:

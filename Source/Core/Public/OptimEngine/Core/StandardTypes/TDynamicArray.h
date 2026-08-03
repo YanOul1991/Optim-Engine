@@ -193,42 +193,14 @@ template <typename T> class TDynamicArray final
 
     return value == m_buffer[_end] || value == m_buffer[_start];
   };
-
-  /*
-  bool Contains(const T& value) const {
-    uint64 cursor = 0;
-
-    for (; cursor + ((32 * 4) / sizeof(T)) <= m_count; cursor += ((32 * 4) / sizeof(T))) {
-      int32 m1 = LowLevel::FindSimdAvx2(value, m_buffer + (cursor + ((32 * 0) / sizeof(T))));
-      int32 m2 = LowLevel::FindSimdAvx2(value, m_buffer + (cursor + ((32 * 1) / sizeof(T))));
-      int32 m3 = LowLevel::FindSimdAvx2(value, m_buffer + (cursor + ((32 * 2) / sizeof(T))));
-      int32 m4 = LowLevel::FindSimdAvx2(value, m_buffer + (cursor + ((32 * 3) / sizeof(T))));
-
-      if ((m1 | m2 | m3 | m4) != 0) {
-        return true;
-      }
-    }
-    for (; cursor + (32 / sizeof(T)) <= m_count; cursor += (32 / sizeof(T))) {
-      if (LowLevel::FindSimdAvx2(value, m_buffer + cursor) != 0) {
-        return true;
-      }
-    }
-    for (; cursor < m_count; cursor++) {
-      if (m_buffer[cursor] == value) {
-        return true;
-      }
-    }
-    return false;
-  };
-  */
-
-  int64 Find(const T& value) const {
-    for (int64 i = 0; i < m_count; i++) {
+  
+  uint64 Find(const T& value) const {
+    for (uint64 i = 0; i < m_count; i++) {
       if (m_buffer[i] == value) {
         return i;
       }
     }
-    return -1;
+    return ~0u;
   }
 
   template <typename... Args> T& EmplaceBack(Args&&... args) {
