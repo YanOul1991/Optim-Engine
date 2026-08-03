@@ -67,10 +67,15 @@ vcpkg_installed/
 Testing/
 .cache/
 
-.vscode/
+# build & output directories
 [B-b]uild/
 [D-d]ebug/
 [O-o]utput/
 [C-c]ompiled/
 
-**/[G-g]enerated/
+# vs code and visual studio temportary files & cache
+.vscode/
+.vs/
+
+# cmake artifacts
+CMakeUserPresets.json
