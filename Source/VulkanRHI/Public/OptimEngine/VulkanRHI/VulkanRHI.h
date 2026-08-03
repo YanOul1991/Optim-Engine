@@ -23,6 +23,6 @@ class VULKANRHI_API VulkanRHI final : public IRHI
   virtual void Cleanup() override final;
 
  private:
-  struct Impl;
-  TUniquePtr<Impl> impl;
+  struct VulkanContext;
+  TUniquePtr<VulkanContext> pVkContext;
 };

@@ -3,8 +3,8 @@
 #include "OptimEngine/Core/CoreMinimal.h"
 #include "OptimEngine/Core/StandardTypes/String.h"
 #include "OptimEngine/Core/StandardTypes/TDynamicArray.h"
-#include "OptimVKTypes/OptimVKWrapperTypes.h"
-#include "VulkanMinimal.h"
+#include "OpVkTypes/RenderDevice.h"
+#include "OpVkCommon/Minimal.h"
 // SDL
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>

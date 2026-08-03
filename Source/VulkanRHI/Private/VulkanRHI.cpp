@@ -4,8 +4,11 @@
 
 #include "VulkanRHI/VulkanRHI.h"
 
-#include "OptimVKDebug.h"
-#include "OptimVKSetup.h"
+#include "OpVkCommon/Minimal.h"
+#include "OpVkDebug/Debug.h"
+#include "OpVkCore/OpVkCore.h"
+#include "OpVkTypes/RenderDevice.h"
+#include "OpVkTypes/SwapChainContext.h"
 
 // SDL
 #include <SDL3/SDL.h>
@@ -20,7 +23,7 @@
 #include <ranges>
 #include <vector>
 
-struct VulkanRHI::Impl
+struct VulkanRHI::VulkanContext
 {
   vk::raii::Context    context;
   vk::raii::Instance   instance = nullptr;
@@ -34,144 +37,7 @@ struct VulkanRHI::Impl
   std::vector<vk::Image> swapChainImages;
 };
 
-namespace Optim::VK
-{
-vk::SurfaceFormatKHR SelectSwapChainVkSurfaceKHRFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)
-{
-  assert(!availableFormats.empty());
-  for (auto& surfaceFormat : availableFormats) {
-    if (surfaceFormat.format == vk::Format::eB8G8R8A8Srgb && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
-      std::cout << "  Found best Format(color space: " << to_string(surfaceFormat.colorSpace) << " | format: " << to_string(surfaceFormat.format) << ")\n";
-      return surfaceFormat;
-    }
-  }
-
-  return availableFormats[0];
-}
-
-/**
- * Vulkan presentation modes
- *
- * Vulkan Tutorial
- * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/01_Presentation/01_Swap_chain.html#_presentation_mode
- */
-vk::PresentModeKHR SelectSwapChainVkPresentModeKHR(const std::vector<vk::PresentModeKHR>& availablePresentModes)
-{
-  assert(std::ranges::any_of(availablePresentModes, [](const vk::PresentModeKHR& presentMode) {
-    return presentMode == vk::PresentModeKHR::eFifo;
-  }));
-
-  for (auto& presentMode : availablePresentModes) {
-    if (presentMode == vk::PresentModeKHR::eMailbox) {
-      return presentMode;
-    }
-  }
-
-  return vk::PresentModeKHR::eFifo;
-}
-
-/**
- * Swap chain extent:
- *  Resolution of swap chain images.
- *
- * Vulkan Tutorial:
- * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/01_Presentation/01_Swap_chain.html#_swap_extent
- *
- * struct `VkSurfaceCapabilitiesKHR` documentation def:
- * https://docs.vulkan.org/refpages/latest/refpages/source/VkSurfaceCapabilitiesKHR.html
- */
-vk::Extent2D SelectSwapChainVkExtend2D(const vk::SurfaceCapabilitiesKHR& capabilities, SDL_Window*& pWindow)
-{
-  // std::cout << "Current Surface Capabilities info\n";
-  // std::cout << "  Current extent width " << capabilities.currentExtent.width << '\n';
-  // std::cout << "  Current extent height " << capabilities.currentExtent.width << '\n';
-
-  if (capabilities.currentExtent.width != (std::numeric_limits<uint32>::max)()) {
-    return capabilities.currentExtent;
-  }
-
-  int32 width, height;
-  SDL_GetWindowSizeInPixels(pWindow, &width, &height);
-
-  return {
-    std::clamp<uint32>(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-    std::clamp<uint32>(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
-  };
-}
-
-/**
- * Defines how many images will be in the swap chain. Because Vulkan implemention
- * has a minimal and a maximal amount this function helps select a correct amount.
- */
-uint32 SelectSwapChainMinImageCount(const vk::SurfaceCapabilitiesKHR& capabilities)
-{
-  uint32 minImgCount = std::max(3u, capabilities.minImageCount);
-
-  // If maxImageCount is more that 0 and smaller than the desired minImgCount
-  // then use the maxImageCount for the swap chain.
-  if ((0 < capabilities.maxImageCount) && (capabilities.maxImageCount < minImgCount)) {
-    return capabilities.maxImageCount;
-  }
-
-  return minImgCount;
-}
-
-/**
- * Querying details of swap chain support.
- *
- * Settings to determine:
- *   * Surface format (color depth)
- *   * Presentation mode (conditions for "swapping" images to the screen)
- *   * Swap extent (resolution of images in swapchain)
- *
- * Vulkan Tutorial Example:
- * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/01_Presentation/01_Swap_chain.html#_querying_details_of_swap_chain_support
- */
-vk::raii::SwapchainKHR CreateVkSwapChainKHR(const vk::raii::Device& device, const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& surface, SDL_Window*& pWindow)
-{
-  std::cout << "Querying QueryVkSurfaceKHRCapabilities\n";
-
-  // Get surface available basic capabilities
-  auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
-  // Get surface available formats
-  auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
-  // Get surface available present modes
-  auto surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
-
-  // Select optimal settings
-  auto swapChainFormat        = SelectSwapChainVkSurfaceKHRFormat(surfaceFormats);
-  auto swapChainPresentMode   = SelectSwapChainVkPresentModeKHR(surfacePresentModes);
-  auto swapChainExtent        = SelectSwapChainVkExtend2D(surfaceCapabilities, pWindow);
-  auto swapChainMinImageCount = SelectSwapChainMinImageCount(surfaceCapabilities);
-
-  std::cout << "Swap Chain Selection info:\n"
-            << "  Format: " << to_string(swapChainFormat.colorSpace) << " " << to_string(swapChainFormat.format) << '\n'
-            << "  Present Mode: " << to_string(swapChainPresentMode) << '\n'
-            << "  Extent: " << swapChainExtent.width << ", " << swapChainExtent.height << '\n'
-            << "  Min image count: " << swapChainMinImageCount << '\n';
-
-  // Swap Chain create info
-  vk::SwapchainCreateInfoKHR swapChainCreateInfo{
-    .surface          = *surface,
-    .minImageCount    = swapChainMinImageCount,
-    .imageFormat      = swapChainFormat.format,
-    .imageColorSpace  = swapChainFormat.colorSpace,
-    .imageExtent      = swapChainExtent,
-    .imageArrayLayers = 1,
-    .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment,
-    .imageSharingMode = vk::SharingMode::eExclusive,
-    .preTransform     = surfaceCapabilities.currentTransform,
-    .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-    .presentMode      = swapChainPresentMode,
-    .clipped          = true
-  };
-
-  return vk::raii::SwapchainKHR(device, swapChainCreateInfo);
-}
-
-} // namespace Optim::VK
-
-VulkanRHI::VulkanRHI() : impl(MakeUnique<Impl>())
+VulkanRHI::VulkanRHI() : pVkContext(MakeUnique<VulkanContext>())
 {}
 
 VulkanRHI::~VulkanRHI()
@@ -211,6 +77,8 @@ VulkanRHI::~VulkanRHI()
 void VulkanRHI::Initialize(void* param_pSDLWindow)
 {
   try {
+    auto& ctx = *pVkContext;
+
     SDL_Window* sdlwindow = static_cast<SDL_Window*>(param_pSDLWindow);
 
     TDynamicArray<String> reqInstanceExt;
@@ -233,7 +101,7 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     }
 
     // Get list of all supported extension by current Vulkan API.
-    auto extensionProperties = impl.GetRef().context.enumerateInstanceExtensionProperties();
+    auto extensionProperties = ctx.context.enumerateInstanceExtensionProperties();
 
     for (auto&& str : reqInstanceExt) {
       auto comparaisonFn = [str](vk::ExtensionProperties const& extentionProperty) {
@@ -253,7 +121,7 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     }
 
     // Validate required layers.
-    TDynamicArray<String> unsupportedLayers = Optim::VK::VerifyRequiredLayers(requiredLayers, impl.GetRef().context);
+    TDynamicArray<String> unsupportedLayers = Optim::VK::VerifyRequiredLayers(requiredLayers, ctx.context);
 
     if (unsupportedLayers.GetCount() > 0) {
       String errorMsg = String("[VulkanRHI | Error] The following layers are not supported by Vulkan:\n");
@@ -264,53 +132,62 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     }
 
     // Create VkInstance object
-    impl.GetRef().instance = Optim::VK::CreateVkInstance(impl.GetRef().context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
-    if (impl.GetRef().instance == nullptr) {
+    ctx.instance = Optim::VK::CreateVkInstance(pVkContext.GetRef().context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
+    if (pVkContext.GetRef().instance == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to initialize VkInstance object.");
     }
 
     // Create VkDebugUtilsMessengerEXT object if validation layers are enabled
     if constexpr (Optim::VK::enableValidationLayers) {
-      impl.GetRef().debugMessenger = Optim::VK::Debug::CreateVkDebugUtilsMessengerEXT(impl.GetRef().instance);
-      if (impl.GetRef().debugMessenger == nullptr) {
+      ctx.debugMessenger = Optim::VK::Debug::CreateVkDebugUtilsMessengerEXT(pVkContext.GetRef().instance);
+      if (pVkContext.GetRef().debugMessenger == nullptr) {
         throw std::runtime_error("[VulkanRHI | Error] Debug messenger FAILED to initialize.");
       }
     }
 
     // Create VKSurfaceKHR object
-    impl.GetRef().surface = Optim::VK::CreateVkSurfaceKHR(impl.GetRef().instance, sdlwindow);
-    if (impl.GetRef().surface == nullptr) {
+    ctx.surface = Optim::VK::CreateVkSurfaceKHR(pVkContext.GetRef().instance, sdlwindow);
+    if (pVkContext.GetRef().surface == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to initialize VkSurfaceKHR object.");
     }
 
     // Select most optimal VkPhysicalDevice object
-    auto physicalDevice = Optim::VK::SelectVkPhysicalDevice(impl.GetRef().instance, impl.GetRef().surface);
+    auto physicalDevice = Optim::VK::SelectVkPhysicalDevice(pVkContext.GetRef().instance, ctx.surface);
     if (physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
     }
 
     // Create RenderDevice object
-    impl.GetRef().renderDevice = Optim::VK::CreateRenderDevice(physicalDevice, impl.GetRef().surface);
+    ctx.renderDevice = Optim::VK::CreateRenderDevice(physicalDevice, ctx.surface);
 
-    if (impl.GetRef().renderDevice.physicalDevice == nullptr) {
+    if (pVkContext.GetRef().renderDevice.physicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] vk::PhyscialDevice object is null.");
     }
-    if (impl.GetRef().renderDevice.logicalDevice == nullptr) {
+    if (pVkContext.GetRef().renderDevice.logicalDevice == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] vk::Device object is null.");
     }
-    if (impl.GetRef().renderDevice.graphicsQueue == nullptr) {
+    if (pVkContext.GetRef().renderDevice.graphicsQueue == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] vk::Queue object is null.");
     }
 
     // Swap chain creation
-    impl.GetRef().swapChain = Optim::VK::CreateVkSwapChainKHR(
-      impl.GetRef().renderDevice.logicalDevice,
-      impl.GetRef().renderDevice.physicalDevice,
-      impl.GetRef().surface,
-      sdlwindow);
+    ctx.swapChain = Optim::VK::CreateVkSwapChainKHR(ctx.renderDevice.logicalDevice, ctx.renderDevice.physicalDevice, ctx.surface, sdlwindow);
 
-    if (impl.GetRef().swapChain == nullptr) {
+    if (pVkContext.GetRef().swapChain == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to create VkSwapChainKHR object.");
+    }
+
+    // Get swap chain images
+    ctx.swapChainImages = ctx.swapChain.getImages();
+    if (ctx.swapChainImages.empty()) {
+      throw std::runtime_error("[VulkanRHI | Error] Failed to get swap chain images.");
+    }
+
+    // Check if the swap chain images are valid
+    for (const auto& image : ctx.swapChainImages) {
+      if (image == nullptr) {
+        throw std::runtime_error("[VulkanRHI | Error] Swap chain image is null.");
+      }
     }
   }
   catch (const vk::SystemError& e) {

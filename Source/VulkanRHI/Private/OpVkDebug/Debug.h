@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanMinimal.h"
+#include "OpVkCommon/Minimal.h"
 
 namespace Optim::VK::Debug
 {
