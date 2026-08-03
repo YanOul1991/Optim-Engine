@@ -15,6 +15,6 @@ SYSTEM_API bool ProcessEvents();
 
 SYSTEM_API void Quit();
 
-SYSTEM_API TDelegate<> OnSystemModuleInitialized;
+// SYSTEM_API TDelegate<> OnSystemModuleInitialized;
 
 }; // namespace System

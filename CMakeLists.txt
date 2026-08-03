@@ -8,7 +8,7 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(BUILD_SHARED_LIBS ON)
-  set(VCPKG_CRT_LINKAGE "dynamic")
+  # set(VCPKG_CRT_LINKAGE "dynamic")
 
   if(WIN32)
     set(VCPKG_TARGET_TRIPLET "x64-windows")
@@ -17,7 +17,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   endif()
 else()
   set(BUILD_SHARED_LIBS OFF)
-  set(VCPKG_CRT_LINKAGE "static")
+  # set(VCPKG_CRT_LINKAGE "static")
 
   if(WIN32)
     set(VCPKG_TARGET_TRIPLET "x64-windows-static")

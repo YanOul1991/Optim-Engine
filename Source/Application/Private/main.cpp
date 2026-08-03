@@ -21,7 +21,7 @@
 #include "OptimEngine/System/Window.h"
 
 // FMT test
-#include <fmt/color.h>
+// #include <fmt/color.h>
 
 // STD HEADERS
 #include <cstdio>
@@ -34,14 +34,14 @@ class Bar
  public:
   void Foo()
   {
-    fmt::println(fg(fmt::color::green) | fmt::emphasis::bold, "System Module has been initialized");
+    // fmt::println(fg(fmt::color::green) | fmt::emphasis::bold, "System Module has been initialized");
   }
 };
 
 int main(int argc, char* argv[])
 {
-  Bar bar;
-  System::OnSystemModuleInitialized.SubscribeMemberFunction<&Bar::Foo>(&bar);
+  // Bar bar;
+  // System::OnSystemModuleInitialized.SubscribeMemberFunction<&Bar::Foo>(&bar);
   
   // Initalize the System module
   System::Initalize();

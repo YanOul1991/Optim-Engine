@@ -19,7 +19,7 @@ bool System::Initalize() {
     return false;
   }
 
-  OnSystemModuleInitialized.Broadcast();
+  // OnSystemModuleInitialized.Broadcast();
   return true;
 }
 

@@ -26,7 +26,7 @@ target_link_libraries(optimengine PRIVATE
   vulkanrhi
   rendering
   core
-  fmt::fmt
+  # fmt::fmt
 )
 
 ###############################################################################

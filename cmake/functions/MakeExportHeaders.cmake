@@ -9,26 +9,35 @@ function(export_headers target_name)
 
     # Add compile definition so the macro expands to the correct visibility 
     # attribute in the correct module.
-    target_compile_definitions(${target_name} PRIVATE "EXPORT_${MOD_UPPER}")
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_compile_definitions(${target_name} PUBLIC USE_STATIC_LIBS)
+    else()
+      target_compile_definitions(${target_name} PRIVATE "EXPORT_${MOD_UPPER}")
+    endif()
 
     # C++ visibility block template
     set(MACRO_BLOCK "
 // Export macros for ${target_name} module
 #if !defined(${MOD_UPPER}_API)
-#  if defined(EXPORT_${MOD_UPPER})
-#    if defined(_MSC_VER) || defined(__CYGWIN__)
-#      define ${MOD_UPPER}_API __declspec(dllexport)
-#    else
-#      define ${MOD_UPPER}_API __attribute__((visibility(\"default\")))
-#    endif
+#  if defined(USE_STATIC_LIBS)
+#    define ${MOD_UPPER}_API
 #  else
-#    if defined(_MSC_VER) || defined(__CYGWIN__)
-#      define ${MOD_UPPER}_API __declspec(dllimport)
+#    if defined(EXPORT_${MOD_UPPER})
+#      if defined(_MSC_VER) || defined(__CYGWIN__)
+#        define ${MOD_UPPER}_API __declspec(dllexport)
+#      else
+#        define ${MOD_UPPER}_API __attribute__((visibility(\"default\")))
+#      endif
 #    else
-#      define ${MOD_UPPER}_API
+#      if defined(_MSC_VER) || defined(__CYGWIN__)
+#        define ${MOD_UPPER}_API __declspec(dllimport)
+#      else
+#        define ${MOD_UPPER}_API
+#      endif
 #    endif
 #  endif
-#endif\n\n")
+#endif
+\n\n")
 
     set_property(GLOBAL APPEND PROPERTY EXPORT_ENGINE_MACROS "${MACRO_BLOCK}")
 endfunction()
