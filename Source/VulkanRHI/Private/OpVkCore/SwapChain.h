@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OpVkCommon/Minimal.h"
+#include "OpVkTypes/SwapChainContext.h"
 
 struct SDL_Window;
 
@@ -51,4 +52,8 @@ vk::raii::SwapchainKHR CreateVkSwapChainKHR(const vk::raii::Device&         devi
                                             const vk::raii::SurfaceKHR&     surface,
                                             SDL_Window*                     pWindow);
 
+SwapChainContext CreateSwapChainContext(const vk::raii::Device&         device,
+                                         const vk::raii::PhysicalDevice& physicalDevice,
+                                         const vk::raii::SurfaceKHR&     surface,
+                                         SDL_Window*                     pWindow);                                            
 } // namespace Optim::VK

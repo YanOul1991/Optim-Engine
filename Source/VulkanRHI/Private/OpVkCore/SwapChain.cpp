@@ -127,3 +127,50 @@ vk::raii::SwapchainKHR Optim::VK::CreateVkSwapChainKHR(const vk::raii::Device&  
 
   return vk::raii::SwapchainKHR(device, swapChainCreateInfo);
 }
+
+SwapChainContext Optim::VK::CreateSwapChainContext(const vk::raii::Device &device, const vk::raii::PhysicalDevice &physicalDevice, const vk::raii::SurfaceKHR &surface, SDL_Window *pWindow)
+{
+  SwapChainContext swapChainContext;
+
+  // Get surface available basic capabilities
+  auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
+  // Get surface available formats
+  auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
+  // Get surface available present modes
+  auto surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
+
+  // Select optimal settings
+  auto swapChainFormat        = Optim::VK::SelectSwapChainVkSurfaceKHRFormat(surfaceFormats);
+  auto swapChainPresentMode   = Optim::VK::SelectSwapChainVkPresentModeKHR(surfacePresentModes);
+  auto swapChainExtent        = Optim::VK::SelectSwapChainVkExtend2D(surfaceCapabilities, pWindow);
+  auto swapChainMinImageCount = Optim::VK::SelectSwapChainMinImageCount(surfaceCapabilities);
+
+  // Swap Chain create info
+  vk::SwapchainCreateInfoKHR swapChainCreateInfo{
+    .surface          = *surface,
+    .minImageCount    = swapChainMinImageCount,
+    .imageFormat      = swapChainFormat.format,
+    .imageColorSpace  = swapChainFormat.colorSpace,
+    .imageExtent      = swapChainExtent,
+    .imageArrayLayers = 1,
+    .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment,
+    .imageSharingMode = vk::SharingMode::eExclusive,
+    .preTransform     = surfaceCapabilities.currentTransform,
+    .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+    .presentMode      = swapChainPresentMode,
+    .clipped          = true
+  };
+
+  swapChainContext.swapChain = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
+
+  // Get the images from the swap chain
+  swapChainContext.swapChainImages = swapChainContext.swapChain.getImages();
+
+  // Get the format of the swap chain images
+  swapChainContext.swapChainImageFormat = swapChainFormat;
+
+  // Get the extent of the swap chain images
+  swapChainContext.swapChainExtent = swapChainExtent;
+
+  return swapChainContext;
+}
