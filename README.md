@@ -41,24 +41,19 @@ This project used the SDK version `1.4.350.0`.
 
 To build the project, first run the CMake setup command with one the 
 following presets :
-  * windows-debug
-  * windows-release
+  * debug
+  * release
 
 Example:
 ```bash
-cmake --preset windows-debug
+cmake --preset debug
 ```
 
 The simply run the build command with the selected preset:
 
 Example
 ```bash
-cmake --build --preset windows-debug
+cmake --build --preset debug
 ```
 
-The generated files should be in an `output/` directory.
-
-Finally, to run the program itself simply run:
-```bash
- ./output/optimengine
-```
+The generated files should be in the `output/Debug` directory.

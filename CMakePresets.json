@@ -7,48 +7,28 @@
       "hidden": true,
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "CMAKE_STATIC_LIBRARY_PREFIX": "",
-        "CMAKE_SHARED_LIBRARY_PREFIX": ""
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
-      "name": "windows-debug",
-      "displayName": "Windows Debug Preset",
+      "name": "debug",
+      "displayName": "Debug",
       "inherits": "base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "BUILD_SHARED_LIBS": "ON",
-        "VCPKG_TARGET_TRIPLET": "x64-windows",
-        "VCPKG_CRT_LINKAGE": "dynamic"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "windows-release",
-      "displayName": "Windows Release Preset",
+      "name": "release",
+      "displayName": "Release",
       "inherits": "base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "BUILD_SHARED_LIBS": "OFF",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
-        "VCPKG_CRT_LINKAGE": "static"
-      }
-    },
-    {
-      "name": "linux-debug",
-      "displayName": "Linux Debug Preset",
-      "inherits": "base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "BUILD_SHARED_LIBS": "ON",
-        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake/custom-triplets",
-        "VCPKG_TARGET_TRIPLET": "x64-linux-debug"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ],
   "buildPresets": [
-    { "name": "windows-debug", "configurePreset": "windows-debug" },
-    { "name": "windows-release", "configurePreset": "windows-release" },
-    { "name": "linux-debug", "configurePreset": "linux-debug" }
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" }
   ]
 }
