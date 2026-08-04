@@ -115,9 +115,13 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
 
     // Create SwapChainContext object
     ctx.swapChainContext = Optim::VK::CreateSwapChainContext(ctx.renderDevice.logicalDevice, ctx.renderDevice.physicalDevice, ctx.surface, sdlwindow);
+    
+    // Create Image Views for each image in the swap chain
+    Optim::VK::CreateImageViews(ctx.swapChainContext, ctx.renderDevice.logicalDevice);
     if (!ctx.swapChainContext.IsValid()) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to create swap chain context.");
     }
+
   }
   catch (const vk::SystemError& e) {
     std::cerr << "[Vulkan | Error] " << e.what() << '\n';
