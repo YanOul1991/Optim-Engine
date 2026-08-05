@@ -93,3 +93,40 @@ add_subdirectory("Source/Rendering")
 add_subdirectory("Source/System")
 add_subdirectory("Source/Application")
 
+# Compile slang shaders after build
+
+function(add_slang_shader_target TARGET)
+  set(SHADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
+  set(SLANG_SOURCE "${SHADERS_DIR}/${TARGET}.slang")
+  set(SPIRV_OUTPUT "${SHADERS_DIR}/${TARGET}.spv")
+
+  find_program(SLANGC
+    NAMES slangc slangc.exe
+    HINTS "$ENV{VULKAN_SDK}/bin" "$ENV{VULKAN_SDK}/Bin"
+  )
+
+  if(NOT SLANGC)
+    message(FATAL_ERROR "Could not find slang compiler.")
+  endif()
+
+  add_custom_command(
+    OUTPUT "${SPIRV_OUTPUT}"
+    COMMAND "${SLANGC}"
+            "${SLANG_SOURCE}"
+            -target spirv
+            -profile spirv_1_4
+            -emit-spirv-directly
+            -fvk-use-entrypoint-name
+            -entry VertexMain
+            -entry FragmentMain
+            -o "${SPIRV_OUTPUT}"
+    DEPENDS "${SLANG_SOURCE}"
+    COMMENT "Compiling Slang shader: ${TARGET}.slang"
+    VERBATIM
+  )
+
+  add_custom_target(${TARGET} DEPENDS "${SPIRV_OUTPUT}")
+  add_dependencies(optimengine ${TARGET})
+endfunction()
+
+add_slang_shader_target(sample)
