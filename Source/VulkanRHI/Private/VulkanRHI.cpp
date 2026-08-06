@@ -24,7 +24,7 @@
 #include <vector>
 
 /**
- * @brief 
+ * @brief
  * Structure to hold all Vulkan context objects.
  */
 struct VulkanRHI::VulkanContext
@@ -42,7 +42,6 @@ VulkanRHI::VulkanRHI() : pVkContext(MakeUnique<VulkanContext>())
 
 VulkanRHI::~VulkanRHI()
 {}
-
 
 /**
  * @brief
@@ -114,14 +113,17 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     }
 
     // Create SwapChainContext object
-    ctx.swapChainContext = Optim::VK::CreateSwapChainContext(ctx.renderDevice.logicalDevice, ctx.renderDevice.physicalDevice, ctx.surface, sdlwindow);
-    
+    ctx.swapChainContext = Optim::VK::CreateSwapChainContext(ctx.renderDevice.device, ctx.renderDevice.physicalDevice, ctx.surface, sdlwindow);
+
     // Create Image Views for each image in the swap chain
-    Optim::VK::CreateImageViews(ctx.swapChainContext, ctx.renderDevice.logicalDevice);
+    Optim::VK::CreateImageViews(ctx.swapChainContext, ctx.renderDevice.device);
     if (!ctx.swapChainContext.IsValid()) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to create swap chain context.");
     }
 
+    auto shadercode   = Optim::VKPipeline::LoadCompiledShader("Shaders/sample.spv");
+    auto ShaderModule = Optim::VKPipeline::CreateVkShaderModule(shadercode, ctx.renderDevice.device);
+    
   }
   catch (const vk::SystemError& e) {
     std::cerr << "[Vulkan | Error] " << e.what() << '\n';

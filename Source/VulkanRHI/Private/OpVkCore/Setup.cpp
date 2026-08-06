@@ -147,9 +147,9 @@ RenderDevice Optim::VK::CreateRenderDevice(const vk::raii::PhysicalDevice& physi
 
   // Return RenderDevice object
   RenderDevice retRenderDevice;
-  retRenderDevice.logicalDevice    = vk::raii::Device(physicalDevice, deviceCreateInfo);
+  retRenderDevice.device    = vk::raii::Device(physicalDevice, deviceCreateInfo);
   retRenderDevice.physicalDevice   = physicalDevice;
-  retRenderDevice.queueFamily      = vk::raii::Queue(retRenderDevice.logicalDevice, queueIndex, 0);
+  retRenderDevice.queueFamily      = vk::raii::Queue(retRenderDevice.device, queueIndex, 0);
   retRenderDevice.queueFamilyIndex = queueIndex;
   return retRenderDevice;
 }

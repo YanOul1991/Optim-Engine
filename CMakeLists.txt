@@ -98,7 +98,7 @@ add_subdirectory("Source/Application")
 function(add_slang_shader_target TARGET)
   set(SHADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
   set(SLANG_SOURCE "${SHADERS_DIR}/${TARGET}.slang")
-  set(SPIRV_OUTPUT "${SHADERS_DIR}/${TARGET}.spv")
+  set(SPIRV_OUTPUT "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders/${TARGET}.spv")
 
   find_program(SLANGC
     NAMES slangc slangc.exe
