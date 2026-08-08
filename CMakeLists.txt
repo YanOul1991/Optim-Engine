@@ -8,8 +8,7 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(BUILD_SHARED_LIBS ON)
-  # set(VCPKG_CRT_LINKAGE "dynamic")
-
+  set(VCPKG_CRT_LINKAGE "dynamic")
   if(WIN32)
     set(VCPKG_TARGET_TRIPLET "x64-windows")
   elseif(LINUX)
@@ -17,8 +16,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   endif()
 else()
   set(BUILD_SHARED_LIBS OFF)
-  # set(VCPKG_CRT_LINKAGE "static")
-
+  set(VCPKG_CRT_LINKAGE "static")
   if(WIN32)
     set(VCPKG_TARGET_TRIPLET "x64-windows-static")
   endif()
@@ -44,39 +42,16 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${CMAKE_CURRENT_SOURCE_DIR}/output/${CMAKE_BUILD_TYPE}/lib")
 endforeach()
 
-###############################################################################
-# LINKAGE OPTIONS
-###############################################################################
-
-# # Turn off CMake's dynamic internal RPATH rewrites entirely
-# set(CMAKE_SKIP_RPATH TRUE)
-# # Tell the system compiler to bake exactly '$ORIGIN' into ALL executables
-# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'\$ORIGIN' -Wl,--disable-new-dtags")
-# # Tell the system compiler to bake exactly '$ORIGIN' into ALL shared libraries
-# set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath,'\$ORIGIN' -Wl,--disable-new-dtags")
-
-# 1. Enable RPATH for your build tree 
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
-
-# 2. Do not clear the RPATH when installing/packaging the binaries
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-
-# 3. Use $ORIGIN so it searches the executable's own directory first
-# (The escaped '\$ORIGIN' is critical so CMake passes it as a literal string to the linker)
 set(CMAKE_INSTALL_RPATH "\$ORIGIN")
-
-# 4. Automatically add dependent library paths to the runtime search path
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
-###############################################################################
 # External System Libraries
-###############################################################################
 find_package(Vulkan REQUIRED)
 
-###############################################################################
 # Vcpkg Managed Libraries
-###############################################################################
 find_package(SDL3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
@@ -93,43 +68,7 @@ add_subdirectory("Source/Rendering")
 add_subdirectory("Source/System")
 add_subdirectory("Source/Application")
 
-# Compile slang shaders after build
-
-# function(add_slang_shader_target TARGET)
-#   set(SHADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
-#   set(SLANG_SOURCE "${SHADERS_DIR}/${TARGET}.slang")
-#   set(SPIRV_OUTPUT "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders/${TARGET}.spv")
-
-#   find_program(SLANGC
-#     NAMES slangc slangc.exe
-#     HINTS "$ENV{VULKAN_SDK}/bin" "$ENV{VULKAN_SDK}/Bin"
-#   )
-
-#   if(NOT SLANGC)
-#     message(FATAL_ERROR "Could not find slang compiler.")
-#   endif()
-
-#   add_custom_command(
-#     OUTPUT "${SPIRV_OUTPUT}"
-#     COMMAND "${SLANGC}"
-#             "${SLANG_SOURCE}"
-#             -target spirv
-#             -profile spirv_1_4
-#             -emit-spirv-directly
-#             -fvk-use-entrypoint-name
-#             -entry VertexMain
-#             -entry FragmentMain
-#             -o "${SPIRV_OUTPUT}"
-#     DEPENDS "${SLANG_SOURCE}"
-#     COMMENT "Compiling Slang shader: ${TARGET}.slang"
-#     VERBATIM
-#   )
-
-#   add_custom_target(${TARGET} DEPENDS "${SPIRV_OUTPUT}")
-#   add_dependencies(optimengine ${TARGET})
-# endfunction()
-
-# add_slang_shader_target(sample)
+# Shaders Compilation
 
 add_custom_target(shaders ALL)
 add_dependencies(shaders optimengine)
@@ -143,3 +82,23 @@ add_custom_command(
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   COMMENT "Compiling shaders..."
 )
+
+# Third Party Libraries 
+add_custom_target(thirdpartylibs ALL)
+add_dependencies(thirdpartylibs optimengine)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  if(WIN32)
+    add_custom_command(
+      TARGET thirdpartylibs POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_RUNTIME_DLLS:optimengine>" "$<TARGET_FILE_DIR:optimengine>"
+      COMMAND_EXPAND_LISTS
+    )
+  else()
+    add_custom_command(
+      TARGET thirdpartylibs POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:SDL3::SDL3> "$<TARGET_FILE_DIR:optimengine>"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:fmt::fmt> "$<TARGET_FILE_DIR:optimengine>"
+    )
+  endif()
+endif()
