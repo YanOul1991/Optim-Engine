@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OpVkCommon/Minimal.h"
+#include "OpVkTypes/SwapChainContext.h"
 
 #include <filesystem>
 #include <fstream>
@@ -49,7 +50,7 @@ inline vk::raii::ShaderModule CreateVkShaderModule(const std::vector<char>& byte
   return vk::raii::ShaderModule(device, createInfo);
 }
 
-inline void CreateShaderStage(const vk::raii::ShaderModule& shaderModule)
+inline std::vector<vk::PipelineShaderStageCreateInfo> CreateVkPipelineShaderStageCreateInfoList(const vk::raii::ShaderModule& shaderModule)
 {
   vk::PipelineShaderStageCreateInfo vertexShaderStageInfo{
     .stage  = vk::ShaderStageFlagBits::eVertex,
@@ -63,7 +64,7 @@ inline void CreateShaderStage(const vk::raii::ShaderModule& shaderModule)
     .pName  = "FragmentMain"
   };
 
-  vk::PipelineShaderStageCreateInfo shaderStages[] = {
+  return {
     vertexShaderStageInfo,
     fragmentShaderStageInfo
   };
@@ -73,7 +74,10 @@ inline void CreateShaderStage(const vk::raii::ShaderModule& shaderModule)
  * Vulkan Tutorial:
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/02_Graphics_pipeline_basics/02_Fixed_functions.html
  */
-inline void CreateVulkanGraphicsPipeline(const vk::Extent2D& swapChainExtent, const vk::raii::Device& device)
+inline vk::raii::Pipeline CreateVulkanPipeline(
+  const SwapChainContext&                         swapChainCtx,
+  std::vector<vk::PipelineShaderStageCreateInfo>& stagesInfo,
+  const vk::raii::Device&                         device)
 {
   std::vector<vk::DynamicState> dynamicStates = {
     vk::DynamicState::eViewport,
@@ -94,10 +98,10 @@ inline void CreateVulkanGraphicsPipeline(const vk::Extent2D& swapChainExtent, co
   };
 
   // VIEWPORTS & SCISSORS
-  vk::Viewport viewport{ 0.0f, 0.0f, static_cast<float>(swapChainExtent.width), static_cast<float>(swapChainExtent.height), 0.0f, 1.0f };
+  vk::Viewport viewport{ 0.0f, 0.0f, static_cast<float>(swapChainCtx.swapChainExtent.width), static_cast<float>(swapChainCtx.swapChainExtent.height), 0.0f, 1.0f };
   vk::Rect2D   scissor{
     vk::Offset2D{ 0, 0 },
-    swapChainExtent
+    swapChainCtx.swapChainExtent
   };
 
   vk::PipelineViewportStateCreateInfo viewportState{
@@ -150,6 +154,31 @@ inline void CreateVulkanGraphicsPipeline(const vk::Extent2D& swapChainExtent, co
   vk::raii::PipelineLayout     pipelineLayout = nullptr;
   vk::PipelineLayoutCreateInfo pipelineLayoutInfo{ .setLayoutCount = 0, .pushConstantRangeCount = 0 };
   pipelineLayout = vk::raii::PipelineLayout(device, pipelineLayoutInfo);
+
+  // Pipeline rendering create info
+  vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo{
+    .colorAttachmentCount    = 1,
+    .pColorAttachmentFormats = &swapChainCtx.swapChainImageFormat.format
+  };
+
+  vk::StructureChain<vk::GraphicsPipelineCreateInfo, vk::PipelineRenderingCreateInfo> pipelineCreateInfoChain = {
+    { .stageCount          = 2,
+     .pStages             = stagesInfo.data(),
+     .pVertexInputState   = &vertexInputInfo,
+     .pInputAssemblyState = &inputAssemblyInfo,
+     .pViewportState      = &viewportState,
+     .pRasterizationState = &rasterizer,
+     .pMultisampleState   = &multisampling,
+     .pColorBlendState    = &colorBlending,
+     .pDynamicState       = &dynamicState,
+     .layout              = pipelineLayout,
+     .renderPass          = nullptr },
+    { .colorAttachmentCount = 1, .pColorAttachmentFormats = &swapChainCtx.swapChainImageFormat.format }
+  };
+
+  // std::cout << "Pipeline created ???\n";
+
+  return vk::raii::Pipeline(device, nullptr, pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>());
 }
 
 } // namespace Optim::VKPipeline

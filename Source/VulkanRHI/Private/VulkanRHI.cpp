@@ -35,6 +35,7 @@ struct VulkanRHI::VulkanContext
   vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
   RenderDevice                     renderDevice;
   SwapChainContext                 swapChainContext;
+  vk::raii::Pipeline               pipeline = nullptr;
 };
 
 VulkanRHI::VulkanRHI() : pVkContext(MakeUnique<VulkanContext>())
@@ -121,9 +122,14 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
       throw std::runtime_error("[VulkanRHI | Error] Failed to create swap chain context.");
     }
 
-    auto shadercode   = Optim::VKPipeline::LoadCompiledShader("Shaders/sample.spv");
-    auto ShaderModule = Optim::VKPipeline::CreateVkShaderModule(shadercode, ctx.renderDevice.device);
-    
+    auto shadercode       = Optim::VKPipeline::LoadCompiledShader("Shaders/sample.spv");
+    auto ShaderModule     = Optim::VKPipeline::CreateVkShaderModule(shadercode, ctx.renderDevice.device);
+    auto shaderStagesInfo = Optim::VKPipeline::CreateVkPipelineShaderStageCreateInfoList(ShaderModule);
+
+    ctx.pipeline = Optim::VKPipeline::CreateVulkanPipeline(ctx.swapChainContext, shaderStagesInfo, ctx.renderDevice.device);
+    if (ctx.pipeline == nullptr) {
+      throw std::runtime_error("[VulkanRHI | Error] Failed to create VkPipeline object.");
+    }
   }
   catch (const vk::SystemError& e) {
     std::cerr << "[Vulkan | Error] " << e.what() << '\n';
