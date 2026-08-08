@@ -95,38 +95,51 @@ add_subdirectory("Source/Application")
 
 # Compile slang shaders after build
 
-function(add_slang_shader_target TARGET)
-  set(SHADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
-  set(SLANG_SOURCE "${SHADERS_DIR}/${TARGET}.slang")
-  set(SPIRV_OUTPUT "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders/${TARGET}.spv")
+# function(add_slang_shader_target TARGET)
+#   set(SHADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
+#   set(SLANG_SOURCE "${SHADERS_DIR}/${TARGET}.slang")
+#   set(SPIRV_OUTPUT "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Shaders/${TARGET}.spv")
 
-  find_program(SLANGC
-    NAMES slangc slangc.exe
-    HINTS "$ENV{VULKAN_SDK}/bin" "$ENV{VULKAN_SDK}/Bin"
-  )
+#   find_program(SLANGC
+#     NAMES slangc slangc.exe
+#     HINTS "$ENV{VULKAN_SDK}/bin" "$ENV{VULKAN_SDK}/Bin"
+#   )
 
-  if(NOT SLANGC)
-    message(FATAL_ERROR "Could not find slang compiler.")
-  endif()
+#   if(NOT SLANGC)
+#     message(FATAL_ERROR "Could not find slang compiler.")
+#   endif()
 
-  add_custom_command(
-    OUTPUT "${SPIRV_OUTPUT}"
-    COMMAND "${SLANGC}"
-            "${SLANG_SOURCE}"
-            -target spirv
-            -profile spirv_1_4
-            -emit-spirv-directly
-            -fvk-use-entrypoint-name
-            -entry VertexMain
-            -entry FragmentMain
-            -o "${SPIRV_OUTPUT}"
-    DEPENDS "${SLANG_SOURCE}"
-    COMMENT "Compiling Slang shader: ${TARGET}.slang"
-    VERBATIM
-  )
+#   add_custom_command(
+#     OUTPUT "${SPIRV_OUTPUT}"
+#     COMMAND "${SLANGC}"
+#             "${SLANG_SOURCE}"
+#             -target spirv
+#             -profile spirv_1_4
+#             -emit-spirv-directly
+#             -fvk-use-entrypoint-name
+#             -entry VertexMain
+#             -entry FragmentMain
+#             -o "${SPIRV_OUTPUT}"
+#     DEPENDS "${SLANG_SOURCE}"
+#     COMMENT "Compiling Slang shader: ${TARGET}.slang"
+#     VERBATIM
+#   )
 
-  add_custom_target(${TARGET} DEPENDS "${SPIRV_OUTPUT}")
-  add_dependencies(optimengine ${TARGET})
-endfunction()
+#   add_custom_target(${TARGET} DEPENDS "${SPIRV_OUTPUT}")
+#   add_dependencies(optimengine ${TARGET})
+# endfunction()
 
-add_slang_shader_target(sample)
+# add_slang_shader_target(sample)
+
+add_custom_target(shaders ALL)
+add_dependencies(shaders optimengine)
+
+add_custom_command(
+  TARGET shaders POST_BUILD
+  COMMAND ${CMAKE_COMMAND}
+          -DSRC_DIR="${CMAKE_CURRENT_SOURCE_DIR}/Shaders"
+          -DOUT_DIR="${CMAKE_RUNTIME_OUTPUT_DIRECTORY}Shaders"
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/scripts/CompileShaders.cmake"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  COMMENT "Compiling shaders..."
+)

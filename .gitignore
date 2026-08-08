@@ -79,3 +79,6 @@ Testing/
 
 # cmake artifacts
 CMakeUserPresets.json
+
+# Compiled spv shaders
+*.spv
