@@ -16,6 +16,6 @@ class IRHI
   inline virtual ~IRHI()
   {}
   virtual void Initialize(void*) = 0;
-  virtual void Update()          = 0;
+  virtual void DrawFrame()       = 0;
   virtual void Cleanup()         = 0;
 };

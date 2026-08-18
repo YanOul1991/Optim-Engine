@@ -20,43 +20,35 @@
 #include "OptimEngine/System/System.h"
 #include "OptimEngine/System/Window.h"
 
-// FMT test
-// #include <fmt/color.h>
-
 // STD HEADERS
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
 
-class Bar
-{
- public:
-  void Foo()
-  {
-    // fmt::println(fg(fmt::color::green) | fmt::emphasis::bold, "System Module has been initialized");
-  }
-};
+using RHIBackend = VulkanRHI;
 
 int main(int argc, char* argv[])
 {
-  // Bar bar;
-  // System::OnSystemModuleInitialized.SubscribeMemberFunction<&Bar::Foo>(&bar);
-  
+  RHIBackend rhiinterface;
+
   // Initalize the System module
   System::Initalize();
 
   // Load the main window with the name of the application
   Window mainWindow = Window("Vulkan Engine Project");
 
-  Internal::RenderModule rhiBackend(new VulkanRHI());
-
-  rhiBackend.rhi.GetPtr()->Initialize(mainWindow.GetSDLWindowHandle());
+  rhiinterface.Initialize(mainWindow.GetSDLWindowHandle());
 
   uint64 loopCycles = 0;
 
   while (System::ProcessEvents()) {
     loopCycles++;
+    // TODO: 
+    //  Process Input Events.
+
+    // Draw Rendering Frames.
+    rhiinterface.DrawFrame();
   }
 
   std::cout << "Cycles count: " << loopCycles << '\n';

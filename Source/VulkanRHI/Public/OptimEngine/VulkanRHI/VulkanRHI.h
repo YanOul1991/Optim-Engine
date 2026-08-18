@@ -19,7 +19,7 @@ class VULKANRHI_API VulkanRHI final : public IRHI
   VulkanRHI& operator=(const VulkanRHI&) = delete;
 
   virtual void Initialize(void* pWindow) override final;
-  virtual void Update() override final;
+  virtual void DrawFrame() override final;
   virtual void Cleanup() override final;
 
  private:

@@ -293,8 +293,9 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
   }
 }
 
-void VulkanRHI::Update()
+void VulkanRHI::DrawFrame()
 {
+
 }
 void VulkanRHI::Cleanup()
 {
