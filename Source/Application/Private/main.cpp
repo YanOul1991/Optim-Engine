@@ -6,6 +6,8 @@
  * quit.
  */
 
+#include "SlangCompiler.h"
+
 // Core module
 #include "OptimEngine/Core/Memory/TUniquePtr.h"
 #include "OptimEngine/Core/StandardTypes/String.h"
@@ -30,6 +32,16 @@ using RHIBackend = VulkanRHI;
 
 int main(int argc, char* argv[])
 {
+  Optim::Shaders::SlangCompilerInterface slangSession;
+  slangSession.InitalizeGlobalSession();
+  slangSession.VerifyTargetSupport();
+
+  // Slang::ComPtr<slang::IGlobalSession> globalSession;
+  // slang::createGlobalSession(globalSession.writeRef());
+
+  // // Optim::Shaders::SlangCompiler::InitalizeGlobalSession();
+  // Optim::Shaders::SlangCompiler::VerifyTargetSupport(globalSession.get());
+
   RHIBackend rhiinterface;
 
   // Initalize the System module

@@ -61,5 +61,6 @@ foreach(SHADER_PATH ${SHADER_FILES})
 
   message(STATUS "[Slang] Copying ${BASE_NAME}.spv to output dirctory...")
   file(COPY ${COMPILED_LOCAL} DESTINATION ${OUT_DIR})
+  file(COPY ${SHADER_PATH} DESTINATION ${OUT_DIR})
 
 endforeach()

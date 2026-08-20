@@ -2,6 +2,8 @@
  * FILE: VulkanRHI.cpp
  */
 
+ #include "slang/slang.h"
+
 #include "VulkanRHI/VulkanRHI.h"
 
 #include "OpVkCommon/Minimal.h"

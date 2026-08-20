@@ -1,20 +1,21 @@
 {
   "dependencies": [
+    "fmt",
     {
       "name": "sdl3",
       "default-features": false,
       "features": [
         "vulkan",
         {
-          "name": "x11",
+          "name": "wayland",
           "platform": "linux"
         },
         {
-          "name": "wayland",
+          "name": "x11",
           "platform": "linux"
         }
       ]
     },
-    "fmt"
+    "shader-slang"
   ]
 }

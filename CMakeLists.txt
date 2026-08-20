@@ -54,6 +54,7 @@ find_package(Vulkan REQUIRED)
 # Vcpkg Managed Libraries
 find_package(SDL3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(slang CONFIG REQUIRED)
 
 # List all libraries in the `cmake` directory
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -68,17 +69,16 @@ add_subdirectory("Source/Rendering")
 add_subdirectory("Source/System")
 add_subdirectory("Source/Application")
 
-# Shaders Compilation
 
+# Shaders Compilation
 add_custom_target(shaders ALL)
 add_dependencies(shaders optimengine)
-
 add_custom_command(
   TARGET shaders POST_BUILD
   COMMAND ${CMAKE_COMMAND}
           -DSRC_DIR="${CMAKE_CURRENT_SOURCE_DIR}/Shaders"
           -DOUT_DIR="${CMAKE_RUNTIME_OUTPUT_DIRECTORY}Shaders"
-          -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/scripts/CompileShaders.cmake"
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/scripts/ShaderCopyToOutput.cmake"
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   COMMENT "Compiling shaders..."
 )
@@ -99,6 +99,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
       TARGET thirdpartylibs POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:SDL3::SDL3> "$<TARGET_FILE_DIR:optimengine>"
       COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:fmt::fmt> "$<TARGET_FILE_DIR:optimengine>"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:slang::slang> "$<TARGET_FILE_DIR:optimengine>"
     )
   endif()
 endif()

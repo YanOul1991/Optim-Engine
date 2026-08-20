@@ -20,10 +20,21 @@ target_sources(optimengine PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/main.cpp"
 )
 
-target_link_libraries(optimengine PRIVATE
+# set(ENV_VK_SDK_PATH $ENV{VULKAN_SDK})
+# cmake_path(CONVERT "${ENV_VK_SDK_PATH}" TO_CMAKE_PATH_LIST VK_SDK_PATH)
+
+# message(STATUS "${VK_SDK_PATH}")
+
+# find_package(glslang CONFIG REQUIRED
+#   HINTS "${VK_SDK_PATH}/lib/cmake"
+# )
+
+target_link_libraries(optimengine PUBLIC
   system
   rhi
   vulkanrhi
   rendering
   core
+  Vulkan::Vulkan
+  slang::slang
 )
