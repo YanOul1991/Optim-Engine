@@ -15,10 +15,10 @@
 namespace
 {
 
-/*
+/**
  * @brief
- * Validates if all required extensions are supported by the Vulkan implementation.
- * If one or more extension is not supported, a message will be printed listing them.
+ * Validates if all required layers are supported by the Vulkan implementation.
+ * If one or more layer is not supported, a message will be printed listing them.
  */
 [[nodiscard]]
 static bool ValidateExtensions(const TDynamicArray<String>& reqExtensions, const vk::raii::Context& context)
@@ -56,6 +56,11 @@ static bool ValidateExtensions(const TDynamicArray<String>& reqExtensions, const
   return true;
 }
 
+/**
+ * @brief
+ * Validates if all required extensions are supported by the Vulkan implementation.
+ * If one or more extension is not supported, a message will be printed listing them.
+ */
 [[nodiscard]]
 bool ValidateLayers(const TDynamicArray<String>& reqLayers, const vk::raii::Context& context)
 {
@@ -93,6 +98,13 @@ bool ValidateLayers(const TDynamicArray<String>& reqLayers, const vk::raii::Cont
 }
 } // namespace
 
+/**
+ * @brief
+ * Creates a Vulkan surface object using the SDL function 
+ * `SDL_Vulkan_CreateSurface`.This function abstracts the need to perform 
+ * platform specific operations, figuring out the display service, defining the
+ * correct macros, vulkan functions, etc.
+ */
 vk::raii::SurfaceKHR Optim::VK::CreateVkSurfaceKHR(const vk::raii::Instance& instance, SDL_Window* sdlwindow)
 {
   // Use the SDL function to create the surface as it abstracts the need
@@ -105,6 +117,14 @@ vk::raii::SurfaceKHR Optim::VK::CreateVkSurfaceKHR(const vk::raii::Instance& ins
   return vk::raii::SurfaceKHR(instance, rawSurface);
 }
 
+/**
+ * @brief 
+ * Create a `vk::raii::Instance` object. This function, validates all required
+ * extensions such as the ones from SDL, and verifies all required Layers.
+ * 
+ * May through a `std::runtime_error` if anu required extension or layer is not
+ * supported.
+ */
 vk::raii::Instance Optim::VK::CreateVkInstance(const vk::raii::Context& context)
 {
   // ----------- EXTENSIONS VALIDATION -----------

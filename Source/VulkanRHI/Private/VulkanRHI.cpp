@@ -202,36 +202,7 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     auto& ctx = *pVkContext;
     SDL_Window* sdlwindow = static_cast<SDL_Window*>(param_pSDLWindow);
 
-    /*
-    TDynamicArray<String> reqInstanceExt;
-
-    // Add all extensions required by SDL to create a VkSurfaceKHR object.
-    Optim::VK::AddSDLRequiredExtensions(reqInstanceExt);
-
-    // Add "VK_EXT_debug_utils" extension if validation layers are enabled
-    if constexpr (Optim::VK::enableValidationLayers) {
-      reqInstanceExt.EmplaceBack(vk::EXTDebugUtilsExtensionName);
-    }
-
-    if (!Optim::VK::ValidateRequiredExtensions(reqInstanceExt, ctx.context)) {
-      throw std::runtime_error("[VulkanRHI | Error] Required extensions are not supported by Vulkan.");
-    }
-
-    // Required Layers Verification
-    TDynamicArray<String> requiredLayers;
-
-    // Add "VK_LAYER_KHRONOS_validation" if validation layers are enabled
-    if constexpr (Optim::VK::enableValidationLayers) {
-      requiredLayers.EmplaceBack("VK_LAYER_KHRONOS_validation");
-    }
-
-    if (Optim::VK::ValidateRequiredLayers(requiredLayers, ctx.context) == false) {
-      throw std::runtime_error("[VulkanRHI | Error] Required layers are not supported by Vulkan.");
-    }
-    */
-
     // Create VkInstance object
-    // ctx.instance = Optim::VK::CreateVkInstance(ctx.context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
     ctx.instance = Optim::VK::CreateVkInstance(ctx.context);
     if (ctx.instance == nullptr) {
       throw std::runtime_error("[VulkanRHI] Error - VkInstance Initalization Status : FAILURE");
