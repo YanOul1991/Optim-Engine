@@ -200,9 +200,9 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
 {
   try {
     auto& ctx = *pVkContext;
-
     SDL_Window* sdlwindow = static_cast<SDL_Window*>(param_pSDLWindow);
 
+    /*
     TDynamicArray<String> reqInstanceExt;
 
     // Add all extensions required by SDL to create a VkSurfaceKHR object.
@@ -228,25 +228,27 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     if (Optim::VK::ValidateRequiredLayers(requiredLayers, ctx.context) == false) {
       throw std::runtime_error("[VulkanRHI | Error] Required layers are not supported by Vulkan.");
     }
+    */
 
     // Create VkInstance object
-    ctx.instance = Optim::VK::CreateVkInstance(ctx.context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
+    // ctx.instance = Optim::VK::CreateVkInstance(ctx.context, reqInstanceExt, requiredLayers, Optim::VK::GetApplicationInfoStruct());
+    ctx.instance = Optim::VK::CreateVkInstance(ctx.context);
     if (ctx.instance == nullptr) {
-      throw std::runtime_error("[VulkanRHI | Error] Failed to initialize VkInstance object.");
+      throw std::runtime_error("[VulkanRHI] Error - VkInstance Initalization Status : FAILURE");
     }
 
     // Create VkDebugUtilsMessengerEXT object if validation layers are enabled
     if constexpr (Optim::VK::enableValidationLayers) {
       ctx.debugMessenger = Optim::VK::Debug::CreateVkDebugUtilsMessengerEXT(ctx.instance);
       if (ctx.debugMessenger == nullptr) {
-        throw std::runtime_error("[VulkanRHI | Error] Debug messenger FAILED to initialize.");
+        throw std::runtime_error("[VulkanRHI] Error - VkDebugUtilsMessengerEXT Initalization Status : FAILURE");
       }
     }
 
     // Create VKSurfaceKHR object
     ctx.surface = Optim::VK::CreateVkSurfaceKHR(ctx.instance, sdlwindow);
     if (ctx.surface == nullptr) {
-      throw std::runtime_error("[VulkanRHI | Error] Failed to initialize VkSurfaceKHR object.");
+      throw std::runtime_error("[VulkanRHI] Error - VkSurfaceKHR Initalization Status : FAILURE");
     }
 
     // Create RenderContext object
