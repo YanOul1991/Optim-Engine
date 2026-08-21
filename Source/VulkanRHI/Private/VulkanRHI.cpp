@@ -2,15 +2,15 @@
  * FILE: VulkanRHI.cpp
  */
 
- #include "slang/slang.h"
-
 #include "VulkanRHI/VulkanRHI.h"
 
 #include "OpVkCommon/Minimal.h"
 #include "OpVkCore/OpVkCore.h"
 #include "OpVkDebug/Debug.h"
-#include "OpVkTypes/RenderDevice.h"
+#include "OpVkTypes/DrawCommandContext.h"
+#include "OpVkTypes/RenderContext.h"
 #include "OpVkTypes/SwapChainContext.h"
+#include "slang/slang.h"
 
 // SDL
 #include <SDL3/SDL.h>
@@ -26,12 +26,13 @@
 #include <vector>
 
 /**
- * Vualk Documentation:
+ * Vulkan Documentation:
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html
  *
+ * Structure to manage drawing instructions
  */
 
-struct DrawContext
+struct DrawCommandContext
 {
   vk::raii::CommandPool   commandPool   = nullptr;
   vk::raii::CommandBuffer commandBuffer = nullptr;
@@ -128,7 +129,7 @@ struct DrawContext
       vk::PipelineStageFlagBits2::eColorAttachmentOutput,
       vk::PipelineStageFlagBits2::eBottomOfPipe);
 
-      commandBuffer.end();
+    commandBuffer.end();
   }
 
   void TransitionImageLayout(
@@ -176,14 +177,14 @@ struct VulkanRHI::VulkanContext
   vk::raii::SurfaceKHR             surface        = nullptr;
   vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
-  RenderDevice     renderContext;
+  RenderContext    renderContext;
   SwapChainContext swapChainContext;
 
   vk::raii::Pipeline      pipeline      = nullptr;
   vk::raii::CommandPool   commandPool   = nullptr;
   vk::raii::CommandBuffer commandBuffer = nullptr;
 
-  DrawContext drawContext;
+  DrawCommandContext drawContext;
 };
 
 VulkanRHI::VulkanRHI() : pVkContext(MakeUnique<VulkanContext>())
@@ -250,24 +251,32 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     }
 
     // Select most optimal VkPhysicalDevice object
-    auto physicalDevice = Optim::VK::SelectVkPhysicalDevice(ctx.instance, ctx.surface);
-    if (physicalDevice == nullptr) {
-      throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
-    }
+    // auto physicalDevice = Optim::VK::SelectVkPhysicalDevice(ctx.instance, ctx.surface);
+    // if (physicalDevice == nullptr) {
+    //   throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
+    // }
 
-    // Create RenderDevice object
-    ctx.renderContext = Optim::VK::CreateRenderDevice(physicalDevice, ctx.surface);
+    // Create RenderContext object
+    ctx.renderContext = RenderContext(ctx.instance, ctx.surface);
     if (!ctx.renderContext.IsValid()) {
-      throw std::runtime_error("[VulkanRHI | Error] Failed to create RenderDevice object.");
+      throw std::runtime_error("[VulkanRHI] Error - RenderContext Initalization Status : FAILURE");
+    }
+    else {
+      std::cout << "[VulkanRHI] RenderContext Initalization Status : SUCCESS\n";
     }
 
     // Create SwapChainContext object
-    ctx.swapChainContext = Optim::VK::CreateSwapChainContext(ctx.renderContext.device, ctx.renderContext.physicalDevice, ctx.surface, sdlwindow);
+    // ctx.swapChainContext = Optim::VK::CreateSwapChainContext(ctx.renderContext.device, ctx.renderContext.physicalDevice, ctx.surface, sdlwindow);
 
-    // Create Image Views for each image in the swap chain
-    Optim::VK::CreateImageViews(ctx.swapChainContext, ctx.renderContext.device);
+    // // Create Image Views for each image in the swap chain
+    // Optim::VK::CreateImageViews(ctx.swapChainContext, ctx.renderContext.device);
+
+    ctx.swapChainContext = SwapChainContext(ctx.renderContext.device, ctx.renderContext.physicalDevice, ctx.surface, sdlwindow);
     if (!ctx.swapChainContext.IsValid()) {
-      throw std::runtime_error("[VulkanRHI | Error] Failed to create swap chain context.");
+      throw std::runtime_error("[VulkanRHI] Error - SwapChainContext Initalization Status : FAILURE");
+    }
+    else {
+      std::cout << "[VulkanRHI] SwapChainContext Initalization Status : SUCCESS\n";
     }
 
     // Pipeline creation
@@ -297,7 +306,6 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
 
 void VulkanRHI::DrawFrame()
 {
-
 }
 void VulkanRHI::Cleanup()
 {

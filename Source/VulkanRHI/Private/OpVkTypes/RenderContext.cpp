@@ -1,4 +1,4 @@
-#include "OpVkCore/Setup.h"
+#include "./RenderContext.h"
 
 #include <algorithm>
 #include <iostream>
@@ -6,16 +6,29 @@
 #include <ranges>
 #include <vector>
 
-/*
-// List of all obligatory physical device extensions.
+namespace 
+{
+
 static std::vector<const char*> requiredDeviceExtensions = {
   vk::KHRSwapchainExtensionName
 };
 
-vk::raii::PhysicalDevice Optim::VK::SelectVkPhysicalDevice(const vk::raii::Instance& vkInstance, const vk::raii::SurfaceKHR& vkSurface)
+/**
+ * @brief
+ * Check all available GPUs on system and gets the most appropriate one
+ * from predefined prerequisists such as properties, supported features,
+ * queueFamilies and extensions.
+ *
+ * vk::PhysicalDeviceProperties struct Documentation:
+ * https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceProperties.html
+ *
+ * Device Limits struct (vk::PhysicalDeviceLimits)
+ * https://docs.vulkan.org/spec/latest/chapters/limits.html
+ */
+static vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance& instance, const vk::raii::SurfaceKHR& surface)
 {
   // Get a list of all GPUs found by Vulkan.
-  auto physicalDevices = vkInstance.enumeratePhysicalDevices();
+  auto physicalDevices = instance.enumeratePhysicalDevices();
 
   // If there are no GPUs... then there is no rendering :(
   if (physicalDevices.empty()) {
@@ -51,7 +64,7 @@ vk::raii::PhysicalDevice Optim::VK::SelectVkPhysicalDevice(const vk::raii::Insta
       auto const& qfp = queueFamiliyProperties[qfpIndex];
 
       // Get Queue Family that supports both graphics and present.
-      if ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) && gpu.getSurfaceSupportKHR(qfpIndex, *vkSurface)) {
+      if ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) && gpu.getSurfaceSupportKHR(qfpIndex, *surface)) {
         supportsReqQueueFamily = true;
         break;
       }
@@ -90,18 +103,27 @@ vk::raii::PhysicalDevice Optim::VK::SelectVkPhysicalDevice(const vk::raii::Insta
   }
 }
 
-RenderContext Optim::VK::CreateRenderDevice(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface)
+} // namespace
+
+/**
+ * Documentation for basic logical device creation:
+ *
+ * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
+ */
+RenderContext::RenderContext(const vk::raii::Instance& instance, const vk::raii::SurfaceKHR& surface)
 {
+  // Select the most apporpriate physical device
+  auto selectedPhysicalDevice = SelectVkPhysicalDevice(instance, surface);
+
   // List all familiy queues properties.
-  auto queueFamiliyProperties = physicalDevice.getQueueFamilyProperties();
+  auto queueFamiliyProperties = selectedPhysicalDevice.getQueueFamilyProperties();
 
   // Get Queue Family that supports both graphics and present.
   uint32 queueIndex = ~0;
 
   for (uint32 qfpIndex = 0; qfpIndex < queueFamiliyProperties.size(); qfpIndex++) {
     auto const& qfp = queueFamiliyProperties[qfpIndex];
-
-    if ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) && physicalDevice.getSurfaceSupportKHR(qfpIndex, *vkSurface)) {
+    if ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) && selectedPhysicalDevice.getSurfaceSupportKHR(qfpIndex, *surface)) {
       queueIndex = qfpIndex;
       break;
     }
@@ -140,12 +162,10 @@ RenderContext Optim::VK::CreateRenderDevice(const vk::raii::PhysicalDevice& phys
     .ppEnabledExtensionNames = requiredDeviceExtensions.data()
   };
 
-  // Return RenderContext object
-  RenderContext retRenderDevice;
-  retRenderDevice.device    = vk::raii::Device(physicalDevice, deviceCreateInfo);
-  retRenderDevice.physicalDevice   = physicalDevice;
-  retRenderDevice.queueFamily      = vk::raii::Queue(retRenderDevice.device, queueIndex, 0);
-  retRenderDevice.queueFamilyIndex = queueIndex;
-  return retRenderDevice;
+  // assign the queue index and selected physical device.
+  // Then use those to create the vkDevice and vkQueue objects.
+  this->physicalDevice   = selectedPhysicalDevice;
+  this->queueFamilyIndex = queueIndex;
+  this->device           = vk::raii::Device(this->physicalDevice, deviceCreateInfo);
+  this->queueFamily      = vk::raii::Queue(this->device, this->queueFamilyIndex, 0);
 }
-*/

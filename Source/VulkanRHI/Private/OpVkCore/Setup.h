@@ -1,7 +1,7 @@
 #pragma once
 
 #include "OpVkCommon/Minimal.h"
-#include "OpVkTypes/RenderDevice.h"
+#include "OpVkTypes/RenderContext.h"
 #include "OptimEngine/Core/CoreMinimal.h"
 #include "OptimEngine/Core/StandardTypes/String.h"
 #include "OptimEngine/Core/StandardTypes/TDynamicArray.h"
@@ -193,7 +193,7 @@ inline vk::raii::Instance CreateVkInstance(
  * Device Limits struct (vk::PhysicalDeviceLimits)
  * https://docs.vulkan.org/spec/latest/chapters/limits.html
  */
-vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance& vkInstance, const vk::raii::SurfaceKHR& vkSurface);
+// vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance& vkInstance, const vk::raii::SurfaceKHR& vkSurface);
 
 /**
  * Documentation for basic logical device creation:
@@ -201,6 +201,6 @@ vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance& vkInst
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
  *
  */
-RenderDevice CreateRenderDevice(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface);
+// RenderContext CreateRenderDevice(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& vkSurface);
 
 }; // namespace Optim::VK
