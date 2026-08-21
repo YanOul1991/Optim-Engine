@@ -10,7 +10,6 @@
 #include "OpVkTypes/DrawCommandContext.h"
 #include "OpVkTypes/RenderContext.h"
 #include "OpVkTypes/SwapChainContext.h"
-#include "slang/slang.h"
 
 // SDL
 #include <SDL3/SDL.h>
@@ -250,33 +249,16 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
       throw std::runtime_error("[VulkanRHI | Error] Failed to initialize VkSurfaceKHR object.");
     }
 
-    // Select most optimal VkPhysicalDevice object
-    // auto physicalDevice = Optim::VK::SelectVkPhysicalDevice(ctx.instance, ctx.surface);
-    // if (physicalDevice == nullptr) {
-    //   throw std::runtime_error("[VulkanRHI | Error] Failed to find usable GPU for rendering.");
-    // }
-
     // Create RenderContext object
     ctx.renderContext = RenderContext(ctx.instance, ctx.surface);
     if (!ctx.renderContext.IsValid()) {
       throw std::runtime_error("[VulkanRHI] Error - RenderContext Initalization Status : FAILURE");
     }
-    else {
-      std::cout << "[VulkanRHI] RenderContext Initalization Status : SUCCESS\n";
-    }
 
-    // Create SwapChainContext object
-    // ctx.swapChainContext = Optim::VK::CreateSwapChainContext(ctx.renderContext.device, ctx.renderContext.physicalDevice, ctx.surface, sdlwindow);
-
-    // // Create Image Views for each image in the swap chain
-    // Optim::VK::CreateImageViews(ctx.swapChainContext, ctx.renderContext.device);
-
+    // Create the initial SwapChainContext
     ctx.swapChainContext = SwapChainContext(ctx.renderContext.device, ctx.renderContext.physicalDevice, ctx.surface, sdlwindow);
     if (!ctx.swapChainContext.IsValid()) {
       throw std::runtime_error("[VulkanRHI] Error - SwapChainContext Initalization Status : FAILURE");
-    }
-    else {
-      std::cout << "[VulkanRHI] SwapChainContext Initalization Status : SUCCESS\n";
     }
 
     // Pipeline creation
