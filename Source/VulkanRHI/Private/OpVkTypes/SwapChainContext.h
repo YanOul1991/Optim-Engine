@@ -25,29 +25,36 @@ struct SwapChainContext final
   }
 
   SwapChainContext() = default;
-
-  SwapChainContext(const vk::raii::Device&         device,
-                   const vk::raii::PhysicalDevice& physicalDevice,
-                   const vk::raii::SurfaceKHR&     surface,
-                   SDL_Window*                     pWindow);
-
-  SwapChainContext(const vk::raii::Device&         device,
-                   const vk::raii::PhysicalDevice& physicalDevice,
-                   const vk::raii::SurfaceKHR&     surface,
-                   SDL_Window*                     pWindow,
-                   const SwapChainContext&         oldContext);
-
-  //  Enable move semantics
+  // Yes move :D
   SwapChainContext(SwapChainContext&&) noexcept            = default;
   SwapChainContext& operator=(SwapChainContext&&) noexcept = default;
 
-  //  No copy semantics, to align with vk::raii types being move-only objects.
+  // No copy >:(
   SwapChainContext(const SwapChainContext&)            = delete;
   SwapChainContext& operator=(const SwapChainContext&) = delete;
 
-  void CreateSwapChainContext(
+  // Contructor to create new swap chain context from scratch.
+  SwapChainContext(
     const vk::raii::Device&         device,
     const vk::raii::PhysicalDevice& physicalDevice,
     const vk::raii::SurfaceKHR&     surface,
     SDL_Window*                     pWindow);
+
+  /**
+   * Contructor to create new swap chain context from already existing
+   * swapchain context.
+   */
+  SwapChainContext(
+    const vk::raii::Device&         device,
+    const vk::raii::PhysicalDevice& physicalDevice,
+    const vk::raii::SurfaceKHR&     surface,
+    SDL_Window*                     pWindow,
+    const SwapChainContext&         oldContext);
+
+  //  DEPRECATED FUNCTION
+  // void CreateSwapChainContext(
+  //   const vk::raii::Device&         device,
+  //   const vk::raii::PhysicalDevice& physicalDevice,
+  //   const vk::raii::SurfaceKHR&     surface,
+  //   SDL_Window*                     pWindow);
 };

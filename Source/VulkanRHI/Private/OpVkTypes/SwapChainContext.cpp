@@ -146,57 +146,57 @@ SwapChainContext::SwapChainContext(
 
 /**
  * Initilize the SwapChainContext struct and its underlying Vulkan objects.
+ void SwapChainContext::CreateSwapChainContext(
+   const vk::raii::Device&         device,
+   const vk::raii::PhysicalDevice& physicalDevice,
+   const vk::raii::SurfaceKHR&     surface,
+   SDL_Window*                     pWindow)
+ {
+   // Get surface available basic capabilities
+   auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
+   // Get surface available formats
+   auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
+   // Get surface available present modes
+   auto surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
+ 
+   // Select optimal settings
+   auto selectedSwapChainFormat        = SelectSwapChainVkSurfaceKHRFormat(surfaceFormats);
+   auto selectedSwapChainPresentMode   = SelectSwapChainVkPresentModeKHR(surfacePresentModes);
+   auto selectedSwapChainExtent        = SelectSwapChainVkExtend2D(surfaceCapabilities, pWindow);
+   auto selectedSwapChainMinImageCount = SelectSwapChainMinImageCount(surfaceCapabilities);
+ 
+   // Swap Chain create info
+   vk::SwapchainCreateInfoKHR swapChainCreateInfo{
+     .surface          = *surface,
+     .minImageCount    = selectedSwapChainMinImageCount,
+     .imageFormat      = selectedSwapChainFormat.format,
+     .imageColorSpace  = selectedSwapChainFormat.colorSpace,
+     .imageExtent      = selectedSwapChainExtent,
+     .imageArrayLayers = 1,
+     .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment,
+     .imageSharingMode = vk::SharingMode::eExclusive,
+     .preTransform     = surfaceCapabilities.currentTransform,
+     .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+     .presentMode      = selectedSwapChainPresentMode,
+     .clipped          = true
+   };
+ 
+   this->swapChain            = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
+   this->swapChainImages      = this->swapChain.getImages();
+   this->swapChainImageFormat = selectedSwapChainFormat;
+   this->swapChainExtent      = selectedSwapChainExtent;
+ 
+   // Create the Image views
+   vk::ImageViewCreateInfo imageViewCreateInfo{
+     .viewType         = vk::ImageViewType::e2D,
+     .format           = this->swapChainImageFormat.format,
+     .components       = { vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity },
+     .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 },
+   };
+ 
+   for (auto& image : this->swapChainImages) {
+     imageViewCreateInfo.image = image;
+     this->swapChainImageViews.emplace_back(device.createImageView(imageViewCreateInfo));
+   }
+ }
  */
-void SwapChainContext::CreateSwapChainContext(
-  const vk::raii::Device&         device,
-  const vk::raii::PhysicalDevice& physicalDevice,
-  const vk::raii::SurfaceKHR&     surface,
-  SDL_Window*                     pWindow)
-{
-  // Get surface available basic capabilities
-  auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
-  // Get surface available formats
-  auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
-  // Get surface available present modes
-  auto surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
-
-  // Select optimal settings
-  auto selectedSwapChainFormat        = SelectSwapChainVkSurfaceKHRFormat(surfaceFormats);
-  auto selectedSwapChainPresentMode   = SelectSwapChainVkPresentModeKHR(surfacePresentModes);
-  auto selectedSwapChainExtent        = SelectSwapChainVkExtend2D(surfaceCapabilities, pWindow);
-  auto selectedSwapChainMinImageCount = SelectSwapChainMinImageCount(surfaceCapabilities);
-
-  // Swap Chain create info
-  vk::SwapchainCreateInfoKHR swapChainCreateInfo{
-    .surface          = *surface,
-    .minImageCount    = selectedSwapChainMinImageCount,
-    .imageFormat      = selectedSwapChainFormat.format,
-    .imageColorSpace  = selectedSwapChainFormat.colorSpace,
-    .imageExtent      = selectedSwapChainExtent,
-    .imageArrayLayers = 1,
-    .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment,
-    .imageSharingMode = vk::SharingMode::eExclusive,
-    .preTransform     = surfaceCapabilities.currentTransform,
-    .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-    .presentMode      = selectedSwapChainPresentMode,
-    .clipped          = true
-  };
-
-  this->swapChain            = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
-  this->swapChainImages      = this->swapChain.getImages();
-  this->swapChainImageFormat = selectedSwapChainFormat;
-  this->swapChainExtent      = selectedSwapChainExtent;
-
-  // Create the Image views
-  vk::ImageViewCreateInfo imageViewCreateInfo{
-    .viewType         = vk::ImageViewType::e2D,
-    .format           = this->swapChainImageFormat.format,
-    .components       = { vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity },
-    .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 },
-  };
-
-  for (auto& image : this->swapChainImages) {
-    imageViewCreateInfo.image = image;
-    this->swapChainImageViews.emplace_back(device.createImageView(imageViewCreateInfo));
-  }
-}
