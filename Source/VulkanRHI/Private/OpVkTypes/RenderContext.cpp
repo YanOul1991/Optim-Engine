@@ -165,7 +165,7 @@ RenderContext::RenderContext(const vk::raii::Instance& instance, const vk::raii:
   // assign the queue index and selected physical device.
   // Then use those to create the vkDevice and vkQueue objects.
   this->physicalDevice   = selectedPhysicalDevice;
-  this->queueFamilyIndex = queueIndex;
+  this->queueIndex = queueIndex;
   this->device           = vk::raii::Device(this->physicalDevice, deviceCreateInfo);
-  this->queueFamily      = vk::raii::Queue(this->device, this->queueFamilyIndex, 0);
+  this->queue      = vk::raii::Queue(this->device, this->queueIndex, 0);
 }

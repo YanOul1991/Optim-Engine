@@ -6,16 +6,16 @@ struct RenderContext final
 {
   vk::raii::PhysicalDevice physicalDevice   = nullptr;
   vk::raii::Device         device           = nullptr;
-  vk::raii::Queue          queueFamily      = nullptr;
-  uint32                   queueFamilyIndex = ~0u;
+  vk::raii::Queue          queue      = nullptr;
+  uint32                   queueIndex = ~0u;
 
   [[nodiscard]]
   inline bool IsValid() const noexcept
   {
     return (physicalDevice != nullptr) &&
            (device != nullptr) &&
-           (queueFamily != nullptr) &&
-           (queueFamilyIndex != ~0u);
+           (queue != nullptr) &&
+           (queueIndex != ~0u);
   }
 
   // Null constructor

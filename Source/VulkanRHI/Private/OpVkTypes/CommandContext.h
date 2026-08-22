@@ -16,8 +16,19 @@ struct CommandContext final
   vk::raii::CommandPool   commandPool   = nullptr;
   vk::raii::CommandBuffer commandBuffer = nullptr;
 
+  vk::raii::Semaphore presentCompleteSemaphore = nullptr;
+  vk::raii::Semaphore renderFinishedSemaphore  = nullptr;
+  vk::raii::Fence     drawFence                = nullptr;
+
   [[nodiscard]]
-  inline bool IsValid() const noexcept { return commandPool != nullptr && commandBuffer != nullptr; }
+  inline bool IsValid() const noexcept
+  {
+    return commandPool != nullptr &&
+           commandBuffer != nullptr &&
+           presentCompleteSemaphore != nullptr &&
+           renderFinishedSemaphore != nullptr &&
+           drawFence != nullptr;
+  }
 
   CommandContext() = default;
 
@@ -33,11 +44,11 @@ struct CommandContext final
   void RecordCommandBuffer(const SwapChainContext& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
 
   /*
-  void CreateCommandPool(const vk::raii::Device& device, uint32 queueFamilyIndex)
+  void CreateCommandPool(const vk::raii::Device& device, uint32 queueIndex)
   {
     vk::CommandPoolCreateInfo poolInfo{
       .flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-      .queueFamilyIndex = queueFamilyIndex
+      .queueFamilyIndex = queueIndex
     };
     commandPool = vk::raii::CommandPool(device, poolInfo);
   }
@@ -55,9 +66,9 @@ struct CommandContext final
     // and that it wont be destroyed once the vector is being destroyed.
     commandBuffer = std::move(vk::raii::CommandBuffers(device, allocInfo).front());
   };
-  
+
   */
-  
+
   /*
   void RecordCommandBuffer(
     const std::vector<vk::Image>&     swapChainImages,

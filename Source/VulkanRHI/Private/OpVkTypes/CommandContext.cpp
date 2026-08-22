@@ -8,7 +8,7 @@ CommandContext::CommandContext(const vk::raii::Device& device, RenderContext& re
   // Create the command pool
   vk::CommandPoolCreateInfo poolInfo{
     .flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-    .queueFamilyIndex = renderContext.queueFamilyIndex
+    .queueFamilyIndex = renderContext.queueIndex
   };
 
   this->commandPool = vk::raii::CommandPool(device, poolInfo);
@@ -24,6 +24,11 @@ CommandContext::CommandContext(const vk::raii::Device& device, RenderContext& re
   // one (using .front() function) and use std::move to move the object as
   // front return an lvalue ref which is a delete function.
   this->commandBuffer = std::move(vk::raii::CommandBuffers(device, allocInfo).front());
+
+  // Create the sync objects
+  this->presentCompleteSemaphore = vk::raii::Semaphore(device, vk::SemaphoreCreateInfo());
+  this->renderFinishedSemaphore  = vk::raii::Semaphore(device, vk::SemaphoreCreateInfo());
+  this->drawFence                = vk::raii::Fence(device, { .flags = vk::FenceCreateFlagBits::eSignaled });
 }
 
 void CommandContext::RecordCommandBuffer(const SwapChainContext& swapChainContext, const uint32 imageIndex, const vk::raii::Pipeline& vkPipeline)
