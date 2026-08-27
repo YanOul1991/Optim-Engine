@@ -41,8 +41,27 @@ struct CommandContext final
 
   CommandContext(const vk::raii::Device& device, RenderContext& renderContext);
 
+  /**
+   * @param swapChainContext
+   * A reference to the active swap chain context.
+   * 
+   * @param swapChainImageIndex
+   * The index of the swap chain image that we will draw to. This is aquired
+   * by calling `vk::raii::SwapchainKHR::acquireNextImage`. This is managed 
+   * in the `DrawFrame` function of the `VulkanRHI` class.
+   * 
+   * @param vkPipeline
+   * A reference to the VkPipeline object defining the current render settings.
+   */
   void RecordCommandBuffer(const SwapChainContext& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
 
+  /**
+   * @brief
+   * Helper function to change the image layout of a given `VkImage` contained 
+   * in a given `SwapChainContext` object.
+   * 
+   * REFERENCE: https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html#_image_layout_transitions
+   */
   void TransitionImageLayout(
     const std::vector<vk::Image>& swapChainImages,
     uint32                        imageIndex,

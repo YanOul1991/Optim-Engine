@@ -10,7 +10,8 @@ namespace
 {
 
 static std::vector<const char*> requiredDeviceExtensions = {
-  vk::KHRSwapchainExtensionName
+  vk::KHRSwapchainExtensionName,
+  vk::KHRSynchronization2ExtensionName
 };
 
 /**
@@ -140,7 +141,10 @@ RenderContext::RenderContext(const vk::raii::Instance& instance, const vk::raii:
     featureChain = {
       {},                               // vk::PhysicalDeviceFeatures2 (empty for now)
       { .shaderDrawParameters = true }, // Enable shader draw parameters from Vulkan 1.1
-      { .dynamicRendering = true },     // Enable dynamic rendering from Vulkan 1.3
+      { 
+        .synchronization2 = true,
+        .dynamicRendering = true 
+      },    // Enable dynamic rendering from Vulkan 1.3
       { .extendedDynamicState = true }  // Enable extended dynamic state from the extension
     };
 

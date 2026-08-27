@@ -50,6 +50,7 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSeverityFlag
 {
 
   std::cerr << "Validation layer: type " << to_string(messageType) << "msg: " << pCallbackData->pMessage << '\n';
+  std::cerr << "-----------------------------------------------------------------\n";
 
   return vk::False;
 }

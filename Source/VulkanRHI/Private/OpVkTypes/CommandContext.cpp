@@ -83,6 +83,15 @@ void CommandContext::RecordCommandBuffer(const SwapChainContext& swapChainContex
 
   commandBuffer.endRendering();
 
+  // TransitionImageLayout(
+  //   swapChainContext.swapChainImages,
+  //   imageIndex,
+  //   vk::ImageLayout::eColorAttachmentOptimal,
+  //   vk::ImageLayout::ePresentSrcKHR,
+  //   {},
+  //   vk::AccessFlagBits2::eColorAttachmentWrite,
+  //   vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+  //   vk::PipelineStageFlagBits2::eBottomOfPipe);
   TransitionImageLayout(
     swapChainContext.swapChainImages,
     imageIndex,
@@ -91,7 +100,7 @@ void CommandContext::RecordCommandBuffer(const SwapChainContext& swapChainContex
     {},
     vk::AccessFlagBits2::eColorAttachmentWrite,
     vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-    vk::PipelineStageFlagBits2::eBottomOfPipe);
+    vk::PipelineStageFlagBits2::eBottomOfPipe | vk::PipelineStageFlagBits2::eColorAttachmentOutput);
 
   commandBuffer.end();
 }
