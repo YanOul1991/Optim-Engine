@@ -122,7 +122,7 @@ vk::raii::SurfaceKHR Optim::VK::CreateVkSurfaceKHR(const vk::raii::Instance& ins
  * Create a `vk::raii::Instance` object. This function, validates all required
  * extensions such as the ones from SDL, and verifies all required Layers.
  * 
- * May through a `std::runtime_error` if anu required extension or layer is not
+ * May throw a `std::runtime_error` if anu required extension or layer is not
  * supported.
  */
 vk::raii::Instance Optim::VK::CreateVkInstance(const vk::raii::Context& context)

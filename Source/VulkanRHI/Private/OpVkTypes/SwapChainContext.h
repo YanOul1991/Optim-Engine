@@ -50,11 +50,4 @@ struct SwapChainContext final
     const vk::raii::SurfaceKHR&     surface,
     SDL_Window*                     pWindow,
     const SwapChainContext&         oldContext);
-
-  //  DEPRECATED FUNCTION
-  // void CreateSwapChainContext(
-  //   const vk::raii::Device&         device,
-  //   const vk::raii::PhysicalDevice& physicalDevice,
-  //   const vk::raii::SurfaceKHR&     surface,
-  //   SDL_Window*                     pWindow);
 };

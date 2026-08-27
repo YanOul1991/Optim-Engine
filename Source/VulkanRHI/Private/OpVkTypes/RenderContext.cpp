@@ -6,7 +6,7 @@
 #include <ranges>
 #include <vector>
 
-namespace 
+namespace
 {
 
 static std::vector<const char*> requiredDeviceExtensions = {
@@ -84,7 +84,7 @@ static vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance&
 
     bool supportsFeatures = features2.get<vk::PhysicalDeviceFeatures2>().features.geometryShader &&
                             features2.get<vk::PhysicalDeviceVulkan11Features>().shaderDrawParameters &&
-                            features2.get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
+                            features2.get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering && // <- use dynamic rendering
                             features2.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
 
     // If all the requirements are validated then then add handle to the list of potential condidates with a score.
@@ -107,7 +107,6 @@ static vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance&
 
 /**
  * Documentation for basic logical device creation:
- *
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
  */
 RenderContext::RenderContext(const vk::raii::Instance& instance, const vk::raii::SurfaceKHR& surface)
@@ -164,8 +163,8 @@ RenderContext::RenderContext(const vk::raii::Instance& instance, const vk::raii:
 
   // assign the queue index and selected physical device.
   // Then use those to create the vkDevice and vkQueue objects.
-  this->physicalDevice   = selectedPhysicalDevice;
-  this->queueIndex = queueIndex;
-  this->device           = vk::raii::Device(this->physicalDevice, deviceCreateInfo);
-  this->queue      = vk::raii::Queue(this->device, this->queueIndex, 0);
+  this->physicalDevice = selectedPhysicalDevice;
+  this->queueIndex     = queueIndex;
+  this->device         = vk::raii::Device(this->physicalDevice, deviceCreateInfo);
+  this->queue          = vk::raii::Queue(this->device, this->queueIndex, 0);
 }
