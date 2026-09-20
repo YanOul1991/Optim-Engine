@@ -22,13 +22,6 @@ This avoids needing to dedicate a third party directory taking space and
 prevents manually rebuilding libraries with the correct settings when
 switching to a new machine or operating system.
 
-To be able to use vkpkg it must be installed first following the
-[vcpkg installation steps](https://learn.microsoft.com/en-us/vcpkg/get_started/overview#get-started-with-vcpkg).
-
-
-To get usefull info on vcpkg such as how to install and use certain packages, [check on vcpkg.link](https://vcpkg.link/)
-
-
 ### Vulkan SDK
 
 For vulkan since it is not managed with vcpkg it must be installed from [the LunarG website](https://vulkan.lunarg.com/sdk/home).
