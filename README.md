@@ -39,21 +39,9 @@ This project used the SDK version `1.4.350.0`.
 
 # Building the project
 
-To build the project, first run the CMake setup command with one the 
+To build the project, simply run the CMake setup commands with one the 
 following presets :
   * debug
   * release
 
-Example:
-```bash
-cmake --preset debug
-```
-
-The simply run the build command with the selected preset:
-
-Example
-```bash
-cmake --build --preset debug
-```
-
-The generated files should be in the `output/Debug` directory.
+The generated files should be in the `output/{preset}` directory.
