@@ -1,40 +1,50 @@
-# RENDERING ENGINE WITH VULKAN
-Small personal project for learning 3D rendering utilizing the Vulkan API.
+# Rendering Engine with Vulkan
 
-[>>> Vulkan Tutorial Link <<<](https://docs.vulkan.org/tutorial/latest/00_Introduction.html)
+A personal project to learn 3D rendering using the Vulkan API with dynamic rendering, featuring Slang as the default shader language.
+
+This project is an improved and re-architecture version of a previous [capstone project](link to previous repo).
 
 <br>
 
 # Dependencies & Requirements
 
-This project contains the following requierments:
-- CMake
-- vcpkg
-- Vulkan SDK
-- Git
+### CMake  
+This project is built and tested with CMake version `4.2.3`.
 
-### VCPKG
+### vcpkg
+Open-source libraries are managed via vcpkg integrated with CMake.
 
-Open Sources libraries such as SDL3 dependencies are managed with vcpkg 
-with CMake.
+Current dependencies:
+* SDL3
+* fmt
+* Slang
 
-This avoids needing to dedicate a third party directory taking space and 
-prevents manually rebuilding libraries with the correct settings when
-switching to a new machine or operating system.
+### Git
+Required for vcpkg dependency management.
 
 ### Vulkan SDK
+The Vulkan SDK can be downloaded from the official [LunarG website](https://vulkan.lunarg.com/sdk/home).
 
-For vulkan since it is not managed with vcpkg it must be installed from [the LunarG website](https://vulkan.lunarg.com/sdk/home).
+Tested SDK version: `1.4.350.0`
 
-This project used the SDK version `1.4.350.0`.
+<br>
 
-<br><br>
+# Building the Project
 
-# Building the project
+To build the project using CMake presets, run:
 
-To build the project, simply run the CMake setup commands with one the 
-following presets :
-  * debug
-  * release
+```bash
+# Configure and build with a preset (debug or release)
+cmake --preset debug
+cmake --build --preset debug
+```
 
-The generated files should be in the `output/{preset}` directory.
+The compiled binaries will be located in the a `output/{preset}` directory.
+
+<br>
+
+# Technical Specifications
+* Language Standard: C++20
+* Graphics API: Vulkan (Dynamic Rendering / Vulkan 1.4)
+* Shader Language: Slang
+* Target Platforms: Windows & Linux
