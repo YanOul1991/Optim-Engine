@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OptimEngine/Core/CoreMinimal.h"
+#include "Core/CoreMinimal.h"
 
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 
@@ -20,6 +20,8 @@ constexpr bool enableValidationLayers = false;
 #else
 constexpr bool enableValidationLayers = true;
 #endif
+
+constexpr int32 maxFramesInFlight = 2;
 
 constexpr vk::ApplicationInfo GetApplicationInfoStruct()
 {

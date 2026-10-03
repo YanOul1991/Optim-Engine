@@ -82,16 +82,7 @@ void CommandContext::RecordCommandBuffer(const SwapChainContext& swapChainContex
   commandBuffer.draw(3, 1, 0, 0);
 
   commandBuffer.endRendering();
-
-  // TransitionImageLayout(
-  //   swapChainContext.swapChainImages,
-  //   imageIndex,
-  //   vk::ImageLayout::eColorAttachmentOptimal,
-  //   vk::ImageLayout::ePresentSrcKHR,
-  //   {},
-  //   vk::AccessFlagBits2::eColorAttachmentWrite,
-  //   vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-  //   vk::PipelineStageFlagBits2::eBottomOfPipe);
+  
   TransitionImageLayout(
     swapChainContext.swapChainImages,
     imageIndex,

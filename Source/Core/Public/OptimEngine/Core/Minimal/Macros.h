@@ -29,5 +29,6 @@ using byte   = __UINT8_TYPE__;
 #define NOMOVE(CLASS_NAME)                      \
   CLASS_NAME(CLASS_NAME&&)            = delete; \
   CLASS_NAME& operator=(CLASS_NAME&&) = delete;
-
-// fe
+  
+#define NO_COPY(CLASS) NOCOPY(CLASS)
+#define NO_MOVE(CLASS) NOMOVE(CLASS)

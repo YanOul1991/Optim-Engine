@@ -1,19 +1,12 @@
 #pragma once
 
-#include "OptimEngine/Core/CoreMinimal.h"
-
-namespace Optim::Time {
-// Number of nanoseconds in 1 millisecond.
-constexpr double nanosecPerMillisec = 1'000'000.0;
-// Number of nanoseconds in 1 microsecond.
-constexpr double nanosecPerMicrosec = 1'000.0;
-}; // namespace Optim::Time
+#include "Core/CoreMinimal.h"
 
 class CORE_API Timer final
 {
  public:
-  NOCOPY(Timer)
-  NOMOVE(Timer)
+  NO_COPY(Timer)
+  NO_MOVE(Timer)
 
   Timer();
 
@@ -30,7 +23,13 @@ class CORE_API Timer final
   /**
    * Get the timer value in nanoseconds.
    */
-  uint64 Get();
+  constexpr inline uint64 Get() const {
+    return value;
+  }
+
+  constexpr inline double GetMs() const {
+    return static_cast<double>(value) / static_cast<double>(1'000'000);
+  }
 
  private:
   uint64 value;

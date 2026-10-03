@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OptimEngine/Core/CoreMinimal.h"
+#include "Core/CoreMinimal.h"
 
 #if defined(PLATFORM_WINDOWS)
 #  include <Windows.h>

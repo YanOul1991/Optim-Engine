@@ -12,7 +12,3 @@ void Timer::End() {
   uint64 endVal = OptimPrivate::Time::GetTime();
   value = endVal - value;
 }
-
-uint64 Timer::Get() {
-  return value;
-}

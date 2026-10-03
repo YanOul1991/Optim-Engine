@@ -32,16 +32,13 @@ using RHIBackend = VulkanRHI;
 
 int main(int argc, char* argv[])
 {
+  Timer timer;
+  timer.Start();
+
   Optim::Shaders::SlangCompilerInterface slangSession;
   slangSession.InitalizeGlobalSession();
   slangSession.VerifyTargetSupport();
-
-  // Slang::ComPtr<slang::IGlobalSession> globalSession;
-  // slang::createGlobalSession(globalSession.writeRef());
-
-  // // Optim::Shaders::SlangCompiler::InitalizeGlobalSession();
-  // Optim::Shaders::SlangCompiler::VerifyTargetSupport(globalSession.get());
-
+  
   RHIBackend rhiinterface;
 
   // Initalize the System module
@@ -53,17 +50,29 @@ int main(int argc, char* argv[])
   rhiinterface.Initialize(mainWindow.GetSDLWindowHandle());
 
   uint64 loopCycles = 0;
+  uint64 loopTimes[2048];
 
   while (System::ProcessEvents()) {
-    loopCycles++;
-    // TODO: 
-    //  Process Input Events.
+    timer.Start();
 
-    // Draw Rendering Frames.
     rhiinterface.DrawFrame();
+
+    timer.End();
+
+    if (loopCycles < 2048) {
+      loopTimes[loopCycles] = timer.Get();
+      loopCycles++;
+    }
+  }
+  double average = 0;
+  for (size_t i = 0; i <= loopCycles; i++) {
+    average += loopTimes[i];
   }
 
-  std::cout << "Cycles count: " << loopCycles << '\n';
+  average /= loopCycles;
+
+  // std::cout << "Average FramerateL " << loopTimes << '\n';
+  std::printf("Average framerate: %lfms\n", (1000.0 / ((double)average / 1000000.0)));
 
   mainWindow.~Window();
 

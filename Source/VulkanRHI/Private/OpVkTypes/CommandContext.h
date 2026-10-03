@@ -9,16 +9,17 @@ struct SwapChainContext;
  * Vulkan Documentation:
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html
  *
- * Structure to manage drawing instructions
+ * Structure to manage drawing context
  */
 struct CommandContext final
 {
-  vk::raii::CommandPool   commandPool   = nullptr;
-  vk::raii::CommandBuffer commandBuffer = nullptr;
-
+  vk::raii::CommandPool   commandPool          = nullptr;
+  vk::raii::CommandBuffer commandBuffer        = nullptr;
   vk::raii::Semaphore presentCompleteSemaphore = nullptr;
   vk::raii::Semaphore renderFinishedSemaphore  = nullptr;
   vk::raii::Fence     drawFence                = nullptr;
+
+  
 
   [[nodiscard]]
   inline bool IsValid() const noexcept

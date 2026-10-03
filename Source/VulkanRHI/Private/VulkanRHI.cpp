@@ -157,7 +157,6 @@ void VulkanRHI::DrawFrame()
   ctx.renderContext.queue.submit(submitInfo, ctx.commandContext.drawFence);
 
   // Present the result to the swap chain
-
   const vk::PresentInfoKHR presentInfo = {
     .waitSemaphoreCount = 1,
     .pWaitSemaphores    = &*ctx.commandContext.renderFinishedSemaphore,
