@@ -35,6 +35,7 @@ void CommandContext::RecordCommandBuffer(const SwapChainContext& swapChainContex
 {
   commandBuffer.begin({});
 
+  // Transition image layout to optimize for color attachement.
   TransitionImageLayout(
     swapChainContext.swapChainImages,
     imageIndex,
@@ -83,6 +84,7 @@ void CommandContext::RecordCommandBuffer(const SwapChainContext& swapChainContex
 
   commandBuffer.endRendering();
   
+  // Transition Image layout to optimize for presentation.
   TransitionImageLayout(
     swapChainContext.swapChainImages,
     imageIndex,

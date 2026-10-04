@@ -26,20 +26,26 @@
 
 struct VulkanRHI::VulkanContext
 {
+  static constexpr int32 MAX_FRAMES_IN_FLIGHT = 2;
+
   vk::raii::Context                context;
   vk::raii::Instance               instance       = nullptr;
   vk::raii::SurfaceKHR             surface        = nullptr;
   vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
   RenderContext    renderContext;
+
   SwapChainContext swapChainContext;
 
   vk::raii::Pipeline pipeline = nullptr;
-  CommandContext     commandContext;
+
+  std::vector<FrameResource> frameResources;
+
+  FORCEINLINE void Initialize(SDL_Window* pSdlWindow) {}
+  FORCEINLINE void DrawFrame(){}
 };
 
-VulkanRHI::VulkanRHI() : pVkContext(MakeUnique<VulkanContext>())
-{
+VulkanRHI::VulkanRHI() : pVkContext(MakeUnique<VulkanContext>()){
 }
 
 VulkanRHI::~VulkanRHI()
@@ -100,11 +106,13 @@ void VulkanRHI::Initialize(void* param_pSDLWindow)
     if (ctx.pipeline == nullptr) {
       throw std::runtime_error("[VulkanRHI | Error] Failed to create VkPipeline object.");
     }
-    
-    ctx.commandContext = CommandContext(ctx.renderContext.device, ctx.renderContext);
-    if (!ctx.commandContext.IsValid()) {
-      throw std::runtime_error("[VulkanRHI | Error] Failed to create CommandContext object.");
+    // FrameResources creation"
+    for(int i = 0; i < ctx.MAX_FRAMES_IN_FLIGHT; i++) {
+      if(!ctx.frameResources.emplace_back(ctx.renderContext.device, ctx.renderContext).IsValid()) {
+        throw std::runtime_error("[VulkanRHI | Error] Failed to create FrameResource object.");
+      }
     }
+
   }
   catch (const vk::SystemError& e) {
     std::cerr << "[Vulkan | Error] " << e.what() << '\n';
@@ -125,18 +133,18 @@ void VulkanRHI::DrawFrame()
   auto& ctx = this->pVkContext.GetRef();
 
   // Wait for draw fence to be signaled before drawing the next frame.
-  auto fenceResult = ctx.renderContext.device.waitForFences(*ctx.commandContext.drawFence, vk::True, UINT64_MAX);
+  auto fenceResult = ctx.renderContext.device.waitForFences(*ctx.frameResources[0].drawFence, vk::True, UINT64_MAX);
   if (fenceResult != vk::Result::eSuccess) {
     throw std::runtime_error("[VulkanRHI] - Error: Failed to wait for VkFence");
   }
-  ctx.renderContext.device.resetFences(*ctx.commandContext.drawFence); // Reset fence
+  ctx.renderContext.device.resetFences(*ctx.frameResources[0].drawFence); // Reset fence
 
   // Get a new image from the swap chain. Signal for the presentComplete 
   // semaphore when image is ready to be used.
-  auto [result, imageIndex] = ctx.swapChainContext.swapChain.acquireNextImage(UINT64_MAX, *ctx.commandContext.presentCompleteSemaphore, nullptr);
+  auto [result, imageIndex] = ctx.swapChainContext.swapChain.acquireNextImage(UINT64_MAX, *ctx.frameResources[0].presentCompleteSemaphore, nullptr);
 
   // Start recording the command buffer.
-  ctx.commandContext.RecordCommandBuffer(ctx.swapChainContext, imageIndex, ctx.pipeline);
+  ctx.frameResources[0].RecordCommandBuffer(ctx.swapChainContext, imageIndex, ctx.pipeline);
 
   // Specify which stages of the pipeline to wait for when submiting the wait
   // semaphore. Here we wait for writing colors.
@@ -144,22 +152,22 @@ void VulkanRHI::DrawFrame()
 
   const vk::SubmitInfo submitInfo = {
     .waitSemaphoreCount   = 1,
-    .pWaitSemaphores      = &(*ctx.commandContext.presentCompleteSemaphore),
+    .pWaitSemaphores      = &(*ctx.frameResources[0].presentCompleteSemaphore),
     .pWaitDstStageMask    = &waitDestinationStageMask,
     .commandBufferCount   = 1,
-    .pCommandBuffers      = &(*ctx.commandContext.commandBuffer),
+    .pCommandBuffers      = &(*ctx.frameResources[0].commandBuffer),
     .signalSemaphoreCount = 1,
-    .pSignalSemaphores    = &(*ctx.commandContext.renderFinishedSemaphore)
+    .pSignalSemaphores    = &(*ctx.frameResources[0].renderFinishedSemaphore)
   };
 
   // Submit the command buffer to the queue. Signal the draw fence when the
   // command buffer finishes executing.
-  ctx.renderContext.queue.submit(submitInfo, ctx.commandContext.drawFence);
+  ctx.renderContext.queue.submit(submitInfo, ctx.frameResources[0].drawFence);
 
   // Present the result to the swap chain
   const vk::PresentInfoKHR presentInfo = {
     .waitSemaphoreCount = 1,
-    .pWaitSemaphores    = &(*ctx.commandContext.renderFinishedSemaphore),
+    .pWaitSemaphores    = &(*ctx.frameResources[0].renderFinishedSemaphore),
     .swapchainCount     = 1,
     .pSwapchains        = &(*ctx.swapChainContext.swapChain),
     .pImageIndices      = &imageIndex,

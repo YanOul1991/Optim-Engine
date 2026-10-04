@@ -2,10 +2,10 @@
 
 #include "OpVkCommon/Minimal.h"
 
-struct RenderContext;
-struct SwapChainContext;
-
 /**
+ * Vulkan Documentation:
+ * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html
+ * 
  * VULKAN OBJECTS
  * 
  * SEMAPHORES: https://docs.vulkan.org/spec/latest/chapters/synchronization.html#synchronization-semaphores
@@ -34,12 +34,9 @@ struct SwapChainContext;
  * for future reuse and safe resource recycling.
  */
 
-/**
- * Vulkan Documentation:
- * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html
- *
- * Structure to manage drawing context
- */
+struct RenderContext;
+struct SwapChainContext;
+
 struct CommandContext final
 {
   vk::raii::CommandPool   commandPool          = nullptr;
@@ -51,11 +48,11 @@ struct CommandContext final
   [[nodiscard]]
   inline bool IsValid() const noexcept
   {
-    return commandPool != nullptr &&
-           commandBuffer != nullptr &&
-           presentCompleteSemaphore != nullptr &&
-           renderFinishedSemaphore != nullptr &&
-           drawFence != nullptr;
+    return *commandPool &&
+           *commandBuffer &&
+           *presentCompleteSemaphore &&
+           *renderFinishedSemaphore &&
+           *drawFence;
   }
 
   CommandContext() = default;
@@ -88,7 +85,13 @@ struct CommandContext final
    * Helper function to change the image layout of a given `VkImage` contained 
    * in a given `SwapChainContext` object.
    * 
-   * REFERENCE: https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html#_image_layout_transitions
+   * This allows optimization for the image resources depending on the inteded
+   * usage. For example, we transition an image layout to optimize for color
+   * output logic, write our draw commands, transition to a presentation 
+   * optimized layout to present the result.
+   * 
+   * REFERENCE: 
+   * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html#_image_layout_transitions
    */
   void TransitionImageLayout(
     const std::vector<vk::Image>& swapChainImages,
@@ -127,3 +130,6 @@ struct CommandContext final
     commandBuffer.pipelineBarrier2(dependencyInfo);
   }
 };
+
+using FrameResource = CommandContext;
+using FrameData = CommandContext;

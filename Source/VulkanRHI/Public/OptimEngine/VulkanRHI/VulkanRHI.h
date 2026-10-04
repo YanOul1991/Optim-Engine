@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "OptimEngine/Core/CoreMinimal.h"
-#include "OptimEngine/Core/Memory/TUniquePtr.h"
-#include "OptimEngine/RHI/IRHI.h"
+#include "Core/CoreMinimal.h"
+#include "Core/Memory/TUniquePtr.h"
+#include "RHI/IRHI.h"
 
 class VULKANRHI_API VulkanRHI final : public IRHI
 {
