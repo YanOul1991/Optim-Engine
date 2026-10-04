@@ -2,12 +2,17 @@
 
 #include "OpVkCommon/Minimal.h"
 
+/**
+ * Encapsulates the runtime GPU interface. Owns the logical device handle, its
+ * parent physical device context, and the primary queue binding used for 
+ * frame rendering and command submission.
+ */
 struct RenderContext final
 {
   vk::raii::PhysicalDevice physicalDevice   = nullptr;
   vk::raii::Device         device           = nullptr;
-  vk::raii::Queue          queue      = nullptr;
-  uint32                   queueIndex = ~0u;
+  vk::raii::Queue          queue            = nullptr;
+  uint32                   queueIndex       = ~0u;
 
   [[nodiscard]]
   inline bool IsValid() const noexcept
@@ -21,10 +26,10 @@ struct RenderContext final
   // Null constructor
   RenderContext() = default;
   
-  // Yes move :D
+  // Yes move
   RenderContext(RenderContext&&) noexcept            = default;
   RenderContext& operator=(RenderContext&&) noexcept = default;
-  // No copy >:(
+  // No copy
   RenderContext(const RenderContext&)            = delete;
   RenderContext& operator=(const RenderContext&) = delete;
 

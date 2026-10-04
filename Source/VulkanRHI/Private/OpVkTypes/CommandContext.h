@@ -6,6 +6,35 @@ struct RenderContext;
 struct SwapChainContext;
 
 /**
+ * VULKAN OBJECTS
+ * 
+ * SEMAPHORES: https://docs.vulkan.org/spec/latest/chapters/synchronization.html#synchronization-semaphores
+ * 
+ * The CPU submits commands to GPU queues without waiting for execution to 
+ * complete. This allows multiple command submissions and queues to run 
+ * concurrently on the GPU, but it requires explicit synchronization when data 
+ * is shared between them.
+ * 
+ * When submitting commands to a queue, we can instruct the queue to wait for a 
+ * designated semaphore to be signaled before executing dependent pipeline 
+ * stages. A queue submission can also signal a semaphore upon completion, 
+ * enabling precise control over GPU-side synchronization.
+ * 
+ * FENCES: https://docs.vulkan.org/spec/latest/chapters/synchronization.html#VkFence
+ * 
+ * Fences synchronize CPU and GPU execution by allowing the CPU (Host) to wait
+ * for a GPU queue submission to complete.
+ * 
+ * When submitting command buffers to a GPU queue, we can provide a fence to be
+ * signaled upon task completion. The CPU thread can then continue executing
+ * independent tasks concurrently before explicitly blocking on the fence
+ * (vkWaitForFences). 
+ * 
+ * Once signaled, the CPU resets the fence (vkResetFences)
+ * for future reuse and safe resource recycling.
+ */
+
+/**
  * Vulkan Documentation:
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html
  *
@@ -18,8 +47,6 @@ struct CommandContext final
   vk::raii::Semaphore presentCompleteSemaphore = nullptr;
   vk::raii::Semaphore renderFinishedSemaphore  = nullptr;
   vk::raii::Fence     drawFence                = nullptr;
-
-  
 
   [[nodiscard]]
   inline bool IsValid() const noexcept

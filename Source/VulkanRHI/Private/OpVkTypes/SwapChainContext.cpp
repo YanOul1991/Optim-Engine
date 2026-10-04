@@ -103,11 +103,9 @@ SwapChainContext::SwapChainContext(
   const vk::raii::SurfaceKHR&     surface,
   SDL_Window*                     pWindow)
 {
-  // Get surface available basic capabilities
+  // Get surface available basic capabilities, formats & present modes
   auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
-  // Get surface available formats
   auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
-  // Get surface available present modes
   auto surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
 
   // Select optimal swap chain settings
@@ -132,6 +130,7 @@ SwapChainContext::SwapChainContext(
     .clipped          = true
   };
 
+  // Start assigning Vulkan objects to SwapChainContext
   this->swapChain            = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
   this->swapChainImages      = this->swapChain.getImages();
   this->swapChainImageFormat = selectedSwapChainFormat;
@@ -145,6 +144,7 @@ SwapChainContext::SwapChainContext(
     .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 },
   };
 
+  // Create image views
   for (auto& image : this->swapChainImages) {
     imageViewCreateInfo.image = image;
     this->swapChainImageViews.emplace_back(device.createImageView(imageViewCreateInfo));

@@ -124,15 +124,15 @@ void VulkanRHI::DrawFrame()
 {
   auto& ctx = this->pVkContext.GetRef();
 
-  // Verify that the previous frame has successfully finished rendering.
+  // Wait for draw fence to be signaled before drawing the next frame.
   auto fenceResult = ctx.renderContext.device.waitForFences(*ctx.commandContext.drawFence, vk::True, UINT64_MAX);
   if (fenceResult != vk::Result::eSuccess) {
     throw std::runtime_error("[VulkanRHI] - Error: Failed to wait for VkFence");
   }
-  ctx.renderContext.device.resetFences(*ctx.commandContext.drawFence);
+  ctx.renderContext.device.resetFences(*ctx.commandContext.drawFence); // Reset fence
 
-  // Grab an image from the frambuffer, only once the presentation of the
-  // previous frame is finished, use the dedicated semaphore for that purpose.
+  // Get a new image from the swap chain. Signal for the presentComplete 
+  // semaphore when image is ready to be used.
   auto [result, imageIndex] = ctx.swapChainContext.swapChain.acquireNextImage(UINT64_MAX, *ctx.commandContext.presentCompleteSemaphore, nullptr);
 
   // Start recording the command buffer.
@@ -144,12 +144,12 @@ void VulkanRHI::DrawFrame()
 
   const vk::SubmitInfo submitInfo = {
     .waitSemaphoreCount   = 1,
-    .pWaitSemaphores      = &*ctx.commandContext.presentCompleteSemaphore,
+    .pWaitSemaphores      = &(*ctx.commandContext.presentCompleteSemaphore),
     .pWaitDstStageMask    = &waitDestinationStageMask,
     .commandBufferCount   = 1,
-    .pCommandBuffers      = &*ctx.commandContext.commandBuffer,
+    .pCommandBuffers      = &(*ctx.commandContext.commandBuffer),
     .signalSemaphoreCount = 1,
-    .pSignalSemaphores    = &*ctx.commandContext.renderFinishedSemaphore
+    .pSignalSemaphores    = &(*ctx.commandContext.renderFinishedSemaphore)
   };
 
   // Submit the command buffer to the queue. Signal the draw fence when the
@@ -159,9 +159,9 @@ void VulkanRHI::DrawFrame()
   // Present the result to the swap chain
   const vk::PresentInfoKHR presentInfo = {
     .waitSemaphoreCount = 1,
-    .pWaitSemaphores    = &*ctx.commandContext.renderFinishedSemaphore,
+    .pWaitSemaphores    = &(*ctx.commandContext.renderFinishedSemaphore),
     .swapchainCount     = 1,
-    .pSwapchains        = &*ctx.swapChainContext.swapChain,
+    .pSwapchains        = &(*ctx.swapChainContext.swapChain),
     .pImageIndices      = &imageIndex,
     .pResults           = nullptr
   };
