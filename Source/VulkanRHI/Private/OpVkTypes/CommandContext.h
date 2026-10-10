@@ -42,7 +42,7 @@ struct CommandContext final
   vk::raii::CommandPool   commandPool              = nullptr;
   vk::raii::CommandBuffer commandBuffer            = nullptr;
   vk::raii::Semaphore     presentCompleteSemaphore = nullptr;
-  vk::raii::Fence         inFlightFence                = nullptr;
+  vk::raii::Fence         inFlightFence            = nullptr;
 
   [[nodiscard]]
   inline bool IsValid() const noexcept
@@ -76,7 +76,7 @@ struct CommandContext final
    * @param vkPipeline
    * A reference to the VkPipeline object defining the current render settings.
    */
-  void RecordCommandBuffer(const SwapChainResources& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
+  void RecordCommandBuffer(SwapChainResources& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
 
   /**
    * @brief
@@ -91,15 +91,50 @@ struct CommandContext final
    * REFERENCE:
    * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html#_image_layout_transitions
    */
-  void TransitionImageLayout(
-    const std::vector<vk::Image>& swapChainImages,
-    uint32                        imageIndex,
-    vk::ImageLayout               oldLayout,
-    vk::ImageLayout               newLayout,
-    vk::AccessFlags2              srcAcesssMask,
-    vk::AccessFlags2              dstAcessMask,
-    vk::PipelineStageFlags2       srcStageMask,
-    vk::PipelineStageFlags2       dstStageMask)
+  // [[deprecated]]
+  // void TransitionImageLayout(
+  //   const std::vector<vk::Image>& swapChainImages,
+  //   uint32                        imageIndex,
+  //   vk::ImageLayout               oldLayout,
+  //   vk::ImageLayout               newLayout,
+  //   vk::AccessFlags2              srcAcesssMask,
+  //   vk::AccessFlags2              dstAcessMask,
+  //   vk::PipelineStageFlags2       srcStageMask,
+  //   vk::PipelineStageFlags2       dstStageMask)
+  // {
+  //   vk::ImageMemoryBarrier2 barrier = {
+  //     .srcStageMask        = srcStageMask,
+  //     .srcAccessMask       = srcAcesssMask,
+  //     .dstStageMask        = dstStageMask,
+  //     .dstAccessMask       = dstAcessMask,
+  //     .oldLayout           = oldLayout,
+  //     .newLayout           = newLayout,
+  //     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+  //     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+  //     .image               = swapChainImages[imageIndex],
+  //     .subresourceRange    = {
+  //                             .aspectMask     = vk::ImageAspectFlagBits::eColor,
+  //                             .baseMipLevel   = 0,
+  //                             .levelCount     = 1,
+  //                             .baseArrayLayer = 0,
+  //                             .layerCount     = 1 }
+  //   };
+  //   vk::DependencyInfo dependencyInfo = {
+  //     .dependencyFlags         = {},
+  //     .imageMemoryBarrierCount = 1,
+  //     .pImageMemoryBarriers    = &barrier
+  //   };
+  //   commandBuffer.pipelineBarrier2(dependencyInfo);
+  // }
+
+  inline void TransitionImageLayout(
+    vk::Image&              vkImage,
+    vk::ImageLayout         oldLayout,
+    vk::ImageLayout         newLayout,
+    vk::AccessFlags2        srcAcesssMask,
+    vk::AccessFlags2        dstAcessMask,
+    vk::PipelineStageFlags2 srcStageMask,
+    vk::PipelineStageFlags2 dstStageMask)
   {
     vk::ImageMemoryBarrier2 barrier = {
       .srcStageMask        = srcStageMask,
@@ -110,7 +145,7 @@ struct CommandContext final
       .newLayout           = newLayout,
       .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
       .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .image               = swapChainImages[imageIndex],
+      .image               = vkImage,
       .subresourceRange    = {
                               .aspectMask     = vk::ImageAspectFlagBits::eColor,
                               .baseMipLevel   = 0,

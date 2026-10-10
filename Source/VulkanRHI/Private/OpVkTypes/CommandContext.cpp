@@ -27,18 +27,16 @@ CommandContext::CommandContext(const vk::raii::Device& device, RenderContext& re
 
   // Create the sync objects
   this->presentCompleteSemaphore = vk::raii::Semaphore(device, vk::SemaphoreCreateInfo());
-  // this->renderFinishedSemaphore  = vk::raii::Semaphore(device, vk::SemaphoreCreateInfo());
   this->inFlightFence                = vk::raii::Fence(device, { .flags = vk::FenceCreateFlagBits::eSignaled });
 }
 
-void CommandContext::RecordCommandBuffer(const SwapChainResources& swapChainContext, const uint32 imageIndex, const vk::raii::Pipeline& vkPipeline)
+void CommandContext::RecordCommandBuffer(SwapChainResources& swapChainResources, const uint32 imageIndex, const vk::raii::Pipeline& vkPipeline)
 {
   commandBuffer.begin({});
 
   // Transition image layout to optimize for color attachement.
   TransitionImageLayout(
-    swapChainContext.images,
-    imageIndex,
+    swapChainResources.images[imageIndex],
     vk::ImageLayout::eUndefined,
     vk::ImageLayout::eColorAttachmentOptimal,
     {},
@@ -49,7 +47,7 @@ void CommandContext::RecordCommandBuffer(const SwapChainResources& swapChainCont
   vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
 
   vk::RenderingAttachmentInfo attachementInfo = {
-    .imageView   = swapChainContext.imageViews[imageIndex],
+    .imageView   = swapChainResources.imageViews[imageIndex],
     .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
     .loadOp      = vk::AttachmentLoadOp::eClear,
     .storeOp     = vk::AttachmentStoreOp::eStore,
@@ -57,7 +55,7 @@ void CommandContext::RecordCommandBuffer(const SwapChainResources& swapChainCont
   };
 
   vk::RenderingInfo renderingInfo = {
-    .renderArea           = { .offset = { 0, 0 }, .extent = swapChainContext.extent },
+    .renderArea           = { .offset = { 0, 0 }, .extent = swapChainResources.extent },
     .layerCount           = 1,
     .colorAttachmentCount = 1,
     .pColorAttachments    = &attachementInfo
@@ -74,20 +72,19 @@ void CommandContext::RecordCommandBuffer(const SwapChainResources& swapChainCont
     vk::Viewport(
       0.0f,
       0.0f,
-      static_cast<float>(swapChainContext.extent.width),
-      static_cast<float>(swapChainContext.extent.height),
+      static_cast<float>(swapChainResources.extent.width),
+      static_cast<float>(swapChainResources.extent.height),
       0.0f,
       1.0f));
 
-  commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapChainContext.extent));
+  commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapChainResources.extent));
   commandBuffer.draw(3, 1, 0, 0);
 
   commandBuffer.endRendering();
   
   // Transition Image layout to optimize for presentation.
   TransitionImageLayout(
-    swapChainContext.images,
-    imageIndex,
+    swapChainResources.images[imageIndex],
     vk::ImageLayout::eColorAttachmentOptimal,
     vk::ImageLayout::ePresentSrcKHR,
     {},
