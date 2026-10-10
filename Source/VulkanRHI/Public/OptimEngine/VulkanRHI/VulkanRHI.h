@@ -25,8 +25,7 @@ class VULKANRHI_API VulkanRHI final : public IRHI
   virtual void Initialize(void* pWindow) override final;
   virtual void DrawFrame() override final;
   virtual void Cleanup() override final;
-
+  
  private:
-  struct VulkanContext;
   std::unique_ptr<Renderer> renderer;
 };
