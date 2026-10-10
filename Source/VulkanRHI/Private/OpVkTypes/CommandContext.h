@@ -8,7 +8,8 @@
  *
  * VULKAN OBJECTS
  *
- * SEMAPHORES: https://docs.vulkan.org/spec/latest/chapters/synchronization.html#synchronization-semaphores
+ * SEMAPHORES: 
+ * https://docs.vulkan.org/spec/latest/chapters/synchronization.html#synchronization-semaphores
  *
  * The CPU submits commands to GPU queues without waiting for execution to
  * complete. This allows multiple command submissions and queues to run
@@ -20,7 +21,8 @@
  * stages. A queue submission can also signal a semaphore upon completion,
  * enabling precise control over GPU-side synchronization.
  *
- * FENCES: https://docs.vulkan.org/spec/latest/chapters/synchronization.html#VkFence
+ * FENCES: 
+ * https://docs.vulkan.org/spec/latest/chapters/synchronization.html#VkFence
  *
  * Fences synchronize CPU and GPU execution by allowing the CPU (Host) to wait
  * for a GPU queue submission to complete.
@@ -91,41 +93,6 @@ struct CommandContext final
    * REFERENCE:
    * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html#_image_layout_transitions
    */
-  // [[deprecated]]
-  // void TransitionImageLayout(
-  //   const std::vector<vk::Image>& swapChainImages,
-  //   uint32                        imageIndex,
-  //   vk::ImageLayout               oldLayout,
-  //   vk::ImageLayout               newLayout,
-  //   vk::AccessFlags2              srcAcesssMask,
-  //   vk::AccessFlags2              dstAcessMask,
-  //   vk::PipelineStageFlags2       srcStageMask,
-  //   vk::PipelineStageFlags2       dstStageMask)
-  // {
-  //   vk::ImageMemoryBarrier2 barrier = {
-  //     .srcStageMask        = srcStageMask,
-  //     .srcAccessMask       = srcAcesssMask,
-  //     .dstStageMask        = dstStageMask,
-  //     .dstAccessMask       = dstAcessMask,
-  //     .oldLayout           = oldLayout,
-  //     .newLayout           = newLayout,
-  //     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-  //     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-  //     .image               = swapChainImages[imageIndex],
-  //     .subresourceRange    = {
-  //                             .aspectMask     = vk::ImageAspectFlagBits::eColor,
-  //                             .baseMipLevel   = 0,
-  //                             .levelCount     = 1,
-  //                             .baseArrayLayer = 0,
-  //                             .layerCount     = 1 }
-  //   };
-  //   vk::DependencyInfo dependencyInfo = {
-  //     .dependencyFlags         = {},
-  //     .imageMemoryBarrierCount = 1,
-  //     .pImageMemoryBarriers    = &barrier
-  //   };
-  //   commandBuffer.pipelineBarrier2(dependencyInfo);
-  // }
 
   inline void TransitionImageLayout(
     vk::Image&              vkImage,
@@ -165,4 +132,3 @@ struct CommandContext final
 };
 
 using FrameResource = CommandContext;
-using FrameData     = CommandContext;

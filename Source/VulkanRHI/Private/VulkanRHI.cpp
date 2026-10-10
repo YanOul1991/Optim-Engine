@@ -39,7 +39,7 @@ struct VulkanRHI::VulkanContext
 
   vk::raii::Pipeline pipeline = nullptr;
 
-  std::vector<FrameData> frameResources;
+  std::vector<FrameResource> frameResources;
 
   int32 frameIndex = 0;
   

@@ -15,7 +15,6 @@ target_include_directories(system
 )
 
 target_sources(system PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/Private/SharedObject.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/System.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/Window.cpp"
 )
