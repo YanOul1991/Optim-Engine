@@ -95,9 +95,9 @@ uint32 SelectSwapChainMinImageCount(const vk::SurfaceCapabilitiesKHR& capabiliti
 /**
  * @brief
  * First time swap chain context constructor, creates a brand new
- * `SwapChainContext` object.
+ * `SwapChainResources` object.
  */
-SwapChainContext::SwapChainContext(
+SwapChainResources::SwapChainResources(
   const vk::raii::Device&         device,
   const vk::raii::PhysicalDevice& physicalDevice,
   const vk::raii::SurfaceKHR&     surface,
@@ -130,23 +130,28 @@ SwapChainContext::SwapChainContext(
     .clipped          = true
   };
 
-  // Start assigning Vulkan objects to SwapChainContext
-  this->swapChain            = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
-  this->swapChainImages      = this->swapChain.getImages();
-  this->swapChainImageFormat = selectedSwapChainFormat;
-  this->swapChainExtent      = selectedSwapChainExtent;
+  // Start assigning Vulkan objects to SwapChainResources
+  this->swapChain   = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
+  this->images      = this->swapChain.getImages();
+  this->imageFormat = selectedSwapChainFormat;
+  this->extent      = selectedSwapChainExtent;
 
   // Create the Image views
   vk::ImageViewCreateInfo imageViewCreateInfo{
     .viewType         = vk::ImageViewType::e2D,
-    .format           = this->swapChainImageFormat.format,
+    .format           = this->imageFormat.format,
     .components       = { vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity },
     .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 },
   };
 
   // Create image views
-  for (auto& image : this->swapChainImages) {
+  for (auto& image : this->images) {
     imageViewCreateInfo.image = image;
-    this->swapChainImageViews.emplace_back(device.createImageView(imageViewCreateInfo));
+    this->imageViews.emplace_back(device.createImageView(imageViewCreateInfo));
+  }
+
+  // Create sync semaphores.
+  for(int i = 0; i < images.size(); i++) {
+    renderFinishedSemaphores.emplace_back(device, vk::SemaphoreCreateInfo());
   }
 }

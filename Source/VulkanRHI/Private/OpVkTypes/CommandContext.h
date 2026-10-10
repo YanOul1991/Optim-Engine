@@ -5,45 +5,44 @@
 /**
  * Vulkan Documentation:
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html
- * 
+ *
  * VULKAN OBJECTS
- * 
+ *
  * SEMAPHORES: https://docs.vulkan.org/spec/latest/chapters/synchronization.html#synchronization-semaphores
- * 
- * The CPU submits commands to GPU queues without waiting for execution to 
- * complete. This allows multiple command submissions and queues to run 
- * concurrently on the GPU, but it requires explicit synchronization when data 
+ *
+ * The CPU submits commands to GPU queues without waiting for execution to
+ * complete. This allows multiple command submissions and queues to run
+ * concurrently on the GPU, but it requires explicit synchronization when data
  * is shared between them.
- * 
- * When submitting commands to a queue, we can instruct the queue to wait for a 
- * designated semaphore to be signaled before executing dependent pipeline 
- * stages. A queue submission can also signal a semaphore upon completion, 
+ *
+ * When submitting commands to a queue, we can instruct the queue to wait for a
+ * designated semaphore to be signaled before executing dependent pipeline
+ * stages. A queue submission can also signal a semaphore upon completion,
  * enabling precise control over GPU-side synchronization.
- * 
+ *
  * FENCES: https://docs.vulkan.org/spec/latest/chapters/synchronization.html#VkFence
- * 
+ *
  * Fences synchronize CPU and GPU execution by allowing the CPU (Host) to wait
  * for a GPU queue submission to complete.
- * 
+ *
  * When submitting command buffers to a GPU queue, we can provide a fence to be
  * signaled upon task completion. The CPU thread can then continue executing
  * independent tasks concurrently before explicitly blocking on the fence
- * (vkWaitForFences). 
- * 
+ * (vkWaitForFences).
+ *
  * Once signaled, the CPU resets the fence (vkResetFences)
  * for future reuse and safe resource recycling.
  */
 
 struct RenderContext;
-struct SwapChainContext;
+struct SwapChainResources;
 
 struct CommandContext final
 {
-  vk::raii::CommandPool   commandPool          = nullptr;
-  vk::raii::CommandBuffer commandBuffer        = nullptr;
-  vk::raii::Semaphore presentCompleteSemaphore = nullptr;
-  vk::raii::Semaphore renderFinishedSemaphore  = nullptr;
-  vk::raii::Fence     drawFence                = nullptr;
+  vk::raii::CommandPool   commandPool              = nullptr;
+  vk::raii::CommandBuffer commandBuffer            = nullptr;
+  vk::raii::Semaphore     presentCompleteSemaphore = nullptr;
+  vk::raii::Fence         inFlightFence                = nullptr;
 
   [[nodiscard]]
   inline bool IsValid() const noexcept
@@ -51,8 +50,7 @@ struct CommandContext final
     return *commandPool &&
            *commandBuffer &&
            *presentCompleteSemaphore &&
-           *renderFinishedSemaphore &&
-           *drawFence;
+           *inFlightFence;
   }
 
   CommandContext() = default;
@@ -69,28 +67,28 @@ struct CommandContext final
   /**
    * @param swapChainContext
    * A reference to the active swap chain context.
-   * 
+   *
    * @param swapChainImageIndex
    * The index of the swap chain image that we will draw to. This is aquired
-   * by calling `vk::raii::SwapchainKHR::acquireNextImage`. This is managed 
+   * by calling `vk::raii::SwapchainKHR::acquireNextImage`. This is managed
    * in the `DrawFrame` function of the `VulkanRHI` class.
-   * 
+   *
    * @param vkPipeline
    * A reference to the VkPipeline object defining the current render settings.
    */
-  void RecordCommandBuffer(const SwapChainContext& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
+  void RecordCommandBuffer(const SwapChainResources& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
 
   /**
    * @brief
-   * Helper function to change the image layout of a given `VkImage` contained 
-   * in a given `SwapChainContext` object.
-   * 
+   * Helper function to change the image layout of a given `VkImage` contained
+   * in a given `SwapChainResources` object.
+   *
    * This allows optimization for the image resources depending on the inteded
    * usage. For example, we transition an image layout to optimize for color
-   * output logic, write our draw commands, transition to a presentation 
+   * output logic, write our draw commands, transition to a presentation
    * optimized layout to present the result.
-   * 
-   * REFERENCE: 
+   *
+   * REFERENCE:
    * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html#_image_layout_transitions
    */
   void TransitionImageLayout(
@@ -132,4 +130,4 @@ struct CommandContext final
 };
 
 using FrameResource = CommandContext;
-using FrameData = CommandContext;
+using FrameData     = CommandContext;

@@ -35,14 +35,14 @@ struct VulkanRHI::VulkanContext
 
   RenderContext renderContext;
 
-  SwapChainContext swapChainContext;
+  SwapChainResources swapChain;
 
   vk::raii::Pipeline pipeline = nullptr;
 
   std::vector<FrameData>           frameResources;
-  std::vector<vk::raii::Semaphore> presentCompleteSemaphores;
-  std::vector<vk::raii::Semaphore> renderFinishedSemaphores;
-  std::vector<vk::raii::Fence>     framesInFlightFences;
+  // std::vector<vk::raii::Semaphore> presentCompleteSemaphores;
+  // std::vector<vk::raii::Fence>     framesInFlightFences;
+  // std::vector<vk::raii::Semaphore> renderFinishedSemaphores;
 
   int32 frameIndex = 0;
   /**
@@ -79,10 +79,10 @@ struct VulkanRHI::VulkanContext
         throw std::runtime_error("[VulkanRHI] Error - RenderContext Initalization Status : FAILURE");
       }
 
-      // Create the initial SwapChainContext
-      swapChainContext = SwapChainContext(renderContext.device, renderContext.physicalDevice, surface, pSdlWindow);
-      if (!swapChainContext.IsValid()) {
-        throw std::runtime_error("[VulkanRHI] Error - SwapChainContext Initalization Status : FAILURE");
+      // Create the initial SwapChainResources
+      swapChain = SwapChainResources(renderContext.device, renderContext.physicalDevice, surface, pSdlWindow);
+      if (!swapChain.IsValid()) {
+        throw std::runtime_error("[VulkanRHI] Error - SwapChainResources Initalization Status : FAILURE");
       }
 
       // Pipeline creation
@@ -94,20 +94,19 @@ struct VulkanRHI::VulkanContext
       auto ShaderModule     = Optim::VKPipeline::CreateVkShaderModule(shadercode, renderContext.device);
       auto shaderStagesInfo = Optim::VKPipeline::CreateVkPipelineShaderStageCreateInfoList(ShaderModule);
 
-      pipeline = Optim::VKPipeline::CreateVulkanPipeline(swapChainContext, shaderStagesInfo, renderContext.device);
+      pipeline = Optim::VKPipeline::CreateVulkanPipeline(swapChain, shaderStagesInfo, renderContext.device);
       if (pipeline == nullptr) {
         throw std::runtime_error("[VulkanRHI | Error] Failed to create VkPipeline object.");
       }
 
-      // Create Sync objects
-      for (int i = 0; i < swapChainContext.swapChainImages.size(); i++) {
-        renderFinishedSemaphores.emplace_back(renderContext.device, vk::SemaphoreCreateInfo());
-      }
-
+      // // Create Sync objects
+      // for (int i = 0; i < swapChainContext.images.size(); i++) {
+      //   renderFinishedSemaphores.emplace_back(renderContext.device, vk::SemaphoreCreateInfo());
+      // }
       for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         frameResources.emplace_back(renderContext.device, renderContext);
-        presentCompleteSemaphores.emplace_back(renderContext.device, vk::SemaphoreCreateInfo());
-        framesInFlightFences.emplace_back(renderContext.device, vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled });
+        // presentCompleteSemaphores.emplace_back(renderContext.device, vk::SemaphoreCreateInfo());
+        // framesInFlightFences.emplace_back(renderContext.device, vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled });
       }
     }
     catch (const vk::SystemError& e) {
@@ -126,42 +125,70 @@ struct VulkanRHI::VulkanContext
    */
   FORCEINLINE void DrawFrame()
   {
-    // Wait for CPU-GPU sync on the current frame slot
-    auto fenceResult = renderContext.device.waitForFences(*framesInFlightFences[frameIndex], vk::True, UINT64_MAX);
+    /**
+     * Wait for frame slot to be signaled and free to be used. This fence gets
+     * signaled when the last frame commands have finished being computed by 
+     * the GPU queue.
+     */
+    auto fenceResult = renderContext.device.waitForFences(*frameResources[frameIndex].inFlightFence, vk::True, UINT64_MAX);
     if (fenceResult != vk::Result::eSuccess) {
-      throw std::runtime_error("[VulkanRHI] Error: Failed to wait for drawFence");
+      throw std::runtime_error("[VulkanRHI] Error: Failed to wait for inFlightFence");
     }
+    renderContext.device.resetFences(*frameResources[frameIndex].inFlightFence);
 
-    renderContext.device.resetFences(*framesInFlightFences[frameIndex]);
+    /**
+     * Aquire a new image index from the swap chain. Signal the presentCompleteSemaphore
+     * of the active frame resource. 
+     */
+    auto [result, imageIndex] = swapChain.swapChain.acquireNextImage(UINT64_MAX, *frameResources[frameIndex].presentCompleteSemaphore, nullptr);
 
-    // Acquire next swapchain image
-    auto [result, imageIndex] = swapChainContext.swapChain.acquireNextImage(UINT64_MAX, *presentCompleteSemaphores[frameIndex], nullptr);
-
-    // Record commands
+    // Reset command buffer then start recodring commands for next frame.
     frameResources[frameIndex].commandBuffer.reset();
-    frameResources[frameIndex].RecordCommandBuffer(swapChainContext, imageIndex, pipeline);
+    frameResources[frameIndex].RecordCommandBuffer(swapChain, imageIndex, pipeline);
 
-    // Submit to GPU
+    // Only wait for the presentCompleteSemaphore during the color attachement 
+    // output stage.
     vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-
+    
+    /**
+     * Commands submit:
+     * When submitting wait for the last inf lsight frame to have finished 
+     * presenting before starting to record into the swap chain image.
+     * 
+     * When the queue finishes, signal for the rendering finished semaphore
+     * of the acquired image in the swap chain, not on the frame in flight.
+     *  
+     * Additionaly, signal for the frame's in flight fence, so that the next 
+     * CPU cycle can already start recording the next frame's command without
+     * waiting for the presentation to be finished, as the current frame 
+     * already waits for the last one's present operation to be completed when
+     * submitting commands one the GPU queue.
+     */
     const vk::SubmitInfo submitInfo = {
       .waitSemaphoreCount   = 1,
-      .pWaitSemaphores      = &(*presentCompleteSemaphores[frameIndex]),
+      .pWaitSemaphores      = &(*frameResources[frameIndex].presentCompleteSemaphore),
       .pWaitDstStageMask    = &waitDstStageMask,
       .commandBufferCount   = 1,
       .pCommandBuffers      = &(*frameResources[frameIndex].commandBuffer),
       .signalSemaphoreCount = 1,
-      .pSignalSemaphores    = &(*renderFinishedSemaphores[imageIndex])
+      .pSignalSemaphores    = &(*swapChain.renderFinishedSemaphores[imageIndex])
     };
+    renderContext.queue.submit(submitInfo, *frameResources[frameIndex].inFlightFence);
 
-    renderContext.queue.submit(submitInfo, *framesInFlightFences[frameIndex]);
-
-    // Present result
+    /**
+     * Presentation:
+     * 
+     * Tell queue to present the buffer content of the acquired image index in 
+     * this frame. 
+     * 
+     * And wait for the swap chain image's render finished semaphore's to be 
+     * signaled before starting presentation operations.
+     */
     const vk::PresentInfoKHR presentInfo = {
       .waitSemaphoreCount = 1,
-      .pWaitSemaphores    = &(*renderFinishedSemaphores[imageIndex]),
+      .pWaitSemaphores    = &(*swapChain.renderFinishedSemaphores[imageIndex]),
       .swapchainCount     = 1,
-      .pSwapchains        = &(*swapChainContext.swapChain),
+      .pSwapchains        = &(*swapChain.swapChain),
       .pImageIndices      = &imageIndex
     };
 
@@ -171,6 +198,12 @@ struct VulkanRHI::VulkanContext
     frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
   }
 
+  /**
+   * @brief
+   * Because objects are managed using RAII, we simply wait for all running
+   * operations to be finished (device to be idle), then all objects will be 
+   * destroyed correctly upon destrutor call.
+   */
   FORCEINLINE void Cleanup()
   {
     renderContext.device.waitIdle();
@@ -187,17 +220,14 @@ VulkanRHI::~VulkanRHI()
  * @brief
  * Initializes the VulkanRHI object and all required Vulkan objects.
  */
-void VulkanRHI::Initialize(void* pSdlWindow)
-{
+void VulkanRHI::Initialize(void* pSdlWindow) {
   context->Initialize(static_cast<SDL_Window*>(pSdlWindow));
 }
 
-void VulkanRHI::DrawFrame()
-{
+void VulkanRHI::DrawFrame() {
   context->DrawFrame();
 }
 
-void VulkanRHI::Cleanup()
-{
+void VulkanRHI::Cleanup() {
   context->Cleanup();
 }

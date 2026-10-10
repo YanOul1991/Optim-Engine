@@ -94,7 +94,7 @@ inline std::vector<vk::PipelineShaderStageCreateInfo> CreateVkPipelineShaderStag
  * Create a `VkPipeline` object for given shader stages.
  */
 inline vk::raii::Pipeline CreateVulkanPipeline(
-  const SwapChainContext&                         swapChainCtx,
+  const SwapChainResources&                         swapChainCtx,
   std::vector<vk::PipelineShaderStageCreateInfo>& stagesInfo,
   const vk::raii::Device&                         device)
 {
@@ -246,7 +246,7 @@ inline vk::raii::Pipeline CreateVulkanPipeline(
   // Pipeline rendering create info
   vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo = {
     .colorAttachmentCount    = 1,
-    .pColorAttachmentFormats = &swapChainCtx.swapChainImageFormat.format
+    .pColorAttachmentFormats = &swapChainCtx.imageFormat.format
   };
 
   vk::StructureChain<vk::GraphicsPipelineCreateInfo, vk::PipelineRenderingCreateInfo> pipelineCreateInfoChain = {

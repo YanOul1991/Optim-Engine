@@ -28,5 +28,3 @@ class VULKANRHI_API VulkanRHI final : public IRHI
   struct VulkanContext;
   std::unique_ptr<VulkanContext> context;
 };
-
-constexpr int size = sizeof(VulkanRHI);

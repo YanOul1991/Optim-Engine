@@ -50,31 +50,25 @@ int main(int argc, char* argv[])
   rhiinterface.Initialize(mainWindow.GetSDLWindowHandle());
 
   uint64 loopCycles = 0;
-  double loopTimes[2048];
+  double average = 0;
 
   while (System::ProcessEvents()) {
     timer.Start();
-
     rhiinterface.DrawFrame();
-
     timer.End();
 
     if (loopCycles < 2048) {
-      loopTimes[loopCycles] = timer.GetMs();
+      average += timer.GetMs();
       loopCycles++;
     }
-  }
-  double average = 0;
-  for (size_t i = 0; i <= loopCycles; i++) {
-    average += loopTimes[i];
   }
 
   average /= loopCycles;
 
-  // std::cout << "Average FramerateL " << loopTimes << '\n';
   std::printf("Average cycle time: %lf ms (%lf fps)\n", average, 1000.0 / average);
 
   rhiinterface.Cleanup();
+  
   mainWindow.~Window();
 
   System::Quit();
