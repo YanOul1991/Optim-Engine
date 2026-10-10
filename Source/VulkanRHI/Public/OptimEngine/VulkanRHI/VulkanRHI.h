@@ -8,6 +8,8 @@
 #include "Core/Memory/TUniquePtr.h"
 #include "RHI/IRHI.h"
 
+#include <memory>
+
 class VULKANRHI_API VulkanRHI final : public IRHI
 {
  public:
@@ -24,5 +26,7 @@ class VULKANRHI_API VulkanRHI final : public IRHI
 
  private:
   struct VulkanContext;
-  TUniquePtr<VulkanContext> pVkContext;
+  std::unique_ptr<VulkanContext> context;
 };
+
+constexpr int size = sizeof(VulkanRHI);
