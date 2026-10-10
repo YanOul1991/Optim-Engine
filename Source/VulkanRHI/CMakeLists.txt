@@ -18,6 +18,7 @@ target_include_directories(vulkanrhi
 
 target_sources(vulkanrhi PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/VulkanRHI.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Private/VulkanRenderer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkCore/Setup.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkTypes/CommandContext.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkTypes/RenderContext.cpp"

@@ -2,6 +2,8 @@
 
 #include "OpVkCommon/Minimal.h"
 
+#include <iostream>
+
 namespace Optim::VK::Debug
 {
 
@@ -43,7 +45,7 @@ namespace Optim::VK::Debug
  * @param pUserData
  * pointer specified during the setup of the callback and allows you to pass your own data to it.
  */
-VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT      severity,
+inline VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT      severity,
                                                vk::DebugUtilsMessageTypeFlagsEXT             messageType,
                                                const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                void*                                         pUserData)
@@ -69,7 +71,7 @@ inline vk::raii::DebugUtilsMessengerEXT CreateVkDebugUtilsMessengerEXT(const vk:
     .messageType     = messageTypeFlags,
     .pfnUserCallback = &Optim::VK::Debug::DebugCallback
   };
-  
+
   return instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
 }
 

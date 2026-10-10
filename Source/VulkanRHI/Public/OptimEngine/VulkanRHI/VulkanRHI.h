@@ -10,6 +10,8 @@
 
 #include <memory>
 
+struct Renderer;
+
 class VULKANRHI_API VulkanRHI final : public IRHI
 {
  public:
@@ -26,5 +28,5 @@ class VULKANRHI_API VulkanRHI final : public IRHI
 
  private:
   struct VulkanContext;
-  std::unique_ptr<VulkanContext> context;
+  std::unique_ptr<Renderer> renderer;
 };

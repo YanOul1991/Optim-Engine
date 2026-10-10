@@ -3,6 +3,7 @@
  */
 
 #include "VulkanRHI/VulkanRHI.h"
+#include "VulkanRenderer.h"
 
 #include "OpVkCommon/Minimal.h"
 #include "OpVkCore/OpVkCore.h"
@@ -208,7 +209,7 @@ struct VulkanRHI::VulkanContext
   }
 };
 
-VulkanRHI::VulkanRHI() : context(std::make_unique<VulkanRHI::VulkanContext>())
+VulkanRHI::VulkanRHI() : renderer(std::make_unique<Renderer>())
 {}
 
 VulkanRHI::~VulkanRHI()
@@ -220,15 +221,15 @@ VulkanRHI::~VulkanRHI()
  */
 void VulkanRHI::Initialize(void* pSdlWindow)
 {
-  context->Initialize(static_cast<SDL_Window*>(pSdlWindow));
+  renderer->Initialize(static_cast<SDL_Window*>(pSdlWindow));
 }
 
 void VulkanRHI::DrawFrame()
 {
-  context->DrawFrame();
+  renderer->DrawFrame();
 }
 
 void VulkanRHI::Cleanup()
 {
-  context->Cleanup();
+  renderer->WaitForDeviceIdle();
 }
