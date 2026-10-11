@@ -4,9 +4,9 @@
 #include "SDL3/SDL_vulkan.h"
 
 /**
- * @brief 
+ * @brief
  * Selects the appropriate Vulkan surface format for the swap chain.
- * 
+ *
  * Favors eB8G8R8A8Srgb for the format and eSrgbNonlinear for colorspace.
  */
 static inline vk::SurfaceFormatKHR SelectSwapChainVkSurfaceKHRFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)
@@ -23,7 +23,7 @@ static inline vk::SurfaceFormatKHR SelectSwapChainVkSurfaceKHRFormat(const std::
 /**
  * @brief
  * Seleects the most appropriate present mode for the swap chain.
- * 
+ *
  * Favors FIFO mode.
  *
  * [Vulkan Tutorial]
@@ -80,9 +80,7 @@ vk::Extent2D SelectSwapChainVkExtend2D(const vk::SurfaceCapabilitiesKHR& capabil
  */
 uint32 SelectSwapChainMinImageCount(const vk::SurfaceCapabilitiesKHR& capabilities)
 {
-  //
   uint32 minImgCount = std::max(3u, capabilities.minImageCount);
-
   // If maxImageCount is more that 0 and smaller than the desired minImgCount
   // then use the maxImageCount for the swap chain.
   if ((0 < capabilities.maxImageCount) && (capabilities.maxImageCount < minImgCount)) {
@@ -105,7 +103,7 @@ SwapChainResources::SwapChainResources(
 {
   // Get surface available basic capabilities, formats & present modes
   auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
-  auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
+  auto surfaceFormats      = physicalDevice.getSurfaceFormatsKHR(*surface);
   auto surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
 
   // Select optimal swap chain settings
@@ -131,10 +129,10 @@ SwapChainResources::SwapChainResources(
   };
 
   // Start assigning Vulkan objects to SwapChainResources
-  this->swapChain   = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
-  this->images      = this->swapChain.getImages();
-  this->imageFormat = selectedSwapChainFormat;
-  this->extent      = selectedSwapChainExtent;
+  swapChain   = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
+  images      = swapChain.getImages();
+  imageFormat = selectedSwapChainFormat;
+  extent      = selectedSwapChainExtent;
 
   // Create the Image views
   vk::ImageViewCreateInfo imageViewCreateInfo{
@@ -145,13 +143,15 @@ SwapChainResources::SwapChainResources(
   };
 
   // Create image views
-  for (auto& image : this->images) {
+  for (auto& image : images) {
     imageViewCreateInfo.image = image;
-    this->imageViews.emplace_back(device.createImageView(imageViewCreateInfo));
+    imageViews.emplace_back(device.createImageView(imageViewCreateInfo));
   }
 
-  // Create sync semaphores.
-  for(int i = 0; i < images.size(); i++) {
-    renderFinishedSemaphores.emplace_back(device, vk::SemaphoreCreateInfo());
+  if (renderFinishedSemaphores.empty()) {
+    // Create sync semaphores.
+    for (int i = 0; i < images.size(); i++) {
+      renderFinishedSemaphores.emplace_back(device, vk::SemaphoreCreateInfo());
+    }
   }
 }

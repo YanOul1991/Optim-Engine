@@ -26,6 +26,7 @@ class Renderer final
  public:
   static constexpr inline int32 MAX_FRAMES_IN_FLIGHT = 2;
 
+  SDL_Window*                      pWindow = nullptr;
   vk::raii::Context                context;
   vk::raii::Instance               instance       = nullptr;
   vk::raii::SurfaceKHR             surface        = nullptr;
@@ -35,12 +36,14 @@ class Renderer final
   vk::raii::Pipeline               pipeline = nullptr;
   std::vector<FrameResource>       frames;
   size_t                           frameIndex;
+  bool                             frameBufferResized = false;
 
   /**
    * MIGHT THROW
    */
   FORCEINLINE void Initialize(SDL_Window* pSDLWindow)
   {
+    pWindow = pSDLWindow;
 
     // Create VkInstance object
     instance = Optim::VK::CreateVkInstance(context);
@@ -95,6 +98,12 @@ class Renderer final
 
   FORCEINLINE void DrawFrame()
   {
+    if (frameBufferResized) {
+      frameBufferResized = false;
+      RecreateSwapChain();
+      return;
+    }
+
     auto& currentFrame = frames[frameIndex];
 
     /**
@@ -106,13 +115,25 @@ class Renderer final
     if (fenceResult != vk::Result::eSuccess) {
       throw std::runtime_error("[VulkanRHI] Error: Failed to wait for inFlightFence");
     }
-    renderContext.device.resetFences(*currentFrame.inFlightFence);
-    
+
     /**
      * Aquire a new image index from the swap chain. Signal the presentCompleteSemaphore
      * of the active frame resource.
      */
     auto [result, imageIndex] = swapChain.swapChain.acquireNextImage(UINT64_MAX, *currentFrame.presentCompleteSemaphore, nullptr);
+
+    if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || frameBufferResized) {
+      std::printf("ACQUIRE IMAGE: OutofDate...\n");
+      frameBufferResized = false;
+      RecreateSwapChain();
+      return;
+    }
+    if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
+      assert(result == vk::Result::eTimeout || result == vk::Result::eNotReady);
+      throw std::runtime_error("[VulkanRHI - Renderer] Failed to acquire swap chain image!");
+    }
+
+    renderContext.device.resetFences(*currentFrame.inFlightFence);
 
     // Reset command buffer then start recodring commands for next frame.
     currentFrame.commandBuffer.reset();
@@ -156,6 +177,7 @@ class Renderer final
      * And wait for the swap chain image's render finished semaphore's to be
      * signaled before starting presentation operations.
      */
+
     const vk::PresentInfoKHR presentInfo = {
       .waitSemaphoreCount = 1,
       .pWaitSemaphores    = &(*swapChain.renderFinishedSemaphores[imageIndex]),
@@ -163,15 +185,27 @@ class Renderer final
       .pSwapchains        = &(*swapChain.swapChain),
       .pImageIndices      = &imageIndex
     };
-
     result = renderContext.queue.presentKHR(presentInfo);
+
+    if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR || frameBufferResized) {
+      frameBufferResized = false;
+      RecreateSwapChain();
+    }
 
     // Advance frame index
     frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
   }
 
-  FORCEINLINE void WaitForDeviceIdle()
+  inline void WaitForDeviceIdle()
   {
     renderContext.device.waitIdle();
+  }
+
+  inline void RecreateSwapChain()
+  {
+    WaitForDeviceIdle();
+    swapChain.imageViews.clear();
+    swapChain.swapChain = nullptr;
+    swapChain           = std::move(SwapChainResources(renderContext.device, renderContext.physicalDevice, surface, pWindow));
   }
 };

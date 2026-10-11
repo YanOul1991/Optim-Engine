@@ -30,6 +30,12 @@
 
 using RHIBackend = VulkanRHI;
 
+void clearTerminal()
+{
+  // \033[2J clears the screen, \033[H moves the cursor to the top-left corner
+  std::cout << "\033[2J\033[H" << std::flush;
+}
+
 int main(int argc, char* argv[])
 {
   Timer timer;
@@ -38,7 +44,7 @@ int main(int argc, char* argv[])
   Optim::Shaders::SlangCompilerInterface slangSession;
   slangSession.InitalizeGlobalSession();
   slangSession.VerifyTargetSupport();
-  
+
   RHIBackend rhiinterface;
 
   // Initalize the System module
@@ -50,11 +56,20 @@ int main(int argc, char* argv[])
   rhiinterface.Initialize(mainWindow.GetSDLWindowHandle());
 
   uint64 loopCycles = 0;
-  double average = 0;
+  double average    = 0;
 
   while (System::ProcessEvents()) {
     timer.Start();
-    rhiinterface.DrawFrame();
+
+    if (System::GetWindowResized()) {
+      rhiinterface.ResizeWindow();
+    }
+
+    // Only draw if the window has pixels to draw onto.
+    if (!System::GetWindowMinimized()) {
+      rhiinterface.DrawFrame();
+    }
+
     timer.End();
 
     if (loopCycles < 2048) {
@@ -68,7 +83,7 @@ int main(int argc, char* argv[])
   std::printf("Average cycle time: %lf ms (%lf fps)\n", average, 1000.0 / average);
 
   rhiinterface.Cleanup();
-  
+
   mainWindow.~Window();
 
   System::Quit();

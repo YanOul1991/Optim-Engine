@@ -12,7 +12,11 @@
 #include <cstdlib>
 #include <iostream>
 
-bool System::Initalize() {
+static bool windowResized   = false;
+static bool windowMinimized = false;
+
+bool System::Initalize()
+{
   if (!SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO)) {
     String errorMsg = String("[RUNTIME ERROR]\n").Append("  SDL has failed to initalize\n").Append("  [Error message]\n").Append(SDL_GetError());
     fprintf(stderr, "%s", errorMsg.GetPointer());
@@ -23,35 +27,41 @@ bool System::Initalize() {
   return true;
 }
 
-TDynamicArray<String> System::GetVulkanRequiredExtensions() {
-  
-  uint32             vkInstanceCount = 0;
-  const char* const* vkInstanceExtensions = SDL_Vulkan_GetInstanceExtensions(&vkInstanceCount);
-
-  TDynamicArray<String> vulkanExtensions;
-   
-  if (vkInstanceExtensions) {
-    for (size_t i = 0; i < vkInstanceCount; i++) {
-      vulkanExtensions.EmplaceBack(vkInstanceExtensions[i]);
-    }
-  }
-
-  return vulkanExtensions;
-}
-
-bool System::ProcessEvents() {
+bool System::ProcessEvents()
+{
+  windowResized = false;
   SDL_Event event;
 
   while (SDL_PollEvent(&event)) {
     if (event.type == SDL_EVENT_QUIT) {
       return false;
     }
+
+    if (event.type == SDL_EVENT_WINDOW_MINIMIZED) {
+      windowMinimized = true;
+      windowResized   = true;
+    }
+    else if (event.type == SDL_EVENT_WINDOW_RESIZED) {
+      windowResized = true;
+      windowMinimized = false;
+    }
   }
-  
-  SDL_Delay(1);
+
+  // SDL_Delay(1);
   return true;
 }
 
-void System::Quit() {
+bool System::GetWindowResized()
+{
+  return windowResized;
+}
+
+bool System::GetWindowMinimized() 
+{
+  return windowMinimized;
+}
+
+void System::Quit()
+{
   SDL_Quit();
 }

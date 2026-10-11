@@ -69,3 +69,8 @@ void VulkanRHI::Cleanup()
 {
   renderer->WaitForDeviceIdle();
 }
+
+void VulkanRHI::ResizeWindow()
+{
+  renderer->frameBufferResized = true;
+}

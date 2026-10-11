@@ -3,6 +3,7 @@
 #include "Core/CoreMinimal.h"
 
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+#define VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS
 
 #if defined(__INTELISENSE__) || !defined(USE_CPP20_MODULES)
 #  include <vulkan/vulkan_raii.hpp>
