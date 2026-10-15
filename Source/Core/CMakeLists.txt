@@ -21,6 +21,10 @@ target_sources(core PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/Time/Time.cpp"
 )
 
+target_link_libraries(core PUBLIC 
+  fmt::fmt
+)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   target_compile_options(core PRIVATE -fvisibility=hidden)
 endif()

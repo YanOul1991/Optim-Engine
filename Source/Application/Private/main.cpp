@@ -30,6 +30,8 @@
 
 using RHIBackend = VulkanRHI;
 
+#include <fmt/core.h>
+
 void clearTerminal()
 {
   // \033[2J clears the screen, \033[H moves the cursor to the top-left corner
@@ -79,9 +81,8 @@ int main(int argc, char* argv[])
   }
 
   average /= loopCycles;
-
-  std::printf("Average cycle time: %lf ms (%lf fps)\n", average, 1000.0 / average);
-
+  fmt::println("Avergae cycle time: {} ms ({} fps)", average, 1000.0 / average);
+  
   rhiinterface.Cleanup();
 
   mainWindow.~Window();
