@@ -50,14 +50,8 @@ int main(int argc, char* argv[])
 
     if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir)) {
       slangModules.reserve(32);
-      // fmt::println("Found directory: {}", dir.c_str());
 
       for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-        // fmt::println("Filepath: {}\n\tFile name: {}\n\tExtension: {}",
-        //              entry.path().string(),
-        //              entry.path().filename().string(),
-        //              entry.path().extension().string());
-
         if (entry.path().extension().string() == ".slang") {
           slangModules.push_back(entry);
         }
@@ -83,6 +77,8 @@ int main(int argc, char* argv[])
     fmt::println(stderr, "Error: {}", e.what());
     return 1;
   }
+
+  Debug::PrintLn("Test Debug FMT wrapper function {}", 564378);
 
   // return 0;
 

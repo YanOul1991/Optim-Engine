@@ -10,7 +10,9 @@
 
 #pragma once
 
-#include "OptimEngine/Core/CoreMinimal.h"
+#include "Core/CoreMinimal.h"
+#include <utility>
+#include <fmt/base.h>
 
 namespace Internal::Debug {
 CORE_API void InternalDebugPrintF(const char* format, ...);
@@ -23,6 +25,11 @@ template <typename... ARGS> inline void Log(ARGS&&...) {
 #else
 template <typename... ARGS> inline void Log(const char* format, ARGS&&... args) {
   Internal::Debug::InternalDebugPrintF(format, args...);
+}
+
+template <typename... ARGS> inline void PrintLn(fmt::format_string<ARGS...> fmt ,ARGS&&... args)
+{
+  fmt::println(stdout, fmt, std::forward<ARGS&&>(args)...);
 }
 #endif
 } // namespace Debug

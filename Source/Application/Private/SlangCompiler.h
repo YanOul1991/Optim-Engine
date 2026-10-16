@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OptimEngine/Core/CoreMinimal.h"
+#include "Core/CoreMinimal.h"
 #include "slang.h"
 // slang.h first
 #include "slang-com-helper.h"
@@ -26,9 +26,15 @@ struct ShaderModule final
   Slang::ComPtr<slang::IEntryPoint> entryPointVertex;
   Slang::ComPtr<slang::IEntryPoint> entryPointFragment;
 
+  ShaderModule(const Slang::ComPtr<slang::ISession>& session, const char* moduleName)
+  {
+
+  }
+
   /**
    * Try to load a slang module.
    */
+  [[deprecated]]
   bool TryLoadModule(const Slang::ComPtr<slang::ISession>& session, const char* moduleName)
   {
     Slang::ComPtr<slang::IBlob> diagnostics;
@@ -48,6 +54,7 @@ struct ShaderModule final
    *
    * The module must mark entry points with the `[shader("<shader_stage>")]` attribute.
    */
+  [[deprecated]]
   bool TryLoadEntryPoints()
   {
     shaderModule->findEntryPointByName("VertexMain", entryPointVertex.writeRef());
@@ -97,7 +104,7 @@ class SlangCompilerInterface final
     sessionDesc.targetCount = 1;
 
     slang::PreprocessorMacroDesc preprocessorMacroDesc[] = {
-      {  "BIAS_VALUE",  "1138" },
+      { "BIAS_VALUE",  "1138" },
       { "OTHER_MACRO", "float" }
     };
 
@@ -124,6 +131,10 @@ class SlangCompilerInterface final
     // Create Comilation Session
     Slang::ComPtr<slang::ISession> session;
     globalSession->createSession(sessionDesc, session.writeRef());
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // From this point logic could be moved into wrapper struct to allow 
+    // better per module logic.
 
     // Load modules
     //  - Use `ISession::loadModule()` to load from source file (<some_module>.slang)
@@ -173,7 +184,7 @@ class SlangCompilerInterface final
 
     /***
      * If using a multiple entry points shader like for spirv it it possible to
-     * ommi the composed program step and immediatly go to the link step.
+     * omit the composed program step and immediatly go to the link step.
      *
      * And call the `link` function of the shader module directly instead.
      *
@@ -230,7 +241,7 @@ class SlangCompilerInterface final
     outFile.write(reinterpret_cast<const char*>(sprivCode->getBufferPointer()), sprivCode->getBufferSize());
     outFile.close();
 
-    std::cout << "[Slang Compiler] SPRIV Shader successfully created.\n";
+    std::cout << "[Slang Compiler] SPRIV Shader successfully created";
   }
 
  private:
