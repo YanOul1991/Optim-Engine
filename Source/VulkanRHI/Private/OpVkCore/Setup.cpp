@@ -1,7 +1,8 @@
 #include "./Setup.h"
 
-#include "OptimEngine/Core/StandardTypes/String.h"
-#include "OptimEngine/Core/StandardTypes/TDynamicArray.h"
+#include "Core/Debug/Debug.h"
+#include "Core/StandardTypes/String.h"
+// #include "Core/StandardTypes/TDynamicArray.h"
 // SDL
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
@@ -21,10 +22,10 @@ namespace
  * If one or more layer is not supported, a message will be printed listing them.
  */
 [[nodiscard]]
-static bool ValidateExtensions(const TDynamicArray<String>& reqExtensions, const vk::raii::Context& context)
+static bool ValidateExtensions(const std::vector<const char*>& reqExtensions, const vk::raii::Context& context)
 {
   // List of all unsuported extensions.
-  TDynamicArray<String> unsupportedExtensions;
+  std::vector<const char*> unsupportedExtensions;
 
   // Get list of all supported extensions by Vulkan.
   auto vkExtensionProperties = context.enumerateInstanceExtensionProperties();
@@ -35,21 +36,22 @@ static bool ValidateExtensions(const TDynamicArray<String>& reqExtensions, const
     bool isSupported = false;
 
     for (const auto& extensionProperty : vkExtensionProperties) {
-      if (strcmp(extensionProperty.extensionName, reqExtension.GetPointer()) == 0) {
+      if (strcmp(extensionProperty.extensionName, reqExtension) == 0) {
         isSupported = true;
         break;
       }
     }
 
     if (!isSupported) {
-      unsupportedExtensions.EmplaceBack(reqExtension);
+      unsupportedExtensions.push_back(reqExtension);
     }
   }
 
-  if (unsupportedExtensions.GetCount() > 0) {
+  if (unsupportedExtensions.size() > 0) {
     std::cout << "[VulkanRHI] The following extensions are not supported by the Vulkan implementation:\n";
     for (const auto& extension : unsupportedExtensions) {
-      std::cout << "   " << extension.GetPointer() << "\n";
+      // std::cout << "   " << extension.GetPointer() << "\n";
+      Debug::PrintLn("[Vulkan RHI - Error] Unsupported extension: {}", extension);
     }
     return false;
   }
@@ -62,9 +64,9 @@ static bool ValidateExtensions(const TDynamicArray<String>& reqExtensions, const
  * If one or more extension is not supported, a message will be printed listing them.
  */
 [[nodiscard]]
-bool ValidateLayers(const TDynamicArray<String>& reqLayers, const vk::raii::Context& context)
+bool ValidateLayers(const std::vector<const char*>& reqLayers, const vk::raii::Context& context)
 {
-  TDynamicArray<String> unsupportedLayers;
+  std::vector<const char*> unsupportedLayers;
 
   // Get list of all supported layers by Vulkan.
   auto supportedLayers = context.enumerateInstanceLayerProperties();
@@ -75,21 +77,22 @@ bool ValidateLayers(const TDynamicArray<String>& reqLayers, const vk::raii::Cont
     bool isSupported = false;
 
     for (const auto& layerProperty : supportedLayers) {
-      if (strcmp(layerProperty.layerName, reqLayer.GetPointer()) == 0) {
+      if (strcmp(layerProperty.layerName, reqLayer) == 0) {
         isSupported = true;
         break;
       }
     }
 
     if (!isSupported) {
-      unsupportedLayers.EmplaceBack(reqLayer);
+      unsupportedLayers.push_back(reqLayer);
     }
   }
 
-  if (unsupportedLayers.GetCount() > 0) {
+  if (unsupportedLayers.size() > 0) {
     std::cout << "[VulkanRHI] The following layers are not supported by the Vulkan implementation:\n";
     for (const auto& layer : unsupportedLayers) {
-      std::cout << "   " << layer.GetPointer() << "\n";
+      // std::cout << "   " << layer.GetPointer() << "\n";
+      Debug::PrintLn("[Vulkan RHI - Error] Unsupported layer: {}", layer);
     }
     return false;
   }
@@ -128,7 +131,8 @@ vk::raii::SurfaceKHR Optim::VK::CreateVkSurfaceKHR(const vk::raii::Instance& ins
 vk::raii::Instance Optim::VK::CreateVkInstance(const vk::raii::Context& context)
 {
   // ----------- EXTENSIONS VALIDATION -----------
-  TDynamicArray<String> requiredExtensions;
+  // TDynamicArray<String> requiredExtensions;
+  std::vector<const char*> requiredExtensions;
 
   // Add the extensions required by SDL.
   uint32             vkInstanceExtCount = 0;
@@ -139,12 +143,12 @@ vk::raii::Instance Optim::VK::CreateVkInstance(const vk::raii::Context& context)
   }
 
   for (size_t i = 0; i < vkInstanceExtCount; i++) {
-    requiredExtensions.EmplaceBack(ppVkInstanceExt[i]);
+    requiredExtensions.push_back(ppVkInstanceExt[i]);
   }
 
   // Add "VK_EXT_debug_utils" extension if validation layers are enabled
   if constexpr (Optim::VK::enableValidationLayers) {
-    requiredExtensions.EmplaceBack(vk::EXTDebugUtilsExtensionName);
+    requiredExtensions.push_back(vk::EXTDebugUtilsExtensionName);
   }
 
   // Validate the required extensions.
@@ -155,10 +159,10 @@ vk::raii::Instance Optim::VK::CreateVkInstance(const vk::raii::Context& context)
   // ----------- LAYERS VALIDATION -----------
 
   // Required Layers Verification
-  TDynamicArray<String> requiredLayers;
+  std::vector<const char*> requiredLayers;
   // Add "VK_LAYER_KHRONOS_validation" if validation layers are enabled
   if constexpr (Optim::VK::enableValidationLayers) {
-    requiredLayers.EmplaceBack("VK_LAYER_KHRONOS_validation");
+    requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
   }
 
   if (!ValidateLayers(requiredLayers, context)) {
@@ -166,27 +170,27 @@ vk::raii::Instance Optim::VK::CreateVkInstance(const vk::raii::Context& context)
   }
 
   // ----------- INSTANCE CREATION -----------
-  TDynamicArray<const char*> ppExtensionNames;
-  TDynamicArray<const char*> ppLayerNames;
+  // std::vector<const char*> ppExtensionNames;
+  // std::vector<const char*> ppLayerNames;
 
   // List of raw c style pointers for extensions names
-  for (const auto& extension : requiredExtensions) {
-    ppExtensionNames.Push(extension.GetPointer());
-  }
+  // for (const auto& extension : requiredExtensions) {
+  //   ppExtensionNames.push_back(extension.GetPointer());
+  // }
 
-  // List of raw c style pointers for layers names
-  for (const auto& layer : requiredLayers) {
-    ppLayerNames.Push(layer.GetPointer());
-  }
+  // // List of raw c style pointers for layers names
+  // for (const auto& layer : requiredLayers) {
+  //   ppLayerNames.push_back(layer.GetPointer());
+  // }
 
   // Simple debug to check generated list objects.
-  if constexpr (false) {
-    std::cout << "[VulkanRHI] Creating VkInstance object with the following (" << ppExtensionNames.GetCount() << ") extensions:\n";
-    for (const auto& extension : ppExtensionNames) {
+  if constexpr (true) {
+    std::cout << "[VulkanRHI] Creating VkInstance object with the following (" << requiredExtensions.size() << ") extensions:\n";
+    for (const auto& extension : requiredExtensions) {
       std::cout << "   " << extension << "\n";
     }
-    std::cout << "[VulkanRHI] Creating VkInstance object with the following (" << ppLayerNames.GetCount() << ") layers:\n";
-    for (const auto& layer : ppLayerNames) {
+    std::cout << "[VulkanRHI] Creating VkInstance object with the following (" << requiredLayers.size() << ") layers:\n";
+    for (const auto& layer : requiredLayers) {
       std::cout << "   " << layer << "\n";
     }
   }
@@ -196,10 +200,10 @@ vk::raii::Instance Optim::VK::CreateVkInstance(const vk::raii::Context& context)
   // data can be passed to the `vk::InstanceCreateInfo` struct.
   vk::InstanceCreateInfo createInfo = {
     .pApplicationInfo        = &appInfo,
-    .enabledLayerCount       = static_cast<uint32>(ppLayerNames.GetCount()),
-    .ppEnabledLayerNames     = ppLayerNames.GetData(),
-    .enabledExtensionCount   = static_cast<uint32>(ppExtensionNames.GetCount()),
-    .ppEnabledExtensionNames = ppExtensionNames.GetData()
+    .enabledLayerCount       = static_cast<uint32>(requiredLayers.size()),
+    .ppEnabledLayerNames     = requiredLayers.data(),
+    .enabledExtensionCount   = static_cast<uint32>(requiredExtensions.size()),
+    .ppEnabledExtensionNames = requiredExtensions.data()
   };
 
   return vk::raii::Instance(context, createInfo);
