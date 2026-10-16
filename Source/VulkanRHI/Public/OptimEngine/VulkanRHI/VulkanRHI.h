@@ -5,7 +5,6 @@
 #pragma once
 
 #include "Core/CoreMinimal.h"
-#include "Core/Memory/TUniquePtr.h"
 #include "RHI/IRHI.h"
 
 #include <memory>

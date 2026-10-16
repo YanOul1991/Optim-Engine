@@ -9,7 +9,6 @@
 #include "SlangCompiler.h"
 
 // Core module
-#include "Core/Memory/TUniquePtr.h"
 #include "Core/StandardTypes/String.h"
 #include "Core/Time/Time.h"
 

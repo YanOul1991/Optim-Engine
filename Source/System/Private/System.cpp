@@ -4,7 +4,8 @@
 
 #include "System/System.h"
 
-#include "OptimEngine/Core/StandardTypes/String.h"
+#include "Core/StandardTypes/String.h"
+#include "Core/Debug/Logging.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
@@ -18,8 +19,9 @@ static bool windowMinimized = false;
 bool System::Initalize()
 {
   if (!SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO)) {
-    String errorMsg = String("[RUNTIME ERROR]\n").Append("  SDL has failed to initalize\n").Append("  [Error message]\n").Append(SDL_GetError());
-    fprintf(stderr, "%s", errorMsg.GetPointer());
+    // String errorMsg = String("[RUNTIME ERROR]\n").Append("  SDL has failed to initalize\n").Append("  [Error message]\n").Append(SDL_GetError());
+    // fprintf(stderr, "%s", errorMsg.GetPointer());
+    Debug::PrintLn("[Runtime Error]; SDL initialization status: FAILURE; Error message: [{}]", SDL_GetError());
     return false;
   }
 

@@ -2,8 +2,8 @@
 
 #include "Core/Debug/Logging.h"
 
-namespace Debug {
+// namespace Debug {
 
-CORE_API void PrintCallStack();
+// CORE_API void PrintCallStack();
 
-};
+// };

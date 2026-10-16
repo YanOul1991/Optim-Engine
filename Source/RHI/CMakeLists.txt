@@ -16,7 +16,7 @@ target_include_directories(rhi
 
 target_sources(rhi PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/RHI.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Private/IGraphicsRHI.cpp"
+  # "${CMAKE_CURRENT_SOURCE_DIR}/Private/IGraphicsRHI.cpp"
 )
 
 target_link_libraries(rhi PRIVATE 

@@ -102,31 +102,6 @@ inline void Memcpy(T* destination, T* source, uint64 count) {
   }
 }
 
-// template <typename T>
-// inline void Copy(T* destinationBuffer, T* sourceBuffer, uint64 count) {
-//   static_assert(Concepts::TrivialCopy || Concepts::IsCopyConstructible<T> || Concepts::IsMoveConstructible,
-//                 "The type does not support copy constructor\n");
-
-//   // TODO add warnings if any pointer is null.
-//   if (!destinationBuffer || !sourceBuffer) {
-//     return;
-//   }
-
-//   if constexpr (Concepts::TrivialCopy<T>) {
-//     memccpy(destinationBuffer, sourceBuffer, sizeof(T) * count);
-//   }
-//   else if constexpr (Concepts::IsMoveConstructible<T>) {
-//     for (size_t i = 0; i < count; i++) {
-//       new (destinationBuffer + i) T(static_cast<T&&>(sourceBuffer[i]));
-//     }
-//   }
-//   else if constexpr (Concepts::IsCopyConstructible<T>) {
-//     for (size_t i = 0; i < count; i++) {
-//       new (destinationBuffer + i) T(sourceBuffer[i]);
-//     }
-//   }
-// }
-
 template <typename T>
 inline void Memmove(T* destination, T* source, uint64 count) {
   static_assert(Concepts::TrivialCopy<T>, "Type must be trivially copyable to use Memory::Memmove function\n");

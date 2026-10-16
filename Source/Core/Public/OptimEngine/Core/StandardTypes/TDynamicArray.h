@@ -1,17 +1,8 @@
 #pragma once
 
-// #define ENABLE_LOG
-
-#if defined(ENABLE_LOG)
-#  define LOG(...) printf(__VA_ARGS__);
-#else
-#  define LOG(...)
-#endif
-
 #include "Core/CoreMinimal.h"
 #include "Core/Debug/Debug.h"
 #include "Core/Memory/Allocation.h"
-#include "Core/System/LowLevel.h"
 
 #include <iostream>
 

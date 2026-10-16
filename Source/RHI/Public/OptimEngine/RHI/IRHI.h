@@ -5,8 +5,6 @@
 #pragma once
 
 #include "Core/CoreMinimal.h"
-#include "Core/StandardTypes/String.h"
-#include "Core/StandardTypes/TDynamicArray.h"
 
 class Window;
 
