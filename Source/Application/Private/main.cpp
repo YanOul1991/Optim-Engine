@@ -9,22 +9,23 @@
 #include "SlangCompiler.h"
 
 // Core module
-#include "OptimEngine/Core/Memory/TUniquePtr.h"
-#include "OptimEngine/Core/StandardTypes/String.h"
-#include "OptimEngine/Core/Time/Time.h"
+#include "Core/Memory/TUniquePtr.h"
+#include "Core/StandardTypes/String.h"
+#include "Core/Time/Time.h"
 
 // Graphics related modules
-#include "OptimEngine/RHI/RHI.h"
-#include "OptimEngine/Rendering/Rendering.h"
-#include "OptimEngine/VulkanRHI/VulkanRHI.h"
+#include "RHI/RHI.h"
+#include "Rendering/Rendering.h"
+#include "VulkanRHI/VulkanRHI.h"
 
 // System module
-#include "OptimEngine/System/System.h"
-#include "OptimEngine/System/Window.h"
+#include "System/System.h"
+#include "System/Window.h"
 
 // STD HEADERS
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <vector>
 
@@ -40,6 +41,51 @@ void clearTerminal()
 
 int main(int argc, char* argv[])
 {
+  try {
+    // Path starts at running directory as default.
+    std::filesystem::path dir("Shaders");
+
+    std::vector<std::filesystem::directory_entry> slangModules;
+    std::vector<std::filesystem::directory_entry> sprivBinaries;
+
+    if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir)) {
+      slangModules.reserve(32);
+      // fmt::println("Found directory: {}", dir.c_str());
+
+      for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+        // fmt::println("Filepath: {}\n\tFile name: {}\n\tExtension: {}",
+        //              entry.path().string(),
+        //              entry.path().filename().string(),
+        //              entry.path().extension().string());
+
+        if (entry.path().extension().string() == ".slang") {
+          slangModules.push_back(entry);
+        }
+        else if (entry.path().extension().string() == ".spv") {
+          sprivBinaries.push_back(entry);
+        }
+      }
+    }
+    else {
+      fmt::println("Failed to get dir :(");
+    }
+
+    fmt::println("Slang Modules:");
+    for (const auto& mod : slangModules) {
+      fmt::println("  {}", mod.path().string());
+    }
+    fmt::println("SPRIV Binaries:");
+    for (const auto& bin : sprivBinaries) {
+      fmt::println("  {}", bin.path().string());
+    }
+  }
+  catch (const std::filesystem::filesystem_error& e) {
+    fmt::println(stderr, "Error: {}", e.what());
+    return 1;
+  }
+
+  // return 0;
+
   Timer timer;
   timer.Start();
 
@@ -82,7 +128,7 @@ int main(int argc, char* argv[])
 
   average /= loopCycles;
   fmt::println("Avergae cycle time: {} ms ({} fps)", average, 1000.0 / average);
-  
+
   rhiinterface.Cleanup();
 
   mainWindow.~Window();
