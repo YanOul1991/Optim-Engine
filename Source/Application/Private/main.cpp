@@ -24,8 +24,6 @@
 #include "System/Window.h"
 
 // STD HEADERS
-#include <cstdio>
-#include <cstdlib>
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <iostream>
@@ -60,42 +58,13 @@ static void CompileSlangModules()
   }
 }
 
-struct Vertex
-{
-  glm::vec2 position;
-  glm::vec3 color;
-};
-
 int main(int argc, char* argv[])
 {
-  Vertex vert;
-  vert.position = { 278, 3290 };
-  vert.color    = { 1.0f, 0.0f, 0.5f };
-
   Timer timer;
   timer.Start();
 
   try {
     CompileSlangModules();
-    // Optim::Shaders::SlangSession slangSession;
-    // slangSession.InitGlobal();
-    // slangSession.CreateSession();
-    // // Path starts at running directory as default.
-    // std::filesystem::path dir("Shaders");
-    // std::vector<std::filesystem::directory_entry> slangModules;
-    // if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir)) {
-    //   Debug::PrintLn("Compiling Slang Modules:");
-    //   for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-    //     Optim::Shaders::ShaderModule shaderModule;
-    //     if (entry.path().extension().string() == ".slang") {
-    //       auto result = shaderModule.LoadFromModule(slangSession.GetGlobalSession(), entry.path().stem().string().c_str());
-    //       Debug::PrintLn("  {} : {}", entry.path().stem().string(), (Optim::Shaders::Success(result) ? "SUCESS" : "FAILURE"));
-    //     }
-    //   }
-    // }
-    // else {
-    //   Debug::PrintLn("Failed to get dir :(");
-    // }
   }
   catch (const std::filesystem::filesystem_error& e) {
     Debug::PrintError("Error: {}", e.what());
