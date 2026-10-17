@@ -15,13 +15,12 @@
 // STD
 #include <algorithm>
 #include <cstdint>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <limits>
 #include <map>
 #include <ranges>
 #include <vector>
-
-#include <glm/glm.hpp>
 
 class Renderer final
 {
@@ -40,11 +39,15 @@ class Renderer final
   size_t                           frameIndex;
   bool                             frameBufferResized = false;
 
+  // TEST FIELD
   const std::vector<Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    { { 0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+    {  { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
+    { { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } }
   };
+
+  vk::raii::Buffer       vertexBuffer       = nullptr; // TEST FIELD
+  vk::raii::DeviceMemory vertexBufferMemory = nullptr; // TEST FIELD
 
   /**
    * MIGHT THROW
@@ -99,9 +102,60 @@ class Renderer final
       throw std::runtime_error("VkPipeline Initalization FAILURE");
     }
 
+    CreateVertexBuffer();
+
+    // Create FrameResources objects
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
       frames.emplace_back(renderContext.device, renderContext);
     }
+  }
+
+  void CreateVertexBuffer()
+  {
+    // Create Vertex buffer
+    // https://docs.vulkan.org/refpages/latest/refpages/source/VkBufferCreateInfo.html#_document_notes
+    vk::BufferCreateInfo bufferInfo{
+      .size        = sizeof(vertices[0]) * vertices.size(),
+      .usage       = vk::BufferUsageFlagBits::eVertexBuffer,
+      .sharingMode = vk::SharingMode::eExclusive
+    };
+
+    vertexBuffer = vk::raii::Buffer(renderContext.device, bufferInfo);
+    if (vertexBuffer == nullptr) {
+      throw std::runtime_error("Vertex Buffer initialization failure");
+    }
+
+    // Get memory requirements
+    vk::MemoryRequirements memReq = vertexBuffer.getMemoryRequirements();
+
+    auto findMemoryType = [&](uint32 typeFilter, vk::MemoryPropertyFlags properties) -> uint32 {
+      vk::PhysicalDeviceMemoryProperties memProperties = renderContext.physicalDevice.getMemoryProperties();
+      for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+          return i;
+        }
+      }
+
+      throw std::runtime_error("failed to find suitable memory type!");
+    };
+
+    constexpr auto reqMemPropertyFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+
+    vk::MemoryAllocateInfo memAllocInfo{
+      .allocationSize = memReq.size,
+      .memoryTypeIndex = findMemoryType(memReq.memoryTypeBits, reqMemPropertyFlags)
+    }; 
+
+    vertexBufferMemory = vk::raii::DeviceMemory(renderContext.device, memAllocInfo);
+    if(vertexBufferMemory == nullptr) {
+      throw std::runtime_error("Failed to create vertex buffer memory");
+    }
+
+    vertexBuffer.bindMemory(*vertexBufferMemory, 0);
+
+    void* data = vertexBufferMemory.mapMemory(0, bufferInfo.size);
+    memcpy(data, vertices.data(), bufferInfo.size);
+    vertexBufferMemory.unmapMemory();
   }
 
   FORCEINLINE void DrawFrame()
