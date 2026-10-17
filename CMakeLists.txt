@@ -55,6 +55,7 @@ find_package(Vulkan REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(slang CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
 # List all libraries in the `cmake` directory
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")

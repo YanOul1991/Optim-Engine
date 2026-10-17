@@ -41,11 +41,15 @@ void VulkanRHI::Initialize(void* pSdlWindow)
     renderer->Initialize(static_cast<SDL_Window*>(pSdlWindow));
   }
   catch (const vk::SystemError& e) {
-    std::cerr << "[Vulkan | Error] " << e.what() << '\n';
+    Debug::PrintError("[VulkanRHI - Error: vk::SystemError]");
+    Debug::PrintError("  {}", e.what());
+    // std::cerr << "[Vulkan | Error] " << e.what() << '\n';
     return;
   }
   catch (const std::exception& e) {
-    std::cerr << "[VulkanRHI | Error] " << e.what() << '\n';
+    Debug::PrintError("[VulkanRHI - Error: std::exception]");
+    Debug::PrintError("  {}", e.what());
+    // std::cerr << "[VulkanRHI | Error] " << e.what() << '\n';
     return;
   }
 }
@@ -56,11 +60,15 @@ void VulkanRHI::DrawFrame()
     renderer->DrawFrame();
   }
   catch (const vk::SystemError& e) {
-    std::cerr << "[Vulkan | Error] " << e.what() << '\n';
+    // std::cerr << "[Vulkan | Error] " << e.what() << '\n';
+    Debug::PrintError("[VulkanRHI - Error: vk::SystemError]");
+    Debug::PrintError("  {}", e.what());
     return;
   }
   catch (const std::exception& e) {
-    std::cerr << "[VulkanRHI | Error] " << e.what() << '\n';
+    // std::cerr << "[VulkanRHI | Error] " << e.what() << '\n';
+    Debug::PrintError("[VulkanRHI - Error: std::exception]");
+    Debug::PrintError("  {}", e.what());
     return;
   }
 }

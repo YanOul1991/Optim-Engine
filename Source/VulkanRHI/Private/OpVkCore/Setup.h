@@ -1,7 +1,7 @@
 #pragma once
 
 #include "OpVkCommon/Minimal.h"
-#include "OptimEngine/Core/CoreMinimal.h"
+#include "Core/CoreMinimal.h"
 
 struct SDL_Window;
 

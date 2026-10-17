@@ -21,6 +21,8 @@
 #include <ranges>
 #include <vector>
 
+#include <glm/glm.hpp>
+
 class Renderer final
 {
  public:
@@ -38,6 +40,12 @@ class Renderer final
   size_t                           frameIndex;
   bool                             frameBufferResized = false;
 
+  const std::vector<Vertex> vertices = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+  };
+
   /**
    * MIGHT THROW
    */
@@ -48,33 +56,33 @@ class Renderer final
     // Create VkInstance object
     instance = Optim::VK::CreateVkInstance(context);
     if (instance == nullptr) {
-      throw std::runtime_error("[VulkanRHI] Error - VkInstance Initalization Status : FAILURE");
+      throw std::runtime_error("VkInstance Initalization FAILURE");
     }
 
     // Create VkDebugUtilsMessengerEXT object if validation layers are enabled
     if constexpr (Optim::VK::enableValidationLayers) {
       debugMessenger = Optim::VK::Debug::CreateVkDebugUtilsMessengerEXT(instance);
       if (debugMessenger == nullptr) {
-        throw std::runtime_error("[VulkanRHI] Error - VkDebugUtilsMessengerEXT Initalization Status : FAILURE");
+        throw std::runtime_error("VkDebugUtilsMessengerEXT Initalization FAILURE");
       }
     }
 
     // Create VKSurfaceKHR object
     surface = Optim::VK::CreateVkSurfaceKHR(instance, pSDLWindow);
     if (surface == nullptr) {
-      throw std::runtime_error("[VulkanRHI] Error - VkSurfaceKHR Initalization Status : FAILURE");
+      throw std::runtime_error("VkSurfaceKHR Initalization FAILURE");
     }
 
     // Create RenderContext object
     renderContext = RenderContext(instance, surface);
     if (!renderContext.IsValid()) {
-      throw std::runtime_error("[VulkanRHI] Error - RenderContext Initalization Status : FAILURE");
+      throw std::runtime_error("RenderContext Initalization FAILURE");
     }
 
     // Create the initial SwapChainResources
     swapChain = SwapChainResources(renderContext.device, renderContext.physicalDevice, surface, pSDLWindow);
     if (!swapChain.IsValid()) {
-      throw std::runtime_error("[VulkanRHI] Error - SwapChainResources Initalization Status : FAILURE");
+      throw std::runtime_error("SwapChainResources Initalization FAILURE");
     }
 
     // Pipeline creation
@@ -88,7 +96,7 @@ class Renderer final
 
     pipeline = Optim::VKPipeline::CreateVulkanPipeline(swapChain, shaderStagesInfo, renderContext.device);
     if (pipeline == nullptr) {
-      throw std::runtime_error("[VulkanRHI | Error] Failed to create VkPipeline object.");
+      throw std::runtime_error("VkPipeline Initalization FAILURE");
     }
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -113,7 +121,7 @@ class Renderer final
      */
     auto fenceResult = renderContext.device.waitForFences(*currentFrame.inFlightFence, vk::True, UINT64_MAX);
     if (fenceResult != vk::Result::eSuccess) {
-      throw std::runtime_error("[VulkanRHI] Error: Failed to wait for inFlightFence");
+      throw std::runtime_error("Failed to wait for inFlightFence");
     }
 
     /**
@@ -123,14 +131,13 @@ class Renderer final
     auto [result, imageIndex] = swapChain.swapChain.acquireNextImage(UINT64_MAX, *currentFrame.presentCompleteSemaphore, nullptr);
 
     if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || frameBufferResized) {
-      std::printf("ACQUIRE IMAGE: OutofDate...\n");
       frameBufferResized = false;
       RecreateSwapChain();
       return;
     }
     if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
       assert(result == vk::Result::eTimeout || result == vk::Result::eNotReady);
-      throw std::runtime_error("[VulkanRHI - Renderer] Failed to acquire swap chain image!");
+      throw std::runtime_error("Failed to acquire swap chain image");
     }
 
     renderContext.device.resetFences(*currentFrame.inFlightFence);

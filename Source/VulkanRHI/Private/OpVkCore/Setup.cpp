@@ -2,7 +2,6 @@
 
 #include "Core/Debug/Debug.h"
 #include "Core/StandardTypes/String.h"
-// #include "Core/StandardTypes/TDynamicArray.h"
 // SDL
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
@@ -48,10 +47,9 @@ static bool ValidateExtensions(const std::vector<const char*>& reqExtensions, co
   }
 
   if (unsupportedExtensions.size() > 0) {
-    std::cout << "[VulkanRHI] The following extensions are not supported by the Vulkan implementation:\n";
+    std::cout << "[VulkanRHI - Error] The following extensions are not supported by the Vulkan implementation:\n";
     for (const auto& extension : unsupportedExtensions) {
-      // std::cout << "   " << extension.GetPointer() << "\n";
-      Debug::PrintLn("[Vulkan RHI - Error] Unsupported extension: {}", extension);
+      Debug::PrintLn("  {}", extension);
     }
     return false;
   }
@@ -89,10 +87,9 @@ bool ValidateLayers(const std::vector<const char*>& reqLayers, const vk::raii::C
   }
 
   if (unsupportedLayers.size() > 0) {
-    std::cout << "[VulkanRHI] The following layers are not supported by the Vulkan implementation:\n";
+    std::cout << "[VulkanRHI - Error] The following layers are not supported by the Vulkan implementation:\n";
     for (const auto& layer : unsupportedLayers) {
-      // std::cout << "   " << layer.GetPointer() << "\n";
-      Debug::PrintLn("[Vulkan RHI - Error] Unsupported layer: {}", layer);
+      Debug::PrintLn("  {}", layer);
     }
     return false;
   }
@@ -125,13 +122,12 @@ vk::raii::SurfaceKHR Optim::VK::CreateVkSurfaceKHR(const vk::raii::Instance& ins
  * Create a `vk::raii::Instance` object. This function, validates all required
  * extensions such as the ones from SDL, and verifies all required Layers.
  * 
- * May throw a `std::runtime_error` if anu required extension or layer is not
+ * May throw a `std::runtime_error` if any required extension or layer is not
  * supported.
  */
 vk::raii::Instance Optim::VK::CreateVkInstance(const vk::raii::Context& context)
 {
   // ----------- EXTENSIONS VALIDATION -----------
-  // TDynamicArray<String> requiredExtensions;
   std::vector<const char*> requiredExtensions;
 
   // Add the extensions required by SDL.
@@ -153,45 +149,32 @@ vk::raii::Instance Optim::VK::CreateVkInstance(const vk::raii::Context& context)
 
   // Validate the required extensions.
   if (!ValidateExtensions(requiredExtensions, context)) {
-    throw std::runtime_error("[Vulkan RHI] Error - Unsupported required extensions");
+    throw std::runtime_error("[VulkanRHI - Error] - Unsupported required extensions");
   }
 
   // ----------- LAYERS VALIDATION -----------
 
   // Required Layers Verification
   std::vector<const char*> requiredLayers;
+
   // Add "VK_LAYER_KHRONOS_validation" if validation layers are enabled
   if constexpr (Optim::VK::enableValidationLayers) {
     requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
   }
 
   if (!ValidateLayers(requiredLayers, context)) {
-    throw std::runtime_error("[Vulkan RHI] Error - Unsupported required layers.");
+    throw std::runtime_error("[VulkanRHI - Error] - Unsupported required layers.");
   }
 
-  // ----------- INSTANCE CREATION -----------
-  // std::vector<const char*> ppExtensionNames;
-  // std::vector<const char*> ppLayerNames;
-
-  // List of raw c style pointers for extensions names
-  // for (const auto& extension : requiredExtensions) {
-  //   ppExtensionNames.push_back(extension.GetPointer());
-  // }
-
-  // // List of raw c style pointers for layers names
-  // for (const auto& layer : requiredLayers) {
-  //   ppLayerNames.push_back(layer.GetPointer());
-  // }
-
   // Simple debug to check generated list objects.
-  if constexpr (true) {
-    std::cout << "[VulkanRHI] Creating VkInstance object with the following (" << requiredExtensions.size() << ") extensions:\n";
+  if constexpr (false) {
+    Debug::PrintLn("Creating vk::raii::Instance with {} extension:", requiredExtensions.size());
     for (const auto& extension : requiredExtensions) {
-      std::cout << "   " << extension << "\n";
+      Debug::PrintLn("  {}", extension);
     }
-    std::cout << "[VulkanRHI] Creating VkInstance object with the following (" << requiredLayers.size() << ") layers:\n";
+    Debug::PrintLn("Creating vk::raii::Instance with {} layers:", requiredLayers.size());
     for (const auto& layer : requiredLayers) {
-      std::cout << "   " << layer << "\n";
+      Debug::PrintLn("  {}", layer);
     }
   }
 

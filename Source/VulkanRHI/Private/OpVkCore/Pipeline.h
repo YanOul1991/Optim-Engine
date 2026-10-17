@@ -123,7 +123,16 @@ inline vk::raii::Pipeline CreateVulkanPipeline(
    *
    * For now used as is.
    */
-  vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
+
+  auto bindingDesc   = Vertex::GetBindingDescription();
+  auto attributeDesc = Vertex::GetAttributeDescription();
+
+  vk::PipelineVertexInputStateCreateInfo vertexInputInfo{
+    .vertexBindingDescriptionCount   = 1,
+    .pVertexBindingDescriptions      = &bindingDesc,
+    .vertexAttributeDescriptionCount = static_cast<uint32>(attributeDesc.size()),
+    .pVertexAttributeDescriptions    = attributeDesc.data()
+  };
 
   /**
    * INPUT ASSEMBLY
@@ -253,9 +262,9 @@ inline vk::raii::Pipeline CreateVulkanPipeline(
     graphicsPipelineCreateInfo,
     pipelineRenderingCreateInfo
   };
+
   // pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>()  = graphicsPipelineCreateInfo;
   // pipelineCreateInfoChain.get<vk::PipelineRenderingCreateInfo>() = pipelineRenderingCreateInfo;
-
   // vk::StructureChain<vk::GraphicsPipelineCreateInfo, vk::PipelineRenderingCreateInfo> pipelineCreateInfoChain = {
   //   { .stageCount          = static_cast<uint32_t>(stagesInfo.size()),
   //    .pStages             = stagesInfo.data(),

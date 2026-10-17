@@ -13,16 +13,13 @@ target_include_directories(core
 )
 
 target_sources(core PRIVATE
-  # "${CMAKE_CURRENT_SOURCE_DIR}/Private/System/LowLevel.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/StandardTypes/String.cpp"
-  # "${CMAKE_CURRENT_SOURCE_DIR}/Private/StandardTypes/THashTable.cpp"
-  # "${CMAKE_CURRENT_SOURCE_DIR}/Private/Debug/Debug.cpp"
-  # "${CMAKE_CURRENT_SOURCE_DIR}/Private/Debug/Logging.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Private/Time/Time.cpp"
 )
 
 target_link_libraries(core PUBLIC 
   fmt::fmt
+  glm::glm-header-only
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

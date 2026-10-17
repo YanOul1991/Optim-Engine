@@ -27,6 +27,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <vector>
 
@@ -46,10 +47,11 @@ static void CompileSlangModules()
   if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir)) {
     Debug::PrintLn("Compiling Slang Modules:");
     for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-      Optim::Shaders::ShaderModule shaderModule;
       if (entry.path().extension().string() == ".slang") {
+        Debug::Print("  {}... ", entry.path().stem().string());
+        Optim::Shaders::ShaderModule shaderModule;
         auto result = shaderModule.LoadFromModule(slangSession.GetGlobalSession(), entry.path().stem().string().c_str());
-        Debug::PrintLn("  {} : {}", entry.path().stem().string(), (Optim::Shaders::Success(result) ? "SUCESS" : "FAILURE"));
+        Debug::PrintLn("{}", (Optim::Shaders::Success(result) ? "SUCCESS" : "FAILURE"));
       }
     }
   }
@@ -58,8 +60,18 @@ static void CompileSlangModules()
   }
 }
 
+struct Vertex
+{
+  glm::vec2 position;
+  glm::vec3 color;
+};
+
 int main(int argc, char* argv[])
 {
+  Vertex vert;
+  vert.position = { 278, 3290 };
+  vert.color    = { 1.0f, 0.0f, 0.5f };
+
   Timer timer;
   timer.Start();
 
@@ -93,7 +105,7 @@ int main(int argc, char* argv[])
   timer.End();
   Debug::PrintLn("Compiled slang modules in {} ms", timer.GetMs());
 
-  return 0;
+  // return 0;
 
   RHIBackend rhiinterface;
 
@@ -104,7 +116,7 @@ int main(int argc, char* argv[])
   Window mainWindow = Window("Vulkan Engine Project");
 
   rhiinterface.Initialize(mainWindow.GetSDLWindowHandle());
-
+  
   uint64 loopCycles = 0;
   double average    = 0;
 

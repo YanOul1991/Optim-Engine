@@ -26,7 +26,7 @@ template <typename... ARGS>
 inline void PrintError(fmt::format_string<ARGS...> fmt, ARGS&&... args)
 {
 #if !defined(NDEBUG)
-  fmt::print(stderr, fmt, std::forward<ARGS&&>(args)...);
+  fmt::println(stderr, fmt, std::forward<ARGS&&>(args)...);
 #endif
 }
 

@@ -50,10 +50,18 @@ inline VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSever
                                                const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                void*                                         pUserData)
 {
-
-  std::cerr << "Validation layer: type " << to_string(messageType) << "msg: " << pCallbackData->pMessage << '\n';
-  std::cerr << "-----------------------------------------------------------------\n";
-
+  if (severity == vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) {
+    ::Debug::PrintLn("[VulkanRHI - Vulkan API Warning]");
+    ::Debug::PrintLn("  <Validation layer type>: {}", to_string(messageType));
+    ::Debug::PrintLn("  <Message>: {}", pCallbackData->pMessage);
+  }
+  else if (severity == vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) {
+    ::Debug::PrintLn("[VulkanRHI - Vulkan API Error]");
+    ::Debug::PrintLn("  <Validation layer type>: {}", to_string(messageType));
+    ::Debug::PrintLn("  <Message>: {}", pCallbackData->pMessage);
+  }
+  // std::cerr << "Validation layer: type " << to_string(messageType) << "msg: " << pCallbackData->pMessage << '\n';
+  // std::cerr << "-----------------------------------------------------------------\n";
   return vk::False;
 }
 

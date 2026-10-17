@@ -33,7 +33,7 @@ static vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance&
 
   // If there are no GPUs... then there is no rendering :(
   if (physicalDevices.empty()) {
-    throw std::runtime_error("[VulkanRHI | Error] Failed to find GPUs with Vulkan Support.\n");
+    throw std::runtime_error("[VulkanRHI - Error] Failed to find GPUs with Vulkan Support.\n");
   }
 
   // A multimap of all potential GPUs that can be used. Each PhysicalDevice
