@@ -18,6 +18,7 @@ Current dependencies:
 * SDL3
 * fmt
 * Slang
+* glm
 
 ### Git
 Required for vcpkg dependency management.
@@ -25,7 +26,7 @@ Required for vcpkg dependency management.
 ### Vulkan SDK
 The Vulkan SDK can be downloaded from the official [LunarG website](https://vulkan.lunarg.com/sdk/home).
 
-Tested SDK version: `1.4.350.0`
+Tested SDK version: `1.4.357.0`
 
 <br>
 
