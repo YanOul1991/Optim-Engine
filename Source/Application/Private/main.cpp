@@ -32,60 +32,66 @@
 
 using RHIBackend = VulkanRHI;
 
+static void CompileSlangModules()
+{
+  Optim::Shaders::SlangSession slangSession;
+  slangSession.InitGlobal();
+  slangSession.CreateSession();
+
+  // Path starts at running directory as default.
+  std::filesystem::path dir("Shaders");
+
+  std::vector<std::filesystem::directory_entry> slangModules;
+
+  if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir)) {
+    Debug::PrintLn("Compiling Slang Modules:");
+    for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+      Optim::Shaders::ShaderModule shaderModule;
+      if (entry.path().extension().string() == ".slang") {
+        auto result = shaderModule.LoadFromModule(slangSession.GetGlobalSession(), entry.path().stem().string().c_str());
+        Debug::PrintLn("  {} : {}", entry.path().stem().string(), (Optim::Shaders::Success(result) ? "SUCESS" : "FAILURE"));
+      }
+    }
+  }
+  else {
+    Debug::PrintLn("Failed to get dir :(");
+  }
+}
+
 int main(int argc, char* argv[])
 {
   Timer timer;
   timer.Start();
 
   try {
-    // Path starts at running directory as default.
-    std::filesystem::path dir("Shaders");
-
-    std::vector<std::filesystem::directory_entry> slangModules;
-    // std::vector<std::filesystem::directory_entry> sprivBinaries; 
-
-    if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir)) {
-      // slangModules.reserve(32);
-
-      for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-        if (entry.path().extension().string() == ".slang") {
-          slangModules.push_back(entry);
-        }
-        // else if (entry.path().extension().string() == ".spv") {
-        //   sprivBinaries.push_back(entry);
-        // }
-      }
-    }
-    else {
-      fmt::println("Failed to get dir :(");
-    }
-
-    Optim::Shaders::SlangCompilerInterface slangSession;
-    slangSession.InitalizeGlobalSession();
-    slangSession.VerifyTargetSupport();
-
-    fmt::println("Compiling Slang Modules:");
-    for (const auto& mod : slangModules) {
-      Optim::Shaders::ShaderModule shaderModule;
-
-      auto result = shaderModule.LoadFromModule(slangSession.GetGlobalSession(), mod.path().stem().string().c_str());
-
-      if (Optim::Shaders::Success(result)) {
-        fmt::println("  [{}] : Sucess", mod.path().stem().string());
-      }
-      else {
-        fmt::println("  [{}] : Failure", mod.path().stem().string());
-      }
-    }
-    // fmt::println("SPRIV Binaries:");
-    // for (const auto& bin : sprivBinaries) {
-    //   fmt::println("  {}", bin.path().string());
+    CompileSlangModules();
+    // Optim::Shaders::SlangSession slangSession;
+    // slangSession.InitGlobal();
+    // slangSession.CreateSession();
+    // // Path starts at running directory as default.
+    // std::filesystem::path dir("Shaders");
+    // std::vector<std::filesystem::directory_entry> slangModules;
+    // if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir)) {
+    //   Debug::PrintLn("Compiling Slang Modules:");
+    //   for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+    //     Optim::Shaders::ShaderModule shaderModule;
+    //     if (entry.path().extension().string() == ".slang") {
+    //       auto result = shaderModule.LoadFromModule(slangSession.GetGlobalSession(), entry.path().stem().string().c_str());
+    //       Debug::PrintLn("  {} : {}", entry.path().stem().string(), (Optim::Shaders::Success(result) ? "SUCESS" : "FAILURE"));
+    //     }
+    //   }
+    // }
+    // else {
+    //   Debug::PrintLn("Failed to get dir :(");
     // }
   }
   catch (const std::filesystem::filesystem_error& e) {
-    fmt::println(stderr, "Error: {}", e.what());
+    Debug::PrintError("Error: {}", e.what());
     return 1;
   }
+
+  timer.End();
+  Debug::PrintLn("Compiled slang modules in {} ms", timer.GetMs());
 
   return 0;
 
@@ -122,13 +128,9 @@ int main(int argc, char* argv[])
 
   average /= loopCycles;
   Debug::PrintLn("Average cycle time: {} ms ({} fps)", average, 1000.0 / average);
-  // fmt::println("Avergae cycle time: {} ms ({} fps)", average, 1000.0 / average);
 
   rhiinterface.Cleanup();
-
   mainWindow.~Window();
-
   System::Quit();
-
   return 0;
 }

@@ -165,17 +165,17 @@ struct ShaderModule final
 /**
  * Helper class for the slang compiler.
  */
-class SlangCompilerInterface final
+class SlangSession final
 {
  public:
-  inline bool InitalizeGlobalSession()
+  inline bool InitGlobal()
   {
     // Create Global session
     slang::createGlobalSession(globalSession.writeRef());
     return globalSession != nullptr;
   }
 
-  inline void VerifyTargetSupport()
+  inline void CreateSession()
   {
     if (!globalSession) {
       Debug::PrintLn("[Slang Compiler] Global session is not initialized.");
@@ -216,118 +216,12 @@ class SlangCompilerInterface final
 
     // Create Comilation Session
     globalSession->createSession(sessionDesc, session.writeRef());
-
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // From this point logic could be moved into wrapper struct to allow
-    // better per module logic.
-
-    // Load modules
-    //  - Use `ISession::loadModule()` to load from source file (<some_module>.slang)
-    //
-    //  - Use `ISession::loadModleFromSourceString()` to load from
-    //    code in memory. (eg. vector<char>, string)
-    //
-    //  Slang documentation basic example:
-    //  https://docs.shader-slang.org/en/latest/compilation-api.html#load-modules
-    // Slang::ComPtr<slang::IModule> shaderModule;
-    // {
-    //   Slang::ComPtr<slang::IBlob> diagnostics;
-    //   const char* moduleName = "sample";
-    //   shaderModule           = session->loadModule(moduleName, diagnostics.writeRef());
-    //   if (!shaderModule) {
-    //     printf("Error: %s\n", (const char*)diagnostics->getBufferPointer());
-    //     return;
-    //   }
-    // }
-
-    // Get Entry Points by name
-    // Slang::ComPtr<slang::IEntryPoint> entryPointVertex;
-    // Slang::ComPtr<slang::IEntryPoint> entryPointFragment;
-    // shaderModule->findEntryPointByName("VertexMain", entryPointVertex.writeRef());
-    // shaderModule->findEntryPointByName("FragmentMain", entryPointFragment.writeRef());
-    // if (!entryPointVertex) {
-    //   printf("Failed to get entry point 'VertexMain'.\n");
-    //   return;
-    // }
-    // else if (!entryPointFragment) {
-    //   printf("Failed to get entry point 'FragmentMain'.\n");
-    //   return;
-    // }
-
-    // COMPOSE MODULES AND ENTRY POINTS
-
-    // Note: The composed program step is not strictly necessary for SPIRV, but it is a good practice to compose the program before linking. It allows for better error reporting and validation of the shader code.
-    // std::array<slang::IComponentType*, 3> componentTypes = {
-    //   shaderModule,
-    //   entryPointVertex,
-    //   entryPointFragment
-    // };
-
-    /***
-     * If using a multiple entry points shader like for spirv it it possible to
-     * omit the composed program step and immediatly go to the link step.
-     *
-     * And call the `link` function of the shader module directly instead.
-     *
-     * https://docs.shader-slang.org/en/latest/compilation-api.html#get-target-kernel-code
-     */
-    // Slang::ComPtr<slang::IComponentType> composedProgram;
-    // {
-    //   Slang::ComPtr<slang::IBlob> diagnostics;
-    //   Slang::Result               result = session->createCompositeComponentType(
-    //     componentTypes.data(),
-    //     componentTypes.size(),
-    //     composedProgram.writeRef(),
-    //     diagnostics.writeRef());
-    //   printf("[Slang Compiler] Composed program creation status: %s\n", (SLANG_FAILED(result) ? "FAILURE" : "SUCCESS"));
-    //   if (SLANG_FAILED(result)) {
-    //     printf("[Slang Compiler] Error: %s\n", (const char*)diagnostics->getBufferPointer());
-    //     return;
-    //   }
-    // }
-
-    // Validate dependencies
-    // Slang::ComPtr<slang::IComponentType> linkedProgram;
-    // {
-    //   Slang::ComPtr<slang::IBlob> diagnostics;
-    //   auto                        result = shaderModule->link(linkedProgram.writeRef(), diagnostics.writeRef());
-    //   printf("[Slang Compiler] Link Status: %s\n", (SLANG_FAILED(result) ? "FAILURE" : "SUCCESS"));
-    //   if (SLANG_FAILED(result)) {
-    //     printf("[Slang Compiler] Error: %s\n", (const char*)diagnostics->getBufferPointer());
-    //     return;
-    //   }
-    // }
-
-    // Create Target Code for SPIRV
-    // Slang::ComPtr<slang::IBlob> sprivCode;
-    // {
-    //   Slang::ComPtr<slang::IBlob> diagnostics;
-    //   auto result = linkedProgram->getTargetCode(0, sprivCode.writeRef(), diagnostics.writeRef());
-    //   printf("[Slang Compiler] SPRIV Kernel Code Generation Status: %s\n", (SLANG_FAILED(result) ? "FAILURE" : "SUCCESS"));
-    //   if (SLANG_FAILED(result)) {
-    //     printf("[Slang Compiler] Error: %s\n", (const char*)diagnostics->getBufferPointer());
-    //     return;
-    //   }
-    // }
-    // std::ofstream outFile("Shaders/sample.spv", std::ios::out | std::ios::binary);
-    // if (!outFile) {
-    //   std::cerr << "[Slang Compiler] Error: could not create the file.\n";
-    //   return;
-    // }
-    // outFile.write(reinterpret_cast<const char*>(sprivCode->getBufferPointer()), sprivCode->getBufferSize());
-    // outFile.close();
   }
 
-  Slang::ComPtr<slang::ISession>& GetGlobalSession()
-  {
-    // assert(isGlobalSessionInitialized && "Global session is not initialized. Call InitalizeGlobalSession() first.");
-    // No need for assert as ComPtre acts as a smart pointer and will be nullptr if not initialized.
-    return session;
-  }
+  Slang::ComPtr<slang::ISession>& GetGlobalSession() noexcept { return session; }
 
  private:
   Slang::ComPtr<slang::IGlobalSession> globalSession;
   Slang::ComPtr<slang::ISession>       session;
-  // bool                                 isSessionInit = false;
 };
 } // namespace Optim::Shaders

@@ -13,9 +13,6 @@
 #pragma once
 
 #include "Core/CoreMinimal.h"
-
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 
 namespace Memory {
@@ -31,7 +28,7 @@ inline void Dealloc(T* buffer, uint64 count, uint64 capacity) {
     return;
   }
   
-  if constexpr (!Concepts::TrivialDestruct<T>) {
+  if constexpr (!std::is_trivially_destructible_v<T>) {
     for (uint64 i = count; i > 0; i--) {
       buffer[i - 1].~T();
     }
@@ -42,7 +39,7 @@ inline void Dealloc(T* buffer, uint64 count, uint64 capacity) {
 
 template <typename T>
 inline void ObjectCopyConstruct(T* destination, T* source, uint64 count) {
-  static_assert(Concepts::IsCopyConstructible<T>, "The type does not support copy constructor\n");
+  static_assert(std::is_copy_constructible_v<T>, "The type does not support copy constructor\n");
   for (size_t i = 0; i < count; i++) {
     new (destination + i) T(source[i]);
   }
@@ -63,7 +60,7 @@ inline void ObjectCopyConstruct(T* destination, T* source, uint64 count) {
  */
 template <typename T>
 inline void ObjectMoveConstruct(T* destination, T* source, uint64 count) {
-  static_assert(Concepts::IsMoveConstructible<T>, "The type does not support move constructor\n");
+  static_assert(std::is_move_constructible_v<T>, "The type does not support move constructor\n");
   if (destination && source) {
     for (size_t i = 0; i < count; i++) {
       new (destination + i) T(static_cast<T&&>(source[i]));
@@ -96,7 +93,7 @@ inline void ObjectMoveConstruct(T* destination, T* source, uint64 count) {
  */
 template <typename T>
 inline void Memcpy(T* destination, T* source, uint64 count) {
-  static_assert(Concepts::TrivialCopy<T>, "Type must be trivially copyable to use Memory::Memcpy function\n");
+  static_assert(std::is_trivially_copyable_v<T>, "Type must be trivially copyable to use Memory::Memcpy function\n");
   if (destination && source) {
     memcpy(destination, source, sizeof(T) * count);
   }
@@ -104,7 +101,7 @@ inline void Memcpy(T* destination, T* source, uint64 count) {
 
 template <typename T>
 inline void Memmove(T* destination, T* source, uint64 count) {
-  static_assert(Concepts::TrivialCopy<T>, "Type must be trivially copyable to use Memory::Memmove function\n");
+  static_assert(std::is_trivially_copyable_v<T>, "Type must be trivially copyable to use Memory::Memmove function\n");
   if (destination && source) {
     memmove(destination, source, sizeof(T) * count);
   }
@@ -112,7 +109,7 @@ inline void Memmove(T* destination, T* source, uint64 count) {
 
 template <>
 inline void Memcpy<char>(char* destination, char* source, uint64 count) {
-  static_assert(Concepts::TrivialCopy<char>, "Type must be trivially copyable to use Memory::Memcpy function\n");
+  static_assert(std::is_trivially_copyable_v<char>, "Type must be trivially copyable to use Memory::Memcpy function\n");
   if (destination && source) {
     memcpy(destination, source, sizeof(char) * count);
   }
