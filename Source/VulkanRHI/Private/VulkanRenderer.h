@@ -4,6 +4,7 @@
 #include "OpVkCommon/Minimal.h"
 #include "OpVkCore/OpVkCore.h"
 #include "OpVkDebug/Debug.h"
+#include "OpVkTypes/Buffers.h"
 #include "OpVkTypes/CommandContext.h"
 #include "OpVkTypes/RenderContext.h"
 #include "OpVkTypes/SwapChainContext.h"
@@ -22,142 +23,6 @@
 #include <ranges>
 #include <vector>
 
-namespace Optim
-{
-
-template <typename T>
-inline constexpr size_t BinSize(const std::vector<T>& v) {
-  return sizeof(T) * std::size(v);
-}
-
-template <typename T, size_t N>
-inline constexpr size_t BinSize(const std::array<T, N>& v) {
-  return sizeof(T) * std::size(v);
-}
-
-class BufferData final
-{
- public:
-  OPTIM_VK_RAII_TYPE(BufferData)
-  // BufferData()                             = default;
-  // ~BufferData()                            = default;
-  // BufferData(BufferData&&)                 = default;
-  // BufferData& operator=(BufferData&&)      = default;
-  // BufferData(const BufferData&)            = delete;
-  // BufferData& operator=(const BufferData&) = delete;
-
-  BufferData(
-    vk::raii::Device&         device,
-    vk::raii::PhysicalDevice& physicalDevice,
-    vk::DeviceSize            deviceSize,
-    vk::BufferUsageFlagBits   usage,
-    vk::MemoryPropertyFlags   memoryPorperties)
-  {
-    // Buffer creation
-    // https://docs.vulkan.org/refpages/latest/refpages/source/VkBufferCreateInfo.html#_document_notes
-    vk::BufferCreateInfo bufferInfo{
-      .size        = deviceSize,
-      .usage       = usage,
-      .sharingMode = vk::SharingMode::eExclusive
-    };
-
-    buffer = vk::raii::Buffer(device, bufferInfo);
-
-    if (buffer == nullptr) {
-      return;
-    }
-
-    // Get buffer's memory requirements
-    vk::MemoryRequirements memoryReqs = buffer.getMemoryRequirements();
-
-    vk::MemoryAllocateInfo memAllocInfo {
-      .allocationSize  = memoryReqs.size,
-      .memoryTypeIndex = FindMemoryTypeIndex(physicalDevice, memoryReqs.memoryTypeBits, memoryPorperties)
-    };
-
-    deviceMemory = vk::raii::DeviceMemory(device, memAllocInfo);
-
-    if(deviceMemory == nullptr) {
-      return;
-    }
-
-    buffer.bindMemory(*deviceMemory, 0);
-  }
-
-  void Map(const void* pInData, vk::DeviceSize size)
-  {
-    void* data = deviceMemory.mapMemory(0, size);
-    memcpy(data, pInData, size);
-    deviceMemory.unmapMemory();
-  }
-
-  bool IsValid() const noexcept { return buffer != nullptr && deviceMemory != nullptr; }
-  vk::raii::Buffer& GetBuffer() { return buffer; }
-  vk::raii::DeviceMemory& GetMemory() { return deviceMemory; }
-
- private:
-  inline uint32 FindMemoryTypeIndex(const vk::raii::PhysicalDevice& physicalDevice, uint32 typeFilter, vk::MemoryPropertyFlags properties)
-  {
-    vk::PhysicalDeviceMemoryProperties memProperties = physicalDevice.getMemoryProperties();
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-      if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-        return i;
-      }
-    }
-    throw std::runtime_error("failed to find suitable memory type!");
-  }
-
-  vk::raii::Buffer       buffer       = nullptr;
-  vk::raii::DeviceMemory deviceMemory = nullptr;
-};
-
-
-/**
- * 
- */
-class VertexBuffer final
-{
- private:
-  BufferData gpuBuffer;
-  uint32     vertexCount = 0;
-
- public:
-  OPTIM_VK_RAII_TYPE(VertexBuffer)
-
-  static constexpr const auto usage       = vk::BufferUsageFlagBits::eVertexBuffer;
-  static constexpr const auto memoryFlags = vk::MemoryPropertyFlagBits::eHostVisible |
-                                            vk::MemoryPropertyFlagBits::eHostCoherent;
-
-  // VertexBuffer()                               = default;
-  // VertexBuffer(VertexBuffer&&)                 = default;
-  // VertexBuffer& operator=(VertexBuffer&&)      = default;
-  // VertexBuffer(const VertexBuffer&)            = delete;
-  // VertexBuffer& operator=(const VertexBuffer&) = delete;
-
-  VertexBuffer(vk::raii::Device& device, vk::raii::PhysicalDevice& physicalDevice)
-  {
-    // Cannot directly call member initalizer list for BufferData constructor because the vertices
-    // buffer will not be instanciated in time, therefore the size value being passed is of 0 which
-    // causes a runtime error.
-    // For now because of testing, it will be fine, but in the future the list of vertices may
-    // not be owner directly by this class, in which case we will see again about initalized list.
-    gpuBuffer = Optim::BufferData(device, physicalDevice, BinSize(vertices), usage, memoryFlags);
-    if(!gpuBuffer.IsValid()) {
-      throw std::runtime_error("Failed to create vertex buffer");
-    }
-    gpuBuffer.Map(vertices.data(), BinSize(vertices));
-  }
-
-  // TEST FIELD
-  std::vector<Vertex> vertices = {
-    { { 0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-    {  { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
-    { { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } }
-  };
-};
-
-}; // namespace Optim::RHI
-
 class Renderer final
 {
  public:
@@ -175,7 +40,7 @@ class Renderer final
   size_t                           frameIndex;
   bool                             frameBufferResized = false;
 
-  Optim::VertexBuffer vertexBuffer;
+  VertexBuffer vertexBuffer;
 
   /**
    * MIGHT THROW
@@ -230,52 +95,13 @@ class Renderer final
       throw std::runtime_error("VkPipeline Initalization FAILURE");
     }
 
-    vertexBuffer = Optim::VertexBuffer(renderContext.device, renderContext.physicalDevice);
+    vertexBuffer = VertexBuffer(renderContext.device, renderContext.physicalDevice);
 
     // Create FrameResources objects
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
       frames.emplace_back(renderContext.device, renderContext);
     }
   }
-
-  // void CreateVertexBuffer()
-  // {
-  //   // Create Vertex buffer
-  //   // https://docs.vulkan.org/refpages/latest/refpages/source/VkBufferCreateInfo.html#_document_notes
-  //   vk::BufferCreateInfo bufferInfo{
-  //     .size        = sizeof(vertices[0]) * vertices.size(),
-  //     .usage       = vk::BufferUsageFlagBits::eVertexBuffer,
-  //     .sharingMode = vk::SharingMode::eExclusive
-  //   };
-  //   vertexBuffer = vk::raii::Buffer(renderContext.device, bufferInfo);
-  //   if (vertexBuffer == nullptr) {
-  //     throw std::runtime_error("Vertex Buffer initialization failure");
-  //   }
-  //   // Get memory requirements
-  //   vk::MemoryRequirements memReq = vertexBuffer.getMemoryRequirements();
-  //   auto findMemoryType = [&](uint32 typeFilter, vk::MemoryPropertyFlags properties) -> uint32 {
-  //     vk::PhysicalDeviceMemoryProperties memProperties = renderContext.physicalDevice.getMemoryProperties();
-  //     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-  //       if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-  //         return i;
-  //       }
-  //     }
-  //     throw std::runtime_error("failed to find suitable memory type!");
-  //   };
-  //   constexpr auto reqMemPropertyFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-  //   vk::MemoryAllocateInfo memAllocInfo{
-  //     .allocationSize  = memReq.size,
-  //     .memoryTypeIndex = findMemoryType(memReq.memoryTypeBits, reqMemPropertyFlags)
-  //   };
-  //   vertexBufferMemory = vk::raii::DeviceMemory(renderContext.device, memAllocInfo);
-  //   if (vertexBufferMemory == nullptr) {
-  //     throw std::runtime_error("Failed to create vertex buffer memory");
-  //   }
-  //   vertexBuffer.bindMemory(*vertexBufferMemory, 0);
-  //   void* data = vertexBufferMemory.mapMemory(0, bufferInfo.size);
-  //   memcpy(data, vertices.data(), bufferInfo.size);
-  //   vertexBufferMemory.unmapMemory();
-  // }
 
   FORCEINLINE void DrawFrame()
   {
