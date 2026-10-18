@@ -13,6 +13,16 @@
 #  import vulkan_hpp
 #endif
 
+// Since using vk::raii all wrapper objects always define the same constructors and 
+// assignement opeators, wrap them in helper macro.
+#define OPTIM_VK_RAII_TYPE(_CLASS_)             \
+  _CLASS_()                          = default; \
+  ~_CLASS_()                         = default; \
+  _CLASS_(_CLASS_&&)                 = default; \
+  _CLASS_& operator=(_CLASS_&&)      = default; \
+  _CLASS_(const _CLASS_&)            = delete;  \
+  _CLASS_& operator=(const _CLASS_&) = delete;
+
 namespace Optim::VK
 {
 
