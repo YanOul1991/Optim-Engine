@@ -108,12 +108,17 @@ class VertexBuffer final
       throw std::runtime_error("Failed to create vertex buffer");
     }
     gpuBuffer.Map(vertices.data(), BinSize(vertices));
+    vertexCount = static_cast<uint32>(vertices.size());
   }
+
+  uint32 Count() const noexcept { return vertexCount; }
+
+  BufferData& GetBufferData() { return gpuBuffer; }
 
   // TEST FIELD
   std::vector<Vertex> vertices = {
-    { { 0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-    {  { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
-    { { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } }
+    { { 0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+    {  { 0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f } },
+    { { -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f } }
   };
 };

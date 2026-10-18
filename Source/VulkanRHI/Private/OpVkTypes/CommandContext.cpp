@@ -30,67 +30,107 @@ CommandContext::CommandContext(const vk::raii::Device& device, RenderContext& re
   this->inFlightFence                = vk::raii::Fence(device, { .flags = vk::FenceCreateFlagBits::eSignaled });
 }
 
+  void CommandContext::Start(SwapChainResources& swapChainResources, const uint32 imageIndex)
+  {
+    commandBuffer.begin({});
+
+    // Transition image layout to optimize for color attachement.
+    TransitionImageLayout(
+      swapChainResources.images[imageIndex],
+      vk::ImageLayout::eUndefined,
+      vk::ImageLayout::eColorAttachmentOptimal,
+      {},
+      vk::AccessFlagBits2::eColorAttachmentWrite,
+      vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits2::eColorAttachmentOutput);
+
+    vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
+
+    vk::RenderingAttachmentInfo attachementInfo = {
+      .imageView   = swapChainResources.imageViews[imageIndex],
+      .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+      .loadOp      = vk::AttachmentLoadOp::eClear,
+      .storeOp     = vk::AttachmentStoreOp::eStore,
+      .clearValue  = clearColor
+    };
+
+    vk::RenderingInfo renderingInfo = {
+      .renderArea           = { .offset = { 0, 0 }, .extent = swapChainResources.extent },
+      .layerCount           = 1,
+      .colorAttachmentCount = 1,
+      .pColorAttachments    = &attachementInfo
+    };
+
+    // Start rendering objects
+    commandBuffer.beginRendering(renderingInfo);
+
+    // Basic Drawing Commands
+    commandBuffer.setViewport(
+      0,
+      vk::Viewport(
+        0.0f,
+        0.0f,
+        static_cast<float>(swapChainResources.extent.width),
+        static_cast<float>(swapChainResources.extent.height),
+        0.0f,
+        1.0f));
+
+    commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapChainResources.extent));
+  }
+
 void CommandContext::RecordCommandBuffer(SwapChainResources& swapChainResources, const uint32 imageIndex, const vk::raii::Pipeline& vkPipeline)
 {
-  commandBuffer.begin({});
+  // commandBuffer.begin({});
 
-  // Transition image layout to optimize for color attachement.
-  TransitionImageLayout(
-    swapChainResources.images[imageIndex],
-    vk::ImageLayout::eUndefined,
-    vk::ImageLayout::eColorAttachmentOptimal,
-    {},
-    vk::AccessFlagBits2::eColorAttachmentWrite,
-    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-    vk::PipelineStageFlagBits2::eColorAttachmentOutput);
-
-  vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
-
-  vk::RenderingAttachmentInfo attachementInfo = {
-    .imageView   = swapChainResources.imageViews[imageIndex],
-    .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
-    .loadOp      = vk::AttachmentLoadOp::eClear,
-    .storeOp     = vk::AttachmentStoreOp::eStore,
-    .clearValue  = clearColor
-  };
-
-  vk::RenderingInfo renderingInfo = {
-    .renderArea           = { .offset = { 0, 0 }, .extent = swapChainResources.extent },
-    .layerCount           = 1,
-    .colorAttachmentCount = 1,
-    .pColorAttachments    = &attachementInfo
-  };
-
-  // Start rendering objects
-  commandBuffer.beginRendering(renderingInfo);
-
-  // Basic Drawing Commands
-  commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *vkPipeline);
-
-  commandBuffer.setViewport(
-    0,
-    vk::Viewport(
-      0.0f,
-      0.0f,
-      static_cast<float>(swapChainResources.extent.width),
-      static_cast<float>(swapChainResources.extent.height),
-      0.0f,
-      1.0f));
-
-  commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapChainResources.extent));
-  commandBuffer.draw(3, 1, 0, 0);
-
-  commandBuffer.endRendering();
-  
-  // Transition Image layout to optimize for presentation.
-  TransitionImageLayout(
-    swapChainResources.images[imageIndex],
-    vk::ImageLayout::eColorAttachmentOptimal,
-    vk::ImageLayout::ePresentSrcKHR,
-    {},
-    vk::AccessFlagBits2::eColorAttachmentWrite,
-    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-    vk::PipelineStageFlagBits2::eBottomOfPipe | vk::PipelineStageFlagBits2::eColorAttachmentOutput);
-
-  commandBuffer.end();
+  // // Transition image layout to optimize for color attachement.
+  // TransitionImageLayout(
+  //   swapChainResources.images[imageIndex],
+  //   vk::ImageLayout::eUndefined,
+  //   vk::ImageLayout::eColorAttachmentOptimal,
+  //   {},
+  //   vk::AccessFlagBits2::eColorAttachmentWrite,
+  //   vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+  //   vk::PipelineStageFlagBits2::eColorAttachmentOutput);
+  // vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
+  // vk::RenderingAttachmentInfo attachementInfo = {
+  //   .imageView   = swapChainResources.imageViews[imageIndex],
+  //   .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+  //   .loadOp      = vk::AttachmentLoadOp::eClear,
+  //   .storeOp     = vk::AttachmentStoreOp::eStore,
+  //   .clearValue  = clearColor
+  // };
+  // vk::RenderingInfo renderingInfo = {
+  //   .renderArea           = { .offset = { 0, 0 }, .extent = swapChainResources.extent },
+  //   .layerCount           = 1,
+  //   .colorAttachmentCount = 1,
+  //   .pColorAttachments    = &attachementInfo
+  // };
+  // // Start rendering objects
+  // commandBuffer.beginRendering(renderingInfo);
+  // // Basic Drawing Commands
+  // commandBuffer.setViewport(
+  //   0,
+  //   vk::Viewport(
+  //     0.0f,
+  //     0.0f,
+  //     static_cast<float>(swapChainResources.extent.width),
+  //     static_cast<float>(swapChainResources.extent.height),
+  //     0.0f,
+  //     1.0f));
+  // commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapChainResources.extent));
+  // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *vkPipeline);
+  // !!! From now on, draw calls will be done so from by VulkanRenderer object.
+  // commandBuffer.draw(3, 1, 0, 0);
+  // These steps have been wrapped in a function End.
+  // commandBuffer.endRendering();
+  // // Transition Image layout to optimize for presentation.
+  // TransitionImageLayout(
+  //   swapChainResources.images[imageIndex],
+  //   vk::ImageLayout::eColorAttachmentOptimal,
+  //   vk::ImageLayout::ePresentSrcKHR,
+  //   {},
+  //   vk::AccessFlagBits2::eColorAttachmentWrite,
+  //   vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+  //   vk::PipelineStageFlagBits2::eBottomOfPipe | vk::PipelineStageFlagBits2::eColorAttachmentOutput);
+  // commandBuffer.end();
 }

@@ -8,7 +8,7 @@
  *
  * VULKAN OBJECTS
  *
- * SEMAPHORES: 
+ * SEMAPHORES:
  * https://docs.vulkan.org/spec/latest/chapters/synchronization.html#synchronization-semaphores
  *
  * The CPU submits commands to GPU queues without waiting for execution to
@@ -21,7 +21,7 @@
  * stages. A queue submission can also signal a semaphore upon completion,
  * enabling precise control over GPU-side synchronization.
  *
- * FENCES: 
+ * FENCES:
  * https://docs.vulkan.org/spec/latest/chapters/synchronization.html#VkFence
  *
  * Fences synchronize CPU and GPU execution by allowing the CPU (Host) to wait
@@ -54,7 +54,7 @@ struct CommandContext final
            *presentCompleteSemaphore &&
            *inFlightFence;
   }
-
+  
   CommandContext() = default;
 
   // Yes move :D
@@ -78,7 +78,38 @@ struct CommandContext final
    * @param vkPipeline
    * A reference to the VkPipeline object defining the current render settings.
    */
+  [[deprecated]]
   void RecordCommandBuffer(SwapChainResources& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
+
+  void Start(SwapChainResources& swapChainResources, const uint32 imageIndex);
+
+  /**
+   * @brief
+   * Calls `vk::raii::CommandBuffer::endRendering()` on the CommandBuffer
+   * object, then transitions layout to optimize for presentation and calls
+   * vk::raii::CommandBuffer::end().
+   *
+   * IMPORTANT:
+   * For now assume these steps are always the last three to be performed,
+   * when implementation of API progress may require restructuring to allow
+   * more flexibility.
+   */
+  inline void End(vk::Image& image)
+  {
+    commandBuffer.endRendering();
+
+    // Transition Image layout to optimize for presentation.
+    TransitionImageLayout(
+      image,
+      vk::ImageLayout::eColorAttachmentOptimal,
+      vk::ImageLayout::ePresentSrcKHR,
+      {},
+      vk::AccessFlagBits2::eColorAttachmentWrite,
+      vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits2::eBottomOfPipe | vk::PipelineStageFlagBits2::eColorAttachmentOutput);
+
+    commandBuffer.end();
+  }
 
   /**
    * @brief

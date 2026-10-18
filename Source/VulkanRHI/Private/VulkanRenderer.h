@@ -86,7 +86,7 @@ class Renderer final
     //  * Create `VkShaderModule`
     //  * Crate Shader Stages Info
     //  * Use Data to create a `VkPipeline` Object
-    auto shadercode       = Optim::VKPipeline::LoadCompiledShader("Shaders/sample.spv");
+    auto shadercode       = Optim::VKPipeline::LoadCompiledShader("Shaders/dynVert.spv");
     auto ShaderModule     = Optim::VKPipeline::CreateVkShaderModule(shadercode, renderContext.device);
     auto shaderStagesInfo = Optim::VKPipeline::CreateVkPipelineShaderStageCreateInfoList(ShaderModule);
 
@@ -143,7 +143,12 @@ class Renderer final
 
     // Reset command buffer then start recodring commands for next frame.
     currentFrame.commandBuffer.reset();
-    currentFrame.RecordCommandBuffer(swapChain, imageIndex, pipeline);
+    currentFrame.Start(swapChain, imageIndex);
+    // currentFrame.RecordCommandBuffer(swapChain, imageIndex, pipeline);
+    currentFrame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
+    currentFrame.commandBuffer.bindVertexBuffers(0, *vertexBuffer.GetBufferData().GetBuffer(), {0});
+    currentFrame.commandBuffer.draw(vertexBuffer.Count(), 1, 0, 0);
+    currentFrame.End(swapChain.images[imageIndex]);
 
     // Only wait for the presentCompleteSemaphore during the color attachement
     // output stage.
