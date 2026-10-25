@@ -39,6 +39,10 @@
 namespace Optim
 {
 
+/**
+ * @brief
+ * Wrapper class for command resources.
+ */
 class CommandResources final
 {
  private:
@@ -54,7 +58,28 @@ class CommandResources final
   CommandResources& operator=(const CommandResources&) = delete;
   CommandResources(std::nullptr_t) {};
 
-  CommandResources(vk::raii::Device& device, uint32 queueFamilyIndex);
+  inline CommandResources(vk::raii::Device& device, uint32 queueIndex)
+  {
+    // Create the command pool
+    vk::CommandPoolCreateInfo poolInfo{
+      .flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+      .queueFamilyIndex = queueIndex
+    };
+
+    commandPool = vk::raii::CommandPool(device, poolInfo);
+
+    // Create the command buffer
+    vk::CommandBufferAllocateInfo allocInfo{
+      .commandPool        = commandPool,
+      .level              = vk::CommandBufferLevel::ePrimary,
+      .commandBufferCount = 1
+    };
+
+    // Contructor create vector of VkCommandBuffer objects. Only take the first
+    // one (using .front() function) and use std::move to move the object as
+    // front return an lvalue ref which is a delete function.
+    commandBuffer = std::move(vk::raii::CommandBuffers(device, allocInfo).front());
+  }
 
   inline bool IsValid() const noexcept { return commandPool != nullptr && commandBuffer != nullptr; }
 
@@ -63,6 +88,10 @@ class CommandResources final
 };
 
 
+/**
+ * @brief
+ * 
+ */
 class FrameRenderer final
 {
  private:
@@ -78,6 +107,13 @@ class FrameRenderer final
   FrameRenderer(const FrameRenderer&)            = delete;
   FrameRenderer& operator=(const FrameRenderer&) = delete;
   FrameRenderer(std::nullptr_t) {};
+
+  FrameRenderer(const vk::raii::Device& device)
+  {
+    // Create the sync objects
+    presentCompleteSemaphore = vk::raii::Semaphore(device, vk::SemaphoreCreateInfo());
+    inFlightFence            = vk::raii::Fence(device, { .flags = vk::FenceCreateFlagBits::eSignaled });
+  }
 
   inline CommandResources&    CmdResources()             noexcept { return cmdResources; }
   inline vk::raii::Semaphore& PresentCompleteSemaphore() noexcept { return presentCompleteSemaphore; }
@@ -100,23 +136,102 @@ class FrameRenderer final
       vk::PipelineStageFlagBits2::eColorAttachmentOutput,
       vk::PipelineStageFlagBits2::eColorAttachmentOutput);
 
+    vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
+
+    vk::RenderingAttachmentInfo attachementInfo = {
+      .imageView   = imageView,
+      .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+      .loadOp      = vk::AttachmentLoadOp::eClear,
+      .storeOp     = vk::AttachmentStoreOp::eStore,
+      .clearValue  = clearColor
+    };
+
+    vk::RenderingInfo renderingInfo = {
+      .renderArea           = { .offset = { 0, 0 }, .extent = extent },
+      .layerCount           = 1,
+      .colorAttachmentCount = 1,
+      .pColorAttachments    = &attachementInfo
+    };
+
+    cmd.beginRendering(renderingInfo);
+
+    // Basic Drawing Commands
+    cmd.setViewport(
+      0,
+      vk::Viewport(
+        0.0f,
+        0.0f,
+        static_cast<float>(extent.width),
+        static_cast<float>(extent.height),
+        0.0f,
+        1.0f));
+
+    cmd.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
   }
 
-  void End(vk::Image& image);
+  inline void End(vk::Image& image)
+  {
+    auto& cmdBuffer = cmdResources.CmdBuffer();
+    cmdBuffer.endRendering();
 
-  void TransitionImageLayout(
+    TransitionImageLayout(
+      image,
+      vk::ImageLayout::eColorAttachmentOptimal,
+      vk::ImageLayout::ePresentSrcKHR,
+      {},
+      vk::AccessFlagBits2::eColorAttachmentWrite,
+      vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits2::eBottomOfPipe | vk::PipelineStageFlagBits2::eColorAttachmentOutput);
+
+    cmdBuffer.end();
+  }
+
+  inline void TransitionImageLayout(
     vk::Image&              vkImage,
     vk::ImageLayout         oldLayout,
     vk::ImageLayout         newLayout,
     vk::AccessFlags2        srcAcesssMask,
     vk::AccessFlags2        dstAcessMask,
     vk::PipelineStageFlags2 srcStageMask,
-    vk::PipelineStageFlags2 dstStageMask);
+    vk::PipelineStageFlags2 dstStageMask)
+  {
+    vk::ImageMemoryBarrier2 barrier = {
+      .srcStageMask        = srcStageMask,
+      .srcAccessMask       = srcAcesssMask,
+      .dstStageMask        = dstStageMask,
+      .dstAccessMask       = dstAcessMask,
+      .oldLayout           = oldLayout,
+      .newLayout           = newLayout,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .image               = vkImage,
+      .subresourceRange    = {
+                              .aspectMask     = vk::ImageAspectFlagBits::eColor,
+                              .baseMipLevel   = 0,
+                              .levelCount     = 1,
+                              .baseArrayLayer = 0,
+                              .layerCount     = 1 }
+    };
+
+    vk::DependencyInfo dependencyInfo = {
+      .dependencyFlags         = {},
+      .imageMemoryBarrierCount = 1,
+      .pImageMemoryBarriers    = &barrier
+    };
+
+    cmdResources.CmdBuffer().pipelineBarrier2(dependencyInfo);
+  }
 };
 
 }; // namespace Optim
 
 
+/****************************************
+ * 
+ * OBJECT BELOW MAY BE DEPRECATED
+ * 
+ * **************************************
+ */
 struct RenderContext;
 struct SwapChainResources;
 
