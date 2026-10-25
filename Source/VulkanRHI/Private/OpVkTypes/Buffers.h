@@ -55,17 +55,24 @@ class VertexBuffer final
   OPTIM_VK_RAII_TYPE(VertexBuffer)
 
   VertexBuffer(std::nullptr_t) {}
- 
-  static constexpr vk::BufferUsageFlags    usageFlags  = vk::BufferUsageFlagBits::eVertexBuffer;
-  static constexpr vk::MemoryPropertyFlags memoryFlags = vk::MemoryPropertyFlagBits::eHostVisible |
-                                                         vk::MemoryPropertyFlagBits::eHostCoherent;
+
+  static constexpr vk::BufferUsageFlags usageFlags = {
+    vk::BufferUsageFlagBits::eVertexBuffer |
+    vk::BufferUsageFlagBits::eTransferDst
+  };
+  static constexpr vk::MemoryPropertyFlags memoryFlags = { // Optimize vertex buffer resource by making it only GPU accessible 
+    // vk::MemoryPropertyFlagBits::eHostVisible |
+    // vk::MemoryPropertyFlagBits::eHostCoherent
+    vk::MemoryPropertyFlagBits::eDeviceLocal
+  };
+  
   VertexBuffer(
     vk::raii::Device&         device,
     vk::raii::PhysicalDevice& physicalDevice,
     std::vector<Vertex>&      vertices,
     vk::BufferUsageFlags      inUsageFlags  = usageFlags,
     vk::MemoryPropertyFlags   inMemoryFlags = memoryFlags) :
-      gpuBuffer(device, physicalDevice, BinSize(vertices), inUsageFlags, inMemoryFlags, vertices.data()),
+      gpuBuffer(device, physicalDevice, BinSize(vertices), inUsageFlags, inMemoryFlags, nullptr),
       vertexCount(vertices.size())
   {}
 

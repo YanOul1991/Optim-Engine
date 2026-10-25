@@ -38,9 +38,9 @@ GpuBuffer::GpuBuffer(
   buffer.bindMemory(*deviceMemory, 0);
 
   // If inital data was provided then map it.
-  if (pInitalData != nullptr) {
-    Map(pInitalData, deviceSize);
-  }
+  // if (pInitalData != nullptr) {
+  //   Map(pInitalData, deviceSize);
+  // }
 }
 
 uint32 GpuBuffer::FindMemoryTypeIndex(const vk::raii::PhysicalDevice& physicalDevice, uint32 typeFilter, vk::MemoryPropertyFlags properties)

@@ -36,6 +36,87 @@
  * for future reuse and safe resource recycling.
  */
 
+namespace Optim
+{
+
+class CommandResources final
+{
+ private:
+  vk::raii::CommandPool   commandPool   = nullptr;
+  vk::raii::CommandBuffer commandBuffer = nullptr;
+
+ public:
+  CommandResources()                                   = default;
+  ~CommandResources()                                  = default;
+  CommandResources(CommandResources&&)                 = default;
+  CommandResources& operator=(CommandResources&&)      = default;
+  CommandResources(const CommandResources&)            = delete;
+  CommandResources& operator=(const CommandResources&) = delete;
+  CommandResources(std::nullptr_t) {};
+
+  CommandResources(vk::raii::Device& device, uint32 queueFamilyIndex);
+
+  inline bool IsValid() const noexcept { return commandPool != nullptr && commandBuffer != nullptr; }
+
+  vk::raii::CommandPool& CmdPool()     noexcept { return commandPool; }
+  vk::raii::CommandBuffer& CmdBuffer() noexcept { return commandBuffer; }
+};
+
+
+class FrameRenderer final
+{
+ private:
+  CommandResources    cmdResources             = nullptr;
+  vk::raii::Semaphore presentCompleteSemaphore = nullptr;
+  vk::raii::Fence     inFlightFence            = nullptr;
+  
+ public:
+  FrameRenderer()                                = default;
+  ~FrameRenderer()                               = default;
+  FrameRenderer(FrameRenderer&&)                 = default;
+  FrameRenderer& operator=(FrameRenderer&&)      = default;
+  FrameRenderer(const FrameRenderer&)            = delete;
+  FrameRenderer& operator=(const FrameRenderer&) = delete;
+  FrameRenderer(std::nullptr_t) {};
+
+  inline CommandResources&    CmdResources()             noexcept { return cmdResources; }
+  inline vk::raii::Semaphore& PresentCompleteSemaphore() noexcept { return presentCompleteSemaphore; }
+  inline vk::raii::Fence&     InFlightFence()            noexcept { return inFlightFence; }
+
+  inline bool IsValid() const noexcept { return cmdResources.IsValid() && *presentCompleteSemaphore && *inFlightFence; }
+
+  inline void Start(vk::Image& image, vk::ImageView& imageView, vk::Extent2D& extent)
+  {
+    auto& cmd = cmdResources.CmdBuffer();
+    cmd.begin({});
+
+    // Transition image layout to optimize for color attachement.
+    TransitionImageLayout(
+      image,
+      vk::ImageLayout::eUndefined,
+      vk::ImageLayout::eColorAttachmentOptimal,
+      {},
+      vk::AccessFlagBits2::eColorAttachmentWrite,
+      vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits2::eColorAttachmentOutput);
+
+  }
+
+  void End(vk::Image& image);
+
+  void TransitionImageLayout(
+    vk::Image&              vkImage,
+    vk::ImageLayout         oldLayout,
+    vk::ImageLayout         newLayout,
+    vk::AccessFlags2        srcAcesssMask,
+    vk::AccessFlags2        dstAcessMask,
+    vk::PipelineStageFlags2 srcStageMask,
+    vk::PipelineStageFlags2 dstStageMask);
+};
+
+}; // namespace Optim
+
+
 struct RenderContext;
 struct SwapChainResources;
 

@@ -40,7 +40,7 @@ cmake --preset debug
 cmake --build --preset debug
 ```
 
-The compiled binaries will be located in the a `output/{preset}` directory.
+The compiled binaries will be located in a `output/{preset}` directory.
 
 <br>
 
