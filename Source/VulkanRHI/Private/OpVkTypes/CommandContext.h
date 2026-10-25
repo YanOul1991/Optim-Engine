@@ -121,7 +121,7 @@ class FrameRenderer final
 
   inline bool IsValid() const noexcept { return cmdResources.IsValid() && *presentCompleteSemaphore && *inFlightFence; }
 
-  inline void Start(vk::Image& image, vk::ImageView& imageView, vk::Extent2D& extent)
+  inline void Start(vk::Image& image, vk::raii::ImageView& imageView, vk::Extent2D& extent)
   {
     auto& cmd = cmdResources.CmdBuffer();
     cmd.begin({});
@@ -232,128 +232,128 @@ class FrameRenderer final
  * 
  * **************************************
  */
-struct RenderContext;
-struct SwapChainResources;
+// struct RenderContext;
+// struct SwapChainResources;
 
-struct CommandContext final
-{
-  vk::raii::CommandPool   commandPool              = nullptr;
-  vk::raii::CommandBuffer commandBuffer            = nullptr;
-  vk::raii::Semaphore     presentCompleteSemaphore = nullptr;
-  vk::raii::Fence         inFlightFence            = nullptr;
+// struct CommandContext final
+// {
+//   vk::raii::CommandPool   commandPool              = nullptr;
+//   vk::raii::CommandBuffer commandBuffer            = nullptr;
+//   vk::raii::Semaphore     presentCompleteSemaphore = nullptr;
+//   vk::raii::Fence         inFlightFence            = nullptr;
 
-  [[nodiscard]]
-  inline bool IsValid() const noexcept
-  {
-    return *commandPool &&
-           *commandBuffer &&
-           *presentCompleteSemaphore &&
-           *inFlightFence;
-  }
+//   [[nodiscard]]
+//   inline bool IsValid() const noexcept
+//   {
+//     return *commandPool &&
+//            *commandBuffer &&
+//            *presentCompleteSemaphore &&
+//            *inFlightFence;
+//   }
 
-  CommandContext()                                     = default;
-  ~CommandContext()                                    = default;
-  CommandContext(CommandContext&&) noexcept            = default;
-  CommandContext& operator=(CommandContext&&) noexcept = default;
-  CommandContext(const CommandContext&)                = delete;
-  CommandContext& operator=(const CommandContext&)     = delete;
+//   CommandContext()                                     = default;
+//   ~CommandContext()                                    = default;
+//   CommandContext(CommandContext&&) noexcept            = default;
+//   CommandContext& operator=(CommandContext&&) noexcept = default;
+//   CommandContext(const CommandContext&)                = delete;
+//   CommandContext& operator=(const CommandContext&)     = delete;
 
-  CommandContext(const vk::raii::Device& device, RenderContext& renderContext);
+//   CommandContext(const vk::raii::Device& device, RenderContext& renderContext);
 
-  /**
-   * @param swapChainContext
-   * A reference to the active swap chain context.
-   *
-   * @param swapChainImageIndex
-   * The index of the swap chain image that we will draw to. This is aquired
-   * by calling `vk::raii::SwapchainKHR::acquireNextImage`. This is managed
-   * in the `DrawFrame` function of the `VulkanRHI` class.
-   *
-   * @param vkPipeline
-   * A reference to the VkPipeline object defining the current render settings.
-   */
-  // [[deprecated]]
-  // void RecordCommandBuffer(SwapChainResources& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
+//   /**
+//    * @param swapChainContext
+//    * A reference to the active swap chain context.
+//    *
+//    * @param swapChainImageIndex
+//    * The index of the swap chain image that we will draw to. This is aquired
+//    * by calling `vk::raii::SwapchainKHR::acquireNextImage`. This is managed
+//    * in the `DrawFrame` function of the `VulkanRHI` class.
+//    *
+//    * @param vkPipeline
+//    * A reference to the VkPipeline object defining the current render settings.
+//    */
+//   // [[deprecated]]
+//   // void RecordCommandBuffer(SwapChainResources& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
 
-  void Start(SwapChainResources& swapChainResources, const uint32 imageIndex);
+//   void Start(SwapChainResources& swapChainResources, const uint32 imageIndex);
 
-  /**
-   * @brief
-   * Calls `vk::raii::CommandBuffer::endRendering()` on the CommandBuffer
-   * object, then transitions layout to optimize for presentation and calls
-   * vk::raii::CommandBuffer::end().
-   *
-   * IMPORTANT:
-   * For now assume these steps are always the last three to be performed,
-   * when implementation of API progress may require restructuring to allow
-   * more flexibility.
-   */
-  inline void End(vk::Image& image)
-  {
-    commandBuffer.endRendering();
+//   /**
+//    * @brief
+//    * Calls `vk::raii::CommandBuffer::endRendering()` on the CommandBuffer
+//    * object, then transitions layout to optimize for presentation and calls
+//    * vk::raii::CommandBuffer::end().
+//    *
+//    * IMPORTANT:
+//    * For now assume these steps are always the last three to be performed,
+//    * when implementation of API progress may require restructuring to allow
+//    * more flexibility.
+//    */
+//   inline void End(vk::Image& image)
+//   {
+//     commandBuffer.endRendering();
 
-    // Transition Image layout to optimize for presentation.
-    TransitionImageLayout(
-      image,
-      vk::ImageLayout::eColorAttachmentOptimal,
-      vk::ImageLayout::ePresentSrcKHR,
-      {},
-      vk::AccessFlagBits2::eColorAttachmentWrite,
-      vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-      vk::PipelineStageFlagBits2::eBottomOfPipe | vk::PipelineStageFlagBits2::eColorAttachmentOutput);
+//     // Transition Image layout to optimize for presentation.
+//     TransitionImageLayout(
+//       image,
+//       vk::ImageLayout::eColorAttachmentOptimal,
+//       vk::ImageLayout::ePresentSrcKHR,
+//       {},
+//       vk::AccessFlagBits2::eColorAttachmentWrite,
+//       vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+//       vk::PipelineStageFlagBits2::eBottomOfPipe | vk::PipelineStageFlagBits2::eColorAttachmentOutput);
 
-    commandBuffer.end();
-  }
+//     commandBuffer.end();
+//   }
 
-  /**
-   * @brief
-   * Helper function to change the image layout of a given `VkImage` contained
-   * in a given `SwapChainResources` object.
-   *
-   * This allows optimization for the image resources depending on the inteded
-   * usage. For example, we transition an image layout to optimize for color
-   * output logic, write our draw commands, transition to a presentation
-   * optimized layout to present the result.
-   *
-   * REFERENCE:
-   * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html#_image_layout_transitions
-   */
+//   /**
+//    * @brief
+//    * Helper function to change the image layout of a given `VkImage` contained
+//    * in a given `SwapChainResources` object.
+//    *
+//    * This allows optimization for the image resources depending on the inteded
+//    * usage. For example, we transition an image layout to optimize for color
+//    * output logic, write our draw commands, transition to a presentation
+//    * optimized layout to present the result.
+//    *
+//    * REFERENCE:
+//    * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/03_Drawing/01_Command_buffers.html#_image_layout_transitions
+//    */
 
-  inline void TransitionImageLayout(
-    vk::Image&              vkImage,
-    vk::ImageLayout         oldLayout,
-    vk::ImageLayout         newLayout,
-    vk::AccessFlags2        srcAcesssMask,
-    vk::AccessFlags2        dstAcessMask,
-    vk::PipelineStageFlags2 srcStageMask,
-    vk::PipelineStageFlags2 dstStageMask)
-  {
-    vk::ImageMemoryBarrier2 barrier = {
-      .srcStageMask        = srcStageMask,
-      .srcAccessMask       = srcAcesssMask,
-      .dstStageMask        = dstStageMask,
-      .dstAccessMask       = dstAcessMask,
-      .oldLayout           = oldLayout,
-      .newLayout           = newLayout,
-      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .image               = vkImage,
-      .subresourceRange    = {
-                              .aspectMask     = vk::ImageAspectFlagBits::eColor,
-                              .baseMipLevel   = 0,
-                              .levelCount     = 1,
-                              .baseArrayLayer = 0,
-                              .layerCount     = 1 }
-    };
+//   inline void TransitionImageLayout(
+//     vk::Image&              vkImage,
+//     vk::ImageLayout         oldLayout,
+//     vk::ImageLayout         newLayout,
+//     vk::AccessFlags2        srcAcesssMask,
+//     vk::AccessFlags2        dstAcessMask,
+//     vk::PipelineStageFlags2 srcStageMask,
+//     vk::PipelineStageFlags2 dstStageMask)
+//   {
+//     vk::ImageMemoryBarrier2 barrier = {
+//       .srcStageMask        = srcStageMask,
+//       .srcAccessMask       = srcAcesssMask,
+//       .dstStageMask        = dstStageMask,
+//       .dstAccessMask       = dstAcessMask,
+//       .oldLayout           = oldLayout,
+//       .newLayout           = newLayout,
+//       .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+//       .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+//       .image               = vkImage,
+//       .subresourceRange    = {
+//                               .aspectMask     = vk::ImageAspectFlagBits::eColor,
+//                               .baseMipLevel   = 0,
+//                               .levelCount     = 1,
+//                               .baseArrayLayer = 0,
+//                               .layerCount     = 1 }
+//     };
 
-    vk::DependencyInfo dependencyInfo = {
-      .dependencyFlags         = {},
-      .imageMemoryBarrierCount = 1,
-      .pImageMemoryBarriers    = &barrier
-    };
+//     vk::DependencyInfo dependencyInfo = {
+//       .dependencyFlags         = {},
+//       .imageMemoryBarrierCount = 1,
+//       .pImageMemoryBarriers    = &barrier
+//     };
 
-    commandBuffer.pipelineBarrier2(dependencyInfo);
-  }
-};
+//     commandBuffer.pipelineBarrier2(dependencyInfo);
+//   }
+// };
 
-using FrameResource = CommandContext;
+// using FrameResource = CommandContext;

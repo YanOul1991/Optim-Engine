@@ -42,9 +42,9 @@ class Renderer final
 
   vk::raii::Pipeline               pipeline = nullptr;
 
-  std::vector<FrameResource>       frames;
-  size_t                           frameIndex;
-  bool                             frameBufferResized = false;
+  std::vector<Optim::FrameRenderer> frames;
+  size_t                            frameIndex;
+  bool                              frameBufferResized = false;
 
   VertexBuffer vertexBuffer = nullptr;
   
@@ -123,7 +123,9 @@ class Renderer final
     
     // Create FrameResources objects
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-      frames.emplace_back(renderContext.device, renderContext);
+      auto frame = Optim::FrameRenderer(renderContext.device);
+      frame.CmdResources() = Optim::CommandResources(renderContext.device, renderContext.queueIndex);
+      frames.emplace_back(std::move(frame));
     }
   }
 
@@ -142,7 +144,7 @@ class Renderer final
      * signaled when the last frame commands have finished being computed by
      * the GPU queue.
      */
-    auto fenceResult = renderContext.device.waitForFences(*currentFrame.inFlightFence, vk::True, UINT64_MAX);
+    auto fenceResult = renderContext.device.waitForFences(*currentFrame.InFlightFence(), vk::True, UINT64_MAX);
     if (fenceResult != vk::Result::eSuccess) {
       throw std::runtime_error("Failed to wait for inFlightFence");
     }
@@ -151,7 +153,7 @@ class Renderer final
      * Aquire a new image index from the swap chain. Signal the presentCompleteSemaphore
      * of the active frame resource.
      */
-    auto [result, imageIndex] = swapChain.swapChain.acquireNextImage(UINT64_MAX, *currentFrame.presentCompleteSemaphore, nullptr);
+    auto [result, imageIndex] = swapChain.swapChain.acquireNextImage(UINT64_MAX, *currentFrame.PresentCompleteSemaphore(), nullptr);
 
     if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || frameBufferResized) {
       frameBufferResized = false;
@@ -163,15 +165,18 @@ class Renderer final
       throw std::runtime_error("Failed to acquire swap chain image");
     }
 
-    renderContext.device.resetFences(*currentFrame.inFlightFence);
+    renderContext.device.resetFences(*currentFrame.InFlightFence());
+
+    auto& commandBuffer = currentFrame.CmdResources().CmdBuffer();
 
     // Reset command buffer then start recodring commands for next frame.
-    currentFrame.commandBuffer.reset();
-    currentFrame.Start(swapChain, imageIndex);
+    commandBuffer.reset();
+    currentFrame.Start(swapChain.images[imageIndex], swapChain.imageViews[imageIndex], swapChain.extent);
+
     // currentFrame.RecordCommandBuffer(swapChain, imageIndex, pipeline);
-    currentFrame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
-    currentFrame.commandBuffer.bindVertexBuffers(0, *vertexBuffer.Buffer(), {0});
-    currentFrame.commandBuffer.draw(testVertices.size(), 1, 0, 0);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
+    commandBuffer.bindVertexBuffers(0, *vertexBuffer.Buffer(), {0});
+    commandBuffer.draw(testVertices.size(), 1, 0, 0);
     currentFrame.End(swapChain.images[imageIndex]);
 
     // Only wait for the presentCompleteSemaphore during the color attachement
@@ -194,14 +199,14 @@ class Renderer final
      */
     const vk::SubmitInfo submitInfo = {
       .waitSemaphoreCount   = 1,
-      .pWaitSemaphores      = &(*currentFrame.presentCompleteSemaphore),
+      .pWaitSemaphores      = &(*currentFrame.PresentCompleteSemaphore()),
       .pWaitDstStageMask    = &waitDstStageMask,
       .commandBufferCount   = 1,
-      .pCommandBuffers      = &(*currentFrame.commandBuffer),
+      .pCommandBuffers      = &(*commandBuffer),
       .signalSemaphoreCount = 1,
       .pSignalSemaphores    = &(*swapChain.renderFinishedSemaphores[imageIndex])
     };
-    renderContext.queue.submit(submitInfo, *currentFrame.inFlightFence);
+    renderContext.queue.submit(submitInfo, *currentFrame.InFlightFence());
 
     /**
      * Presentation:
