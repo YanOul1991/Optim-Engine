@@ -67,7 +67,7 @@ class Renderer final
   /**
    * MIGHT THROW
    */
-  FORCEINLINE void Initialize(SDL_Window* pSDLWindow)
+  void Initialize(SDL_Window* pSDLWindow)
   {
     pWindow = pSDLWindow;
 
@@ -129,7 +129,7 @@ class Renderer final
     }
   }
 
-  FORCEINLINE void DrawFrame()
+  void DrawFrame()
   {
     if (frameBufferResized) {
       frameBufferResized = false;
