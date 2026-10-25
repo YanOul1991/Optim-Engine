@@ -17,37 +17,14 @@ struct SwapChainResources final
   vk::SurfaceFormatKHR             imageFormat;
   vk::Extent2D                     extent;
 
-  SwapChainResources()                                       = default;
+  SwapChainResources()                                         = default;
+  ~SwapChainResources()                                        = default;
   SwapChainResources(SwapChainResources&&) noexcept            = default;
   SwapChainResources& operator=(SwapChainResources&&) noexcept = default;
+  SwapChainResources(const SwapChainResources&)                = delete;
+  SwapChainResources& operator=(const SwapChainResources&)     = delete;
 
-  SwapChainResources(const SwapChainResources&)            = delete;
-  SwapChainResources& operator=(const SwapChainResources&) = delete;
-
-  /**
-   * @brief
-   * Constructor creating a new SwapChainContext from scratch.
-   */
-  SwapChainResources(
-    const vk::raii::Device&         device,
-    const vk::raii::PhysicalDevice& physicalDevice,
-    const vk::raii::SurfaceKHR&     surface,
-    SDL_Window*                     pWindow);
-
-  /**
-   * TODO:
-   *  Implement...
-   *
-   * @brief
-   * Constructor creating a new SwapChainResources from already existing
-   * swapchain context.
-   */
-  // SwapChainResources(
-  //   const vk::raii::Device&         device,
-  //   const vk::raii::PhysicalDevice& physicalDevice,
-  //   const vk::raii::SurfaceKHR&     surface,
-  //   SDL_Window*                     pWindow,
-  //   const SwapChainResources&         oldContext);
+  SwapChainResources(vk::raii::Device& device, vk::raii::PhysicalDevice& physicalDevice, vk::raii::SurfaceKHR& surface, SDL_Window* pWindow);
 
   [[nodiscard]]
   inline bool IsValid() const noexcept

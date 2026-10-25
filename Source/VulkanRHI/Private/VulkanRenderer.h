@@ -29,18 +29,30 @@ class Renderer final
   static constexpr inline int32 MAX_FRAMES_IN_FLIGHT = 2;
 
   SDL_Window*                      pWindow = nullptr;
+
   vk::raii::Context                context;
   vk::raii::Instance               instance       = nullptr;
-  vk::raii::SurfaceKHR             surface        = nullptr;
   vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
+
+  vk::raii::SurfaceKHR             surface        = nullptr;
   RenderContext                    renderContext;
   SwapChainResources               swapChain;
+
   vk::raii::Pipeline               pipeline = nullptr;
+
   std::vector<FrameResource>       frames;
   size_t                           frameIndex;
   bool                             frameBufferResized = false;
 
-  VertexBuffer vertexBuffer;
+  VertexBuffer vertexBuffer = nullptr;
+  
+  // BufferData _test_vertexBuffer;
+  // TEST FIELD
+  std::vector<Vertex> testVertices = {
+    { { 0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+    {  { 0.5f, 0.5f }, { 0.0f, 0.5f, 0.0f } },
+    { { -0.5f, 0.5f }, { 0.0f, 0.5f, 0.0f } }
+  };
 
   /**
    * MIGHT THROW
@@ -95,7 +107,8 @@ class Renderer final
       throw std::runtime_error("VkPipeline Initalization FAILURE");
     }
 
-    vertexBuffer = VertexBuffer(renderContext.device, renderContext.physicalDevice);
+    // Vertex buffer creation
+    vertexBuffer = VertexBuffer(renderContext.device, renderContext.physicalDevice, testVertices);
 
     // Create FrameResources objects
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -146,8 +159,8 @@ class Renderer final
     currentFrame.Start(swapChain, imageIndex);
     // currentFrame.RecordCommandBuffer(swapChain, imageIndex, pipeline);
     currentFrame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
-    currentFrame.commandBuffer.bindVertexBuffers(0, *vertexBuffer.GetBufferData().GetBuffer(), {0});
-    currentFrame.commandBuffer.draw(vertexBuffer.Count(), 1, 0, 0);
+    currentFrame.commandBuffer.bindVertexBuffers(0, *vertexBuffer.Buffer(), {0});
+    currentFrame.commandBuffer.draw(testVertices.size(), 1, 0, 0);
     currentFrame.End(swapChain.images[imageIndex]);
 
     // Only wait for the presentCompleteSemaphore during the color attachement

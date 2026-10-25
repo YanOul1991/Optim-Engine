@@ -95,11 +95,7 @@ uint32 SelectSwapChainMinImageCount(const vk::SurfaceCapabilitiesKHR& capabiliti
  * First time swap chain context constructor, creates a brand new
  * `SwapChainResources` object.
  */
-SwapChainResources::SwapChainResources(
-  const vk::raii::Device&         device,
-  const vk::raii::PhysicalDevice& physicalDevice,
-  const vk::raii::SurfaceKHR&     surface,
-  SDL_Window*                     pWindow)
+SwapChainResources::SwapChainResources(vk::raii::Device& device, vk::raii::PhysicalDevice& physicalDevice, vk::raii::SurfaceKHR& surface, SDL_Window* pWindow)
 {
   // Get surface available basic capabilities, formats & present modes
   auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);

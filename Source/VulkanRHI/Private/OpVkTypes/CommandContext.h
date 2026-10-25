@@ -54,15 +54,13 @@ struct CommandContext final
            *presentCompleteSemaphore &&
            *inFlightFence;
   }
-  
-  CommandContext() = default;
 
-  // Yes move :D
+  CommandContext()                                     = default;
+  ~CommandContext()                                    = default;
   CommandContext(CommandContext&&) noexcept            = default;
   CommandContext& operator=(CommandContext&&) noexcept = default;
-  // No copy >:(
-  CommandContext(const CommandContext&)            = delete;
-  CommandContext& operator=(const CommandContext&) = delete;
+  CommandContext(const CommandContext&)                = delete;
+  CommandContext& operator=(const CommandContext&)     = delete;
 
   CommandContext(const vk::raii::Device& device, RenderContext& renderContext);
 
@@ -78,8 +76,8 @@ struct CommandContext final
    * @param vkPipeline
    * A reference to the VkPipeline object defining the current render settings.
    */
-  [[deprecated]]
-  void RecordCommandBuffer(SwapChainResources& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
+  // [[deprecated]]
+  // void RecordCommandBuffer(SwapChainResources& swapChainContext, const uint32 swapChainImageIndex, const vk::raii::Pipeline& vkPipeline);
 
   void Start(SwapChainResources& swapChainResources, const uint32 imageIndex);
 

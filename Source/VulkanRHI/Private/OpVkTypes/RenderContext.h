@@ -24,15 +24,12 @@ struct RenderContext final
   }
 
   // Null constructor
-  RenderContext() = default;
-  
-  // Yes move
+  RenderContext()                                    = default;
+  ~RenderContext()                                   = default;
   RenderContext(RenderContext&&) noexcept            = default;
   RenderContext& operator=(RenderContext&&) noexcept = default;
-  // No copy
-  RenderContext(const RenderContext&)            = delete;
-  RenderContext& operator=(const RenderContext&) = delete;
+  RenderContext(const RenderContext&)                = delete;
+  RenderContext& operator=(const RenderContext&)     = delete;
 
-  // Non null default constructor
   RenderContext(const vk::raii::Instance& instance, const vk::raii::SurfaceKHR& surface);
 };
