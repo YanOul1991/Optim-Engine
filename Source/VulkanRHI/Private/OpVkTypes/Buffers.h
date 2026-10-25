@@ -12,6 +12,10 @@ inline constexpr size_t BinSize(const std::array<T, N>& v) {
   return sizeof(T) * std::size(v);
 }
 
+/**
+ * @brief
+ * Wrapper class for generic GPU buffers.
+ */
 class GpuBuffer final
 {
  private:
@@ -45,6 +49,12 @@ class GpuBuffer final
   vk::raii::DeviceMemory& DeviceMemory() { return deviceMemory; }
 };
 
+/**
+ * @brief
+ * Wrapper class for generic GPU vertex buffer.
+ * By default the resources on the GPU are in device local memory, therfore not acessible 
+ * on the CPU side. Must use a dedicated buffer to transfer data.
+ */
 class VertexBuffer final
 {
  private:
@@ -61,8 +71,6 @@ class VertexBuffer final
     vk::BufferUsageFlagBits::eTransferDst
   };
   static constexpr vk::MemoryPropertyFlags memoryFlags = { // Optimize vertex buffer resource by making it only GPU accessible 
-    // vk::MemoryPropertyFlagBits::eHostVisible |
-    // vk::MemoryPropertyFlagBits::eHostCoherent
     vk::MemoryPropertyFlagBits::eDeviceLocal
   };
   
