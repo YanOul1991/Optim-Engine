@@ -64,8 +64,6 @@ class VertexBuffer final
  public:
   OPTIM_VK_RAII_TYPE(VertexBuffer)
 
-  VertexBuffer(std::nullptr_t) {}
-
   static constexpr vk::BufferUsageFlags usageFlags = {
     vk::BufferUsageFlagBits::eVertexBuffer |
     vk::BufferUsageFlagBits::eTransferDst

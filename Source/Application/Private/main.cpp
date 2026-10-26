@@ -101,10 +101,8 @@ int main(int argc, char* argv[])
 
     timer.End();
 
-    if (loopCycles < 2048) {
-      average += timer.GetMs();
-      loopCycles++;
-    }
+    average += timer.GetMs();
+    loopCycles++;
   }
 
   average /= loopCycles;

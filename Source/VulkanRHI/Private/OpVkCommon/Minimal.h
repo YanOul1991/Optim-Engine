@@ -21,7 +21,8 @@
   _CLASS_(_CLASS_&&)                 = default; \
   _CLASS_& operator=(_CLASS_&&)      = default; \
   _CLASS_(const _CLASS_&)            = delete;  \
-  _CLASS_& operator=(const _CLASS_&) = delete;
+  _CLASS_& operator=(const _CLASS_&) = delete;  \
+  _CLASS_(std::nullptr_t){};
 
 namespace Optim::VK
 {
