@@ -231,7 +231,7 @@ class Renderer final
       frameBufferResized = false;
       RecreateSwapChain();
     }
-
+    
     // Advance frame index
     frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
   }

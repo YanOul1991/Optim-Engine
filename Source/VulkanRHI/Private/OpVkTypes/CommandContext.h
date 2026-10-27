@@ -106,20 +106,12 @@ class FrameRenderer final
   CommandResources    cmdResources             = nullptr;
   vk::raii::Semaphore presentCompleteSemaphore = nullptr;
   vk::raii::Fence     inFlightFence            = nullptr;
-
   // Keep track of active image layout for image transitions.
   // Must test to make sure it doesnt cause sync issues with command recording
   vk::ImageLayout currentImageLayout = vk::ImageLayout::eUndefined;
 
  public:
   OPTIM_VK_RAII_TYPE(FrameRenderer)
-  // FrameRenderer()                                = default;
-  // ~FrameRenderer()                               = default;
-  // FrameRenderer(FrameRenderer&&)                 = default;
-  // FrameRenderer& operator=(FrameRenderer&&)      = default;
-  // FrameRenderer(const FrameRenderer&)            = delete;
-  // FrameRenderer& operator=(const FrameRenderer&) = delete;
-  // FrameRenderer(std::nullptr_t) {};
 
   FrameRenderer(const vk::raii::Device& device) :
       presentCompleteSemaphore(vk::raii::Semaphore(device, vk::SemaphoreCreateInfo())),
@@ -130,7 +122,8 @@ class FrameRenderer final
   inline vk::raii::Semaphore&     PresentCompleteSemaphore() noexcept { return presentCompleteSemaphore; }
   inline vk::raii::Fence&         InFlightFence()            noexcept { return inFlightFence; }
   // Maybe find a more efficient way of getting underlying CommandResources members ???
-  inline vk::raii::CommandPool&   CommandPool()              noexcept { return cmdResources.CmdPool(); }
+  // inline vk::raii::CommandPool&   CommandPool()              noexcept { return cmdResources.CmdPool(); }
+  // Only keep CommandBuffer as so for its what we need most of the time.
   inline vk::raii::CommandBuffer& CommandBuffer()            noexcept { return cmdResources.CmdBuffer(); }
 
   [[nodiscard]]

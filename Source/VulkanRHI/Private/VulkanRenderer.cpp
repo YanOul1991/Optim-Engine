@@ -48,3 +48,9 @@ void Renderer::InitalizeVertexBuffer()
   renderContext.queue.waitIdle();
   Debug::PrintLn("Copy complete");
 }
+
+// void Renderer::Initialize(SDL_Window *pSDLWindow)
+// {}
+
+// void Renderer::DrawFrame()
+// {}
