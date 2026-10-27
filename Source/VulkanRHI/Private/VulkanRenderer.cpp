@@ -44,9 +44,7 @@ void Renderer::InitalizeVertexBuffer()
   // Submit work to queue then, simply wait for it to be idle. (Could use a fence as well)
   renderContext.queue.submit(vk::SubmitInfo{ .commandBufferCount = 1, .pCommandBuffers = &*cmdBuf }, nullptr);
 
-  // Debug::PrintLn("Copying From Staging buffer into vertex buffer...");
   renderContext.queue.waitIdle();
-  // Debug::PrintLn("Copy complete");
 }
 
 void Renderer::InitializeIndexBuffer()
@@ -93,10 +91,7 @@ void Renderer::InitializeIndexBuffer()
 
   // Submit work to queue then, simply wait for it to be idle. (Could use a fence as well)
   renderContext.queue.submit(vk::SubmitInfo{ .commandBufferCount = 1, .pCommandBuffers = &*cmdBuf }, nullptr);
-
-  // Debug::PrintLn("Copying From Staging buffer into vertex buffer...");
   renderContext.queue.waitIdle();
-  // Debug::PrintLn("Copy complete");
 }
 
 // void Renderer::Initialize(SDL_Window *pSDLWindow)
