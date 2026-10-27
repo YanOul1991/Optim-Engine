@@ -47,15 +47,20 @@ class Renderer final
   bool                              frameBufferResized = false;
 
   VertexBuffer vertexBuffer = nullptr;
-  
+  GpuBuffer    indexBuffer  = nullptr;
+
   // BufferData _test_vertexBuffer;
   // TEST FIELD
   std::vector<Vertex> testVertices = {
-    { { 0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-    {  { 0.5f, 0.5f }, { 0.0f, 0.5f, 0.0f } },
-    { { -0.5f, 0.5f }, { 0.0f, 0.5f, 0.0f } }
+    { { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+    {  { 0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
+    {   { 0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } },
+    {  { -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f } }
   };
 
+  std::vector<uint32> indices = {
+    0, 1, 2, 2, 3, 0
+  };
 
   /**
    * @brief
@@ -63,6 +68,8 @@ class Renderer final
    * device local vertex buffer.
    */
   void InitalizeVertexBuffer();
+
+  void InitializeIndexBuffer();
 
   /**
    * MIGHT THROW
@@ -119,7 +126,17 @@ class Renderer final
 
     // Vertex buffer creation
     vertexBuffer = VertexBuffer(renderContext.device, renderContext.physicalDevice, testVertices);
-    InitalizeVertexBuffer();
+
+    // Create the index buffer from generic GpuBuffer class
+    indexBuffer = GpuBuffer(renderContext.device,
+                            renderContext.physicalDevice,
+                            BinSize(indices),
+                            vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+                            vk::MemoryPropertyFlagBits::eDeviceLocal,
+                            nullptr);
+
+    InitalizeVertexBuffer(); 
+    InitializeIndexBuffer();
     
     // Create FrameResources objects
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -176,7 +193,9 @@ class Renderer final
     // currentFrame.RecordCommandBuffer(swapChain, imageIndex, pipeline);
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
     commandBuffer.bindVertexBuffers(0, *vertexBuffer.Buffer(), {0});
-    commandBuffer.draw(testVertices.size(), 1, 0, 0);
+    commandBuffer.bindIndexBuffer(*indexBuffer.Buffer(), 0, vk::IndexType::eUint32);
+    // commandBuffer.draw(testVertices.size(), 1, 0, 0);
+    commandBuffer.drawIndexed(static_cast<uint32>(indices.size()), 1, 0, 0, 0);
     currentFrame.End(swapChain.images[imageIndex]);
 
     // Only wait for the presentCompleteSemaphore during the color attachement
