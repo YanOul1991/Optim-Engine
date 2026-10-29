@@ -57,13 +57,6 @@ class CommandResources final
 
  public:
   OPTIM_VK_RAII_TYPE(CommandResources)
-  // CommandResources()                                   = default;
-  // ~CommandResources()                                  = default;
-  // CommandResources(CommandResources&&)                 = default;
-  // CommandResources& operator=(CommandResources&&)      = default;
-  // CommandResources(const CommandResources&)            = delete;
-  // CommandResources& operator=(const CommandResources&) = delete;
-  // CommandResources(std::nullptr_t) {};
 
   inline CommandResources(vk::raii::Device& device, uint32 queueIndex)
   {
@@ -96,9 +89,18 @@ class CommandResources final
 
 /**
  * TODO: 
- *  - Add description for frame renderer. 
- *  - Review object's implementation and functionalities, as currently it is 
- *    quite verbose for no reason.
+ *  - Consider chaching some fields especially in `Start()` functions such as
+ *    vk::RenderingAttachmentInfo or vk::RenderingInfo.
+ * 
+ *  - Consider if the TransitionImageLayout should be implicitly done in Start
+ *    and End functions or excplicitly called.
+ * 
+ *  - Should FrameRender manage presentation since it handles Transition to 
+ *    presentation or make SwapChainResource manage this, but may add tighter
+ *    coupling between the two classes.
+ * 
+ *  - Review what command operations can be implicitly called such as in 
+ *    Start() functionsand which should be explicitly called.
  */
 class FrameRenderer final
 {
@@ -106,9 +108,14 @@ class FrameRenderer final
   CommandResources    cmdResources             = nullptr;
   vk::raii::Semaphore presentCompleteSemaphore = nullptr;
   vk::raii::Fence     inFlightFence            = nullptr;
-  // Keep track of active image layout for image transitions.
-  // Must test to make sure it doesnt cause sync issues with command recording
-  vk::ImageLayout currentImageLayout = vk::ImageLayout::eUndefined;
+
+  // ??? Keep track of active image layout to ease TransitionImageLayout 
+  // ??? function and not require last image layout to be given.
+  // vk::ImageLayout currentImageLayout = vk::ImageLayout::eUndefined;
+
+  // ??? Cache renderInfo & renderAttachementInfo.
+  // vk::RenderingAttachmentInfo renderAttachementInfo;
+  // vk::RenderingInfo           renderInfo;
 
  public:
   OPTIM_VK_RAII_TYPE(FrameRenderer)
@@ -121,9 +128,6 @@ class FrameRenderer final
   inline CommandResources&        CmdResources()             noexcept { return cmdResources; }
   inline vk::raii::Semaphore&     PresentCompleteSemaphore() noexcept { return presentCompleteSemaphore; }
   inline vk::raii::Fence&         InFlightFence()            noexcept { return inFlightFence; }
-  // Maybe find a more efficient way of getting underlying CommandResources members ???
-  // inline vk::raii::CommandPool&   CommandPool()              noexcept { return cmdResources.CmdPool(); }
-  // Only keep CommandBuffer as so for its what we need most of the time.
   inline vk::raii::CommandBuffer& CommandBuffer()            noexcept { return cmdResources.CmdBuffer(); }
 
   [[nodiscard]]
@@ -144,6 +148,7 @@ class FrameRenderer final
       vk::PipelineStageFlagBits2::eColorAttachmentOutput,
       vk::PipelineStageFlagBits2::eColorAttachmentOutput);
 
+    // ??? inline clearColor in attachement info, as it is a trivial thing,
     vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
 
     vk::RenderingAttachmentInfo attachementInfo = {
@@ -154,6 +159,14 @@ class FrameRenderer final
       .clearValue  = clearColor
     };
 
+    // ??? only update the image view per frame, as other fields are
+    // ??? always static per frame.
+    attachementInfo.setImageView(imageView);
+
+    // ??? Cache rendering info with encapsulated field & functions 
+    // ??? If using field(caches) attachement info, then pColorAttachements
+    // ??? should not cause issue as the pointer should be always valid and 
+    // ??? point to the same object everyframe.
     vk::RenderingInfo renderingInfo = {
       .renderArea           = { .offset = { 0, 0 }, .extent = extent },
       .layerCount           = 1,
@@ -161,9 +174,12 @@ class FrameRenderer final
       .pColorAttachments    = &attachementInfo
     };
 
+    // ??? Should vk::raii::CommandBuffer::beginRendering be called implicitly in Start()
+    // ??? or should it be explicitly called by Renderer object.
     cmd.beginRendering(renderingInfo);
 
-    // Basic Drawing Commands
+   // ??? If vk::raii::CommandBuffer::beginRendering() is implicitly called,
+   // ??? keep implicit call of setViewport.
     cmd.setViewport(
       0,
       vk::Viewport(
@@ -173,13 +189,16 @@ class FrameRenderer final
         static_cast<float>(extent.height),
         0.0f,
         1.0f));
-
+    
+    // ??? Set scissors may be more usefull if explicitly called, 
+    // ??? but ok for implicit call for now.
     cmd.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
   }
 
   inline void End(vk::Image& image)
   {
     auto& cmdBuffer = cmdResources.CmdBuffer();
+
     cmdBuffer.endRendering();
 
     TransitionImageLayout(
