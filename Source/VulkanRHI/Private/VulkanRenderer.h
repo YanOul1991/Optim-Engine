@@ -38,10 +38,10 @@ class Renderer final
 
   vk::raii::SurfaceKHR             surface        = nullptr;
   RenderContext                    renderContext;
+  // Optim::SwapChainResource         swapChain;
   SwapChainResources               swapChain;
 
-  vk::raii::Pipeline               pipeline = nullptr;
-
+  vk::raii::Pipeline                pipeline = nullptr;
   std::vector<Optim::FrameRenderer> frames;
   size_t                            frameIndex;
   bool                              frameBufferResized = false;

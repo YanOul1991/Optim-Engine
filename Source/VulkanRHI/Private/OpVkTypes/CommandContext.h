@@ -58,7 +58,7 @@ class CommandResources final
  public:
   OPTIM_VK_RAII_TYPE(CommandResources)
 
-  inline CommandResources(vk::raii::Device& device, uint32 queueIndex)
+  inline CommandResources(const vk::raii::Device& device, uint32 queueIndex)
   {
     // Create the command pool
     vk::CommandPoolCreateInfo poolInfo{
@@ -109,18 +109,16 @@ class FrameRenderer final
   vk::raii::Semaphore presentCompleteSemaphore = nullptr;
   vk::raii::Fence     inFlightFence            = nullptr;
 
-  // ??? Keep track of active image layout to ease TransitionImageLayout 
-  // ??? function and not require last image layout to be given.
-  // vk::ImageLayout currentImageLayout = vk::ImageLayout::eUndefined;
-
-  // ??? Cache renderInfo & renderAttachementInfo.
-  // vk::RenderingAttachmentInfo renderAttachementInfo;
-  // vk::RenderingInfo           renderInfo;
-
  public:
   OPTIM_VK_RAII_TYPE(FrameRenderer)
 
   FrameRenderer(const vk::raii::Device& device) :
+      presentCompleteSemaphore(vk::raii::Semaphore(device, vk::SemaphoreCreateInfo())),
+      inFlightFence(vk::raii::Fence(device, { .flags = vk::FenceCreateFlagBits::eSignaled }))
+  {}
+
+  FrameRenderer(const vk::raii::Device& device, uint32 queueIndex) :
+      cmdResources(device, queueIndex),
       presentCompleteSemaphore(vk::raii::Semaphore(device, vk::SemaphoreCreateInfo())),
       inFlightFence(vk::raii::Fence(device, { .flags = vk::FenceCreateFlagBits::eSignaled }))
   {}
@@ -132,6 +130,12 @@ class FrameRenderer final
 
   [[nodiscard]]
   inline bool IsValid() const noexcept { return cmdResources.IsValid() && *presentCompleteSemaphore && *inFlightFence; }
+
+  // inline void BeginCommandRecord()
+  // {
+  //   auto& cmd = cmdResources.CmdBuffer();
+  //   cmd.begin({});
+  // }
 
   inline void Start(vk::Image& image, vk::raii::ImageView& imageView, vk::Extent2D& extent)
   {
@@ -148,25 +152,14 @@ class FrameRenderer final
       vk::PipelineStageFlagBits2::eColorAttachmentOutput,
       vk::PipelineStageFlagBits2::eColorAttachmentOutput);
 
-    // ??? inline clearColor in attachement info, as it is a trivial thing,
-    vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
-
     vk::RenderingAttachmentInfo attachementInfo = {
       .imageView   = imageView,
       .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
       .loadOp      = vk::AttachmentLoadOp::eClear,
       .storeOp     = vk::AttachmentStoreOp::eStore,
-      .clearValue  = clearColor
+      .clearValue  = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f)
     };
 
-    // ??? only update the image view per frame, as other fields are
-    // ??? always static per frame.
-    attachementInfo.setImageView(imageView);
-
-    // ??? Cache rendering info with encapsulated field & functions 
-    // ??? If using field(caches) attachement info, then pColorAttachements
-    // ??? should not cause issue as the pointer should be always valid and 
-    // ??? point to the same object everyframe.
     vk::RenderingInfo renderingInfo = {
       .renderArea           = { .offset = { 0, 0 }, .extent = extent },
       .layerCount           = 1,
@@ -174,12 +167,9 @@ class FrameRenderer final
       .pColorAttachments    = &attachementInfo
     };
 
-    // ??? Should vk::raii::CommandBuffer::beginRendering be called implicitly in Start()
-    // ??? or should it be explicitly called by Renderer object.
     cmd.beginRendering(renderingInfo);
-
-   // ??? If vk::raii::CommandBuffer::beginRendering() is implicitly called,
-   // ??? keep implicit call of setViewport.
+    
+    // ??? Should be explicit
     cmd.setViewport(
       0,
       vk::Viewport(
@@ -189,18 +179,33 @@ class FrameRenderer final
         static_cast<float>(extent.height),
         0.0f,
         1.0f));
-    
-    // ??? Set scissors may be more usefull if explicitly called, 
-    // ??? but ok for implicit call for now.
+
+    // ??? Should be explicit
     cmd.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
   }
+
+  // inline void SetViewport(const vk::Extent2D& extent)
+  // {
+  //   cmdResources.CmdBuffer().setViewport(
+  //     0,
+  //     vk::Viewport(
+  //       0.0f,
+  //       0.0f,
+  //       static_cast<float>(extent.width),
+  //       static_cast<float>(extent.height),
+  //       0.0f,
+  //       1.0f));
+  // }
+  // inline void SetDefaultScissors(const vk::Extent2D& extent) 
+  // {
+  //   cmdResources.CmdBuffer().setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
+  // }
 
   inline void End(vk::Image& image)
   {
     auto& cmdBuffer = cmdResources.CmdBuffer();
-
     cmdBuffer.endRendering();
-
+    
     TransitionImageLayout(
       image,
       vk::ImageLayout::eColorAttachmentOptimal,
@@ -213,6 +218,7 @@ class FrameRenderer final
     cmdBuffer.end();
   }
 
+  // ??? Consider moving image layout transition into SwapChainResources.
   inline void TransitionImageLayout(
     vk::Image&              vkImage,
     vk::ImageLayout         oldLayout,
