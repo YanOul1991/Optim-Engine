@@ -38,8 +38,8 @@ class Renderer final
 
   vk::raii::SurfaceKHR             surface        = nullptr;
   RenderContext                    renderContext;
-  // Optim::SwapChainResource         swapChain;
-  SwapChainResources               swapChain;
+  Optim::SwapChainResource         swapChain;
+  // SwapChainResources               swapChain;
 
   vk::raii::Pipeline                pipeline = nullptr;
   std::vector<Optim::FrameRenderer> frames;
@@ -105,7 +105,7 @@ class Renderer final
     }
 
     // Create the initial SwapChainResources
-    swapChain = SwapChainResources(renderContext.device, renderContext.physicalDevice, surface, pSDLWindow);
+    swapChain = Optim::SwapChainResource(renderContext.device, renderContext.physicalDevice, surface, pSDLWindow);
     if (!swapChain.IsValid()) {
       throw std::runtime_error("SwapChainResources Initalization FAILURE");
     }
@@ -119,7 +119,8 @@ class Renderer final
     auto ShaderModule     = Optim::VKPipeline::CreateVkShaderModule(shadercode, renderContext.device);
     auto shaderStagesInfo = Optim::VKPipeline::CreateVkPipelineShaderStageCreateInfoList(ShaderModule);
 
-    pipeline = Optim::VKPipeline::CreateVulkanPipeline(swapChain, shaderStagesInfo, renderContext.device);
+    // pipeline = Optim::VKPipeline::CreateVulkanPipeline(swapChain, shaderStagesInfo, renderContext.device);
+    pipeline = Optim::VK::CreateVulkanPipeline(renderContext.device, swapChain.ImageFormat().format, shaderStagesInfo);
     if (pipeline == nullptr) {
       throw std::runtime_error("VkPipeline Initalization FAILURE");
     }
@@ -170,7 +171,7 @@ class Renderer final
      * Aquire a new image index from the swap chain. Signal the presentCompleteSemaphore
      * of the active frame resource.
      */
-    auto [result, imageIndex] = swapChain.swapChain.acquireNextImage(UINT64_MAX, *currentFrame.PresentCompleteSemaphore(), nullptr);
+    auto [result, imageIndex] = swapChain.SwapChain().acquireNextImage(UINT64_MAX, *currentFrame.PresentCompleteSemaphore(), nullptr);
 
     if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || frameBufferResized) {
       frameBufferResized = false;
@@ -188,7 +189,7 @@ class Renderer final
 
     // Reset command buffer then start recodring commands for next frame.
     commandBuffer.reset();
-    currentFrame.Start(swapChain.images[imageIndex], swapChain.imageViews[imageIndex], swapChain.extent);
+    currentFrame.Start(swapChain.Images()[imageIndex], swapChain.ImageViews()[imageIndex], swapChain.ImageExtent());
 
     // currentFrame.RecordCommandBuffer(swapChain, imageIndex, pipeline);
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
@@ -196,7 +197,7 @@ class Renderer final
     commandBuffer.bindIndexBuffer(*indexBuffer.Buffer(), 0, vk::IndexType::eUint32);
     // commandBuffer.draw(testVertices.size(), 1, 0, 0);
     commandBuffer.drawIndexed(static_cast<uint32>(indices.size()), 1, 0, 0, 0);
-    currentFrame.End(swapChain.images[imageIndex]);
+    currentFrame.End(swapChain.Images()[imageIndex]);
 
     // Only wait for the presentCompleteSemaphore during the color attachement
     // output stage.
@@ -223,7 +224,7 @@ class Renderer final
       .commandBufferCount   = 1,
       .pCommandBuffers      = &(*commandBuffer),
       .signalSemaphoreCount = 1,
-      .pSignalSemaphores    = &(*swapChain.renderFinishedSemaphores[imageIndex])
+      .pSignalSemaphores    = &(*swapChain.RenderFinishedSemaphore()[imageIndex])
     };
     renderContext.queue.submit(submitInfo, *currentFrame.InFlightFence());
 
@@ -239,9 +240,9 @@ class Renderer final
 
     const vk::PresentInfoKHR presentInfo = {
       .waitSemaphoreCount = 1,
-      .pWaitSemaphores    = &(*swapChain.renderFinishedSemaphores[imageIndex]),
+      .pWaitSemaphores    = &(*swapChain.RenderFinishedSemaphore()[imageIndex]),
       .swapchainCount     = 1,
-      .pSwapchains        = &(*swapChain.swapChain),
+      .pSwapchains        = &(*swapChain.SwapChain()),
       .pImageIndices      = &imageIndex
     };
     result = renderContext.queue.presentKHR(presentInfo);
@@ -263,8 +264,9 @@ class Renderer final
   inline void RecreateSwapChain()
   {
     WaitForDeviceIdle();
-    swapChain.imageViews.clear();
-    swapChain.swapChain = nullptr;
-    swapChain           = std::move(SwapChainResources(renderContext.device, renderContext.physicalDevice, surface, pWindow));
+    swapChain.ImageViews().clear();
+    swapChain.SwapChain() = nullptr;
+
+    swapChain = std::move(Optim::SwapChainResource(renderContext.device, renderContext.physicalDevice, surface, pWindow));
   }
 };
