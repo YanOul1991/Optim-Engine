@@ -94,73 +94,6 @@ uint32 SelectSwapChainMinImageCount(const vk::SurfaceCapabilitiesKHR& capabiliti
   return minImgCount;
 }
 
-/**
- * @brief
- * First time swap chain context constructor, creates a brand new
- * `SwapChainResources` object.
- */
-// SwapChainResources::SwapChainResources(vk::raii::Device& device, vk::raii::PhysicalDevice& physicalDevice, vk::raii::SurfaceKHR& surface, SDL_Window* pWindow)
-// {
-//   // Get surface available basic capabilities, formats & present modes
-//   auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
-//   auto surfaceFormats      = physicalDevice.getSurfaceFormatsKHR(*surface);
-//   auto surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
-//   // Select optimal swap chain settings
-//   auto selectedSwapChainFormat        = SelectSwapChainVkSurfaceKHRFormat(surfaceFormats);
-//   auto selectedSwapChainPresentMode   = SelectSwapChainVkPresentModeKHR(surfacePresentModes);
-//   auto selectedSwapChainExtent        = SelectSwapChainVkExtend2D(surfaceCapabilities, pWindow);
-//   auto selectedSwapChainMinImageCount = SelectSwapChainMinImageCount(surfaceCapabilities);
-//   // Swap Chain create info
-//   vk::SwapchainCreateInfoKHR swapChainCreateInfo{
-//     .surface          = *surface,
-//     .minImageCount    = selectedSwapChainMinImageCount,
-//     .imageFormat      = selectedSwapChainFormat.format,
-//     .imageColorSpace  = selectedSwapChainFormat.colorSpace,
-//     .imageExtent      = selectedSwapChainExtent,
-//     .imageArrayLayers = 1,
-//     .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment,
-//     .imageSharingMode = vk::SharingMode::eExclusive,
-//     .preTransform     = surfaceCapabilities.currentTransform,
-//     .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-//     .presentMode      = selectedSwapChainPresentMode,
-//     .clipped          = true
-//   };
-//   // Start assigning Vulkan objects to SwapChainResources
-//   swapChain   = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
-//   images      = swapChain.getImages();
-//   imageFormat = selectedSwapChainFormat;
-//   extent      = selectedSwapChainExtent;
-//   // Create the Image views
-//   vk::ImageViewCreateInfo imageViewCreateInfo{
-//     .viewType         = vk::ImageViewType::e2D,
-//     .format           = this->imageFormat.format,
-//     .components       = { vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity },
-//     .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 },
-//   };
-//   // Create image views
-//   for (auto& image : images) {
-//     imageViewCreateInfo.image = image;
-//     imageViews.emplace_back(device.createImageView(imageViewCreateInfo));
-//   }
-//   if (renderFinishedSemaphores.empty()) {
-//     // Create sync semaphores.
-//     for (int i = 0; i < images.size(); i++) {
-//       renderFinishedSemaphores.emplace_back(device, vk::SemaphoreCreateInfo());
-//     }
-//   }
-// }
-
-/**
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- */
 Optim::SwapChainResource::SwapChainResource(vk::raii::Device& device, vk::raii::PhysicalDevice& physicalDevice, vk::raii::SurfaceKHR& surface, SDL_Window* pWindow)
 {
   // Get surface available basic capabilities, formats & present modes
@@ -199,7 +132,7 @@ Optim::SwapChainResource::SwapChainResource(vk::raii::Device& device, vk::raii::
   // Create the Image views
   vk::ImageViewCreateInfo imageViewCreateInfo{
     .viewType         = vk::ImageViewType::e2D,
-    .format           = this->imageFormat.format,
+    .format           = imageFormat.format,
     .components       = { vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity },
     .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 },
   };
@@ -210,8 +143,10 @@ Optim::SwapChainResource::SwapChainResource(vk::raii::Device& device, vk::raii::
     imageViews.emplace_back(device.createImageView(imageViewCreateInfo));
   }
 
+  // Create sync semaphores.
+  // Checks if empty because during swap chain recreation sync objects are not destroyed
+  // and are simply moved to new updated instance.
   if (renderFinishedSemaphores.empty()) {
-    // Create sync semaphores.
     for (int i = 0; i < images.size(); i++) {
       renderFinishedSemaphores.emplace_back(device, vk::SemaphoreCreateInfo());
     }

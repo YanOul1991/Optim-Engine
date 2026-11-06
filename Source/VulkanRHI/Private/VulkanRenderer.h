@@ -39,7 +39,6 @@ class Renderer final
   vk::raii::SurfaceKHR             surface        = nullptr;
   RenderContext                    renderContext;
   Optim::SwapChainResource         swapChain;
-  // SwapChainResources               swapChain;
 
   vk::raii::Pipeline                pipeline = nullptr;
   std::vector<Optim::FrameRenderer> frames;
@@ -68,7 +67,6 @@ class Renderer final
    * device local vertex buffer.
    */
   void InitalizeVertexBuffer();
-
   void InitializeIndexBuffer();
 
   /**
@@ -195,7 +193,6 @@ class Renderer final
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
     commandBuffer.bindVertexBuffers(0, *vertexBuffer.Buffer(), {0});
     commandBuffer.bindIndexBuffer(*indexBuffer.Buffer(), 0, vk::IndexType::eUint32);
-    // commandBuffer.draw(testVertices.size(), 1, 0, 0);
     commandBuffer.drawIndexed(static_cast<uint32>(indices.size()), 1, 0, 0, 0);
     currentFrame.End(swapChain.Images()[imageIndex]);
 

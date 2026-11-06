@@ -42,47 +42,19 @@ class SwapChainResource final
     return index;
   }
 
-  inline vk::ImageMemoryBarrier2 TransitionImageLayout(
-    uint32 inImageIndex,
-    // vk::ImageLayout         oldLayout,
-    vk::ImageLayout         newLayout,
-    vk::AccessFlags2        srcAcesssMask,
-    vk::AccessFlags2        dstAcessMask,
-    vk::PipelineStageFlags2 srcStageMask,
-    vk::PipelineStageFlags2 dstStageMask)
-  {
-    return vk::ImageMemoryBarrier2{
-      .srcStageMask        = srcStageMask,
-      .srcAccessMask       = srcAcesssMask,
-      .dstStageMask        = dstStageMask,
-      .dstAccessMask       = dstAcessMask,
-      .oldLayout           = imageLayouts[inImageIndex],
-      .newLayout           = newLayout,
-      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .image               = images[inImageIndex],
-      .subresourceRange    = {
-                              .aspectMask     = vk::ImageAspectFlagBits::eColor,
-                              .baseMipLevel   = 0,
-                              .levelCount     = 1,
-                              .baseArrayLayer = 0,
-                              .layerCount     = 1 }
-    };
-  }
-
   inline vk::raii::SwapchainKHR&                 SwapChain()               noexcept       { return swapChain;} 
   inline std::vector<vk::Image>&                 Images()                  noexcept       { return images;} 
   inline std::vector<vk::raii::ImageView>&       ImageViews()              noexcept       { return imageViews;} 
   inline std::vector<vk::raii::Semaphore>&       RenderFinishedSemaphore() noexcept       { return renderFinishedSemaphores;} 
   inline vk::SurfaceFormatKHR&                   ImageFormat()             noexcept       { return imageFormat;} 
   inline vk::Extent2D&                           ImageExtent()             noexcept       { return extent;} 
-
-  inline const vk::raii::SwapchainKHR&           SwapChain()               const noexcept { return swapChain;} 
-  inline const std::vector<vk::Image>&           Images()                  const noexcept { return images;} 
-  inline const std::vector<vk::raii::ImageView>& ImageViews()              const noexcept { return imageViews;} 
-  inline const std::vector<vk::raii::Semaphore>& RenderFinishedSemaphore() const noexcept { return renderFinishedSemaphores;} 
-  inline const vk::SurfaceFormatKHR&             ImageFormat()             const noexcept { return imageFormat;} 
-  inline const vk::Extent2D&                     ImageExtent()             const noexcept { return extent;}
+  
+  // inline const vk::raii::SwapchainKHR&           SwapChain()               const noexcept { return swapChain;} 
+  // inline const std::vector<vk::Image>&           Images()                  const noexcept { return images;} 
+  // inline const std::vector<vk::raii::ImageView>& ImageViews()              const noexcept { return imageViews;} 
+  // inline const std::vector<vk::raii::Semaphore>& RenderFinishedSemaphore() const noexcept { return renderFinishedSemaphores;} 
+  // inline const vk::SurfaceFormatKHR&             ImageFormat()             const noexcept { return imageFormat;} 
+  // inline const vk::Extent2D&                     ImageExtent()             const noexcept { return extent;}
 
   [[nodiscard]]
   inline bool IsValid() const noexcept
@@ -107,46 +79,3 @@ class SwapChainResource final
 };
 
 }; // namespace Optim
-
-/**
- * This struct will be deprecated
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- */
-// struct SwapChainResources final
-// {
-//   vk::raii::SwapchainKHR           swapChain = nullptr;
-//   std::vector<vk::Image>           images;
-//   std::vector<vk::raii::ImageView> imageViews;
-//   std::vector<vk::raii::Semaphore> renderFinishedSemaphores;
-//   vk::SurfaceFormatKHR             imageFormat;
-//   vk::Extent2D                     extent;
-
-//   SwapChainResources()                                         = default;
-//   ~SwapChainResources()                                        = default;
-//   SwapChainResources(SwapChainResources&&) noexcept            = default;
-//   SwapChainResources& operator=(SwapChainResources&&) noexcept = default;
-//   SwapChainResources(const SwapChainResources&)                = delete;
-//   SwapChainResources& operator=(const SwapChainResources&)     = delete;
-//   SwapChainResources(std::uintptr_t){};
-
-//   SwapChainResources(vk::raii::Device& device, vk::raii::PhysicalDevice& physicalDevice, vk::raii::SurfaceKHR& surface, SDL_Window* pWindow);
-
-//   [[nodiscard]]
-//   inline bool IsValid() const noexcept
-//   {
-//     return swapChain != nullptr &&
-//            !images.empty() &&
-//            !imageViews.empty() &&
-//            !renderFinishedSemaphores.empty() &&
-//            imageFormat.format != vk::Format::eUndefined &&
-//            extent.width > 0 &&
-//            extent.height > 0;
-//   }
-// };
