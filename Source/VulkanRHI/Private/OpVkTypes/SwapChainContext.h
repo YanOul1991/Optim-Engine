@@ -48,13 +48,6 @@ class SwapChainResource final
   inline std::vector<vk::raii::Semaphore>&       RenderFinishedSemaphore() noexcept       { return renderFinishedSemaphores;} 
   inline vk::SurfaceFormatKHR&                   ImageFormat()             noexcept       { return imageFormat;} 
   inline vk::Extent2D&                           ImageExtent()             noexcept       { return extent;} 
-  
-  // inline const vk::raii::SwapchainKHR&           SwapChain()               const noexcept { return swapChain;} 
-  // inline const std::vector<vk::Image>&           Images()                  const noexcept { return images;} 
-  // inline const std::vector<vk::raii::ImageView>& ImageViews()              const noexcept { return imageViews;} 
-  // inline const std::vector<vk::raii::Semaphore>& RenderFinishedSemaphore() const noexcept { return renderFinishedSemaphores;} 
-  // inline const vk::SurfaceFormatKHR&             ImageFormat()             const noexcept { return imageFormat;} 
-  // inline const vk::Extent2D&                     ImageExtent()             const noexcept { return extent;}
 
   [[nodiscard]]
   inline bool IsValid() const noexcept

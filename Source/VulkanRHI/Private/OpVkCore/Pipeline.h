@@ -269,9 +269,9 @@ inline std::vector<vk::PipelineShaderStageCreateInfo> CreateVkPipelineShaderStag
 
 } // namespace Optim::VKPipeline
 
-namespace Optim::VK
+namespace Optim
 {
-inline vk::raii::Pipeline CreateVulkanPipeline(const vk::raii::Device& device, const vk::Format& colorAttachmentFormat, std::vector<vk::PipelineShaderStageCreateInfo>& stagesInfo)
+inline vk::raii::Pipeline CreateVkPipeline(const vk::raii::Device& device, const vk::Format& colorAttachmentFormat, std::vector<vk::PipelineShaderStageCreateInfo>& stagesInfo)
 {
   // Dynamic States allows to change pipeline configurations when we record
   // commands.

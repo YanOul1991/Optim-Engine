@@ -50,6 +50,7 @@ class Renderer final
   Optim::SwapChainResource         swapChain;
 
   vk::raii::Pipeline                pipeline = nullptr;
+
   std::vector<Optim::FrameRenderer> frames;
   size_t                            frameIndex;
   bool                              frameBufferResized = false;
@@ -128,8 +129,7 @@ class Renderer final
     auto ShaderModule     = Optim::VKPipeline::CreateVkShaderModule(shadercode, device);
     auto shaderStagesInfo = Optim::VKPipeline::CreateVkPipelineShaderStageCreateInfoList(ShaderModule);
 
-    // pipeline = Optim::VKPipeline::CreateVulkanPipeline(swapChain, shaderStagesInfo, renderContext.device);
-    pipeline = Optim::VK::CreateVulkanPipeline(device, swapChain.ImageFormat().format, shaderStagesInfo);
+    pipeline = Optim::CreateVkPipeline(device, swapChain.ImageFormat().format, shaderStagesInfo);
     if (pipeline == nullptr) {
       throw std::runtime_error("VkPipeline Initalization FAILURE");
     }
@@ -138,12 +138,13 @@ class Renderer final
     vertexBuffer = VertexBuffer(device, physicalDevice, testVertices);
 
     // Create the index buffer from generic GpuBuffer class
-    indexBuffer = GpuBuffer(device,
-                            physicalDevice,
-                            BinSize(indices),
-                            vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
-                            vk::MemoryPropertyFlagBits::eDeviceLocal,
-                            nullptr);
+    indexBuffer = GpuBuffer(
+      device,
+      physicalDevice,
+      BinSize(indices),
+      vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+      vk::MemoryPropertyFlagBits::eDeviceLocal,
+      nullptr);
 
     InitalizeVertexBuffer(); 
     InitializeIndexBuffer();
