@@ -18,16 +18,13 @@ static std::vector<const char*> requiredDeviceExtensions = {
   vk::KHRSynchronization2ExtensionName
 };
 
-namespace
-{
-
 /**
  * @brief
  * Validates if all required layers are supported by the Vulkan implementation.
  * If one or more layer is not supported, a message will be printed listing them.
  */
 [[nodiscard]]
-static bool ValidateExtensions(const std::vector<const char*>& reqExtensions, const vk::raii::Context& context)
+static inline bool ValidateExtensions(const std::vector<const char*>& reqExtensions, const vk::raii::Context& context)
 {
   // List of all unsuported extensions.
   std::vector<const char*> unsupportedExtensions;
@@ -68,7 +65,7 @@ static bool ValidateExtensions(const std::vector<const char*>& reqExtensions, co
  * If one or more extension is not supported, a message will be printed listing them.
  */
 [[nodiscard]]
-bool ValidateLayers(const std::vector<const char*>& reqLayers, const vk::raii::Context& context)
+static inline bool ValidateLayers(const std::vector<const char*>& reqLayers, const vk::raii::Context& context)
 {
   std::vector<const char*> unsupportedLayers;
 
@@ -102,112 +99,15 @@ bool ValidateLayers(const std::vector<const char*>& reqLayers, const vk::raii::C
 
   return true;
 }
-} // namespace
 
 /**
  * @brief
- * Creates a Vulkan surface object using the SDL function
- * `SDL_Vulkan_CreateSurface`.This function abstracts the need to perform
- * platform specific operations, figuring out the display service, defining the
- * correct macros, vulkan functions, etc.
+ * Validates all required extensions such as the ones from SDL, and verifies all required Layers.
+ * 
+ * @return `vk::raii::Instance`
+ * 
+ * @throws `std::runtime_error` if one or more required extensions or layers are not supported
  */
-[[deprecated("Use Optim::VK::CreateVkSurfaceKHR instead.")]]
-vk::raii::SurfaceKHR Optim::VK::CreateVkSurfaceKHR(const vk::raii::Instance& instance, SDL_Window* sdlwindow)
-{
-  // Use the SDL function to create the surface as it abstracts the need
-  // to perform platform specific operations, figuring out the display service,
-  // defining the correct macros, calling the correct vulkan functions, etc.
-  VkSurfaceKHR rawSurface = VK_NULL_HANDLE;
-  if (!SDL_Vulkan_CreateSurface(sdlwindow, *instance, nullptr, &rawSurface)) {
-    throw std::runtime_error(SDL_GetError());
-  }
-  return vk::raii::SurfaceKHR(instance, rawSurface);
-}
-
-/**
- * @brief
- * Create a `vk::raii::Instance` object. This function, validates all required
- * extensions such as the ones from SDL, and verifies all required Layers.
- *
- * May throw a `std::runtime_error` if any required extension or layer is not
- * supported.
- */
-[[deprecated("Use Optim::CreateVkInstance instead.")]]
-vk::raii::Instance Optim::VK::CreateVkInstance(const vk::raii::Context& context) {
-    // ----------- EXTENSIONS VALIDATION -----------
-  std::vector<const char*> requiredExtensions;
-
-  // Add the extensions required by SDL.
-  uint32             vkInstanceExtCount = 0;
-  const char* const* ppVkInstanceExt    = SDL_Vulkan_GetInstanceExtensions(&vkInstanceExtCount);
-
-  if (ppVkInstanceExt == nullptr) {
-    throw std::runtime_error(SDL_GetError());
-  }
-
-  // Add extensions required by SDL.
-  for (size_t i = 0; i < vkInstanceExtCount; i++) {
-    requiredExtensions.push_back(ppVkInstanceExt[i]);
-  }
-
-  // Add "VK_EXT_debug_utils" extension if validation layers are enabled
-  if constexpr (Optim::VK::enableValidationLayers) {
-    requiredExtensions.push_back(vk::EXTDebugUtilsExtensionName);
-  }
-
-  // Validate the required extensions.
-  if (!ValidateExtensions(requiredExtensions, context)) {
-    throw std::runtime_error("[VulkanRHI - Error] - Unsupported required extensions");
-  }
-
-  // ----------- LAYERS VALIDATION -----------
-
-  // Required Layers Verification
-  std::vector<const char*> requiredLayers;
-
-  // Add "VK_LAYER_KHRONOS_validation" if validation layers are enabled
-  if constexpr (Optim::VK::enableValidationLayers) {
-    requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
-  }
-
-  if (!ValidateLayers(requiredLayers, context)) {
-    throw std::runtime_error("[VulkanRHI - Error] - Unsupported required layers.");
-  }
-
-  // Simple debug to check generated list objects.
-  if constexpr (false) {
-    Debug::PrintLn("Creating vk::raii::Instance with {} extension:", requiredExtensions.size());
-    for (const auto& extension : requiredExtensions) {
-      Debug::PrintLn("  {}", extension);
-    }
-    Debug::PrintLn("Creating vk::raii::Instance with {} layers:", requiredLayers.size());
-    for (const auto& layer : requiredLayers) {
-      Debug::PrintLn("  {}", layer);
-    }
-  }
-
-  // auto appInfo = Optim::VK::GetApplicationInfoStruct();
-  vk::ApplicationInfo appInfo{
-    .pApplicationName   = "Vulkan Learning",
-    .applicationVersion = VK_MAKE_VERSION(0, 0, 1),
-    .pEngineName        = "Optim Engine",
-    .engineVersion      = VK_MAKE_VERSION(0, 0, 1),
-    .apiVersion         = Optim::VK::ApiVersion
-  };
-
-  // Once the list for extension and layer have been generated, the appropriate
-  // data can be passed to the `vk::InstanceCreateInfo` struct.
-  vk::InstanceCreateInfo createInfo = {
-    .pApplicationInfo        = &appInfo,
-    .enabledLayerCount       = static_cast<uint32>(requiredLayers.size()),
-    .ppEnabledLayerNames     = requiredLayers.data(),
-    .enabledExtensionCount   = static_cast<uint32>(requiredExtensions.size()),
-    .ppEnabledExtensionNames = requiredExtensions.data()
-  };
-
-  return vk::raii::Instance(context, createInfo);
-}
-
 vk::raii::Instance Optim::CreateVkInstance(const vk::raii::Context& context)
 {
   // ----------- EXTENSIONS VALIDATION -----------
@@ -284,6 +184,18 @@ vk::raii::Instance Optim::CreateVkInstance(const vk::raii::Context& context)
   return vk::raii::Instance(context, createInfo);
 }
 
+/**
+ * @brief
+ * Creates a Vulkan surface for the given SDL window.
+ * 
+ * @param instance 
+ * The Vulkan instance used to create the surface.
+ * 
+ * @param sdlwindow 
+ * The SDL window for which to create the Vulkan surface.
+ * 
+ * @return `vk::raii::SurfaceKHR` The created Vulkan surface.
+ */
 vk::raii::SurfaceKHR Optim::CreateVkSurfaceKHR(const vk::raii::Instance& instance, SDL_Window* sdlwindow)
 {
   // Use the SDL function to create the surface as it abstracts the need
@@ -296,6 +208,22 @@ vk::raii::SurfaceKHR Optim::CreateVkSurfaceKHR(const vk::raii::Instance& instanc
   return vk::raii::SurfaceKHR(instance, rawSurface);
 }
 
+/**
+ * @brief
+ * Selects the most suitable physical device (GPU) for rendering based on the
+ * available devices and their capabilities. The selection criteria may include
+ * factors such as device type, supported features, and compatibility with the
+ * application's requirements.
+ * 
+ * @param instance 
+ * The Vulkan instance used to enumerate physical devices.
+ * 
+ * @param surface
+ * The Vulkan surface associated with the window, used to determine the appropriate queue family for presentation.
+ * 
+ * @return
+ * `vk::raii::PhysicalDevice` The selected physical device (GPU) that meets
+ */
 vk::raii::PhysicalDevice Optim::SelectVkPhysicalDevice(const vk::raii::Instance& instance, const vk::raii::SurfaceKHR& surface)
 {
   // Get a list of all GPUs found by Vulkan.
@@ -373,8 +301,23 @@ vk::raii::PhysicalDevice Optim::SelectVkPhysicalDevice(const vk::raii::Instance&
   }
 }
 
-
-bool Optim::CreateVkDeviceAndQueue(const vk::raii::PhysicalDevice &physicalDevice, const vk::raii::SurfaceKHR &surface, vk::raii::Device &outDevice, vk::raii::Queue &outQueue, uint32 &outQueueIndex)
+/**
+ * @brief
+ * Because the `vk::raii::Device` and `vk::raii::Queue` objects are tightly
+ * coupled, this function creates a struct containing both objects and the 
+ * queue index. This approach ensures that the logical device and its 
+ * associated queue are created together, reducing the risk of mismanagement.
+ * 
+ * @param physicalDevice 
+ * The selected physical device (GPU) for which the logical device and queue will be created.
+ * 
+ * @param surface 
+ * The Vulkan surface associated with the window, used to determine the appropriate queue family for presentation.
+ * 
+ * @return 
+ * `ResultCreateVkDeviceAndQueue` A struct containing the created logical device, the graphics queue, and the index of the queue family.
+ */
+Optim::ResultCreateVkDeviceAndQueue Optim::CreateVkDeviceAndQueue(const vk::raii::PhysicalDevice &physicalDevice, const vk::raii::SurfaceKHR &surface)
 {
   // List all familiy queues properties.
   auto queueFamiliyProperties = physicalDevice.getQueueFamilyProperties();
@@ -394,19 +337,34 @@ bool Optim::CreateVkDeviceAndQueue(const vk::raii::PhysicalDevice &physicalDevic
     throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
   }
 
-    // Create StructureChain object of feature structures.
+  // Create StructureChain object of feature structures.
+  // Separating declarations for readability.
+
+  vk::PhysicalDeviceFeatures2 vkFeatures2 {};
+
+  // Required features from Vulkan 1.1
+  vk::PhysicalDeviceVulkan11Features vk11Features{
+    .shaderDrawParameters = true
+  };
+  
+  // Required features from Vulkan 1.1.
+  vk::PhysicalDeviceVulkan13Features vk13Features{
+    .synchronization2 = true,
+    .dynamicRendering = true
+  };
+  vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT extDynamicStateFeatures{
+    .extendedDynamicState = true
+  };
+
   vk::StructureChain<vk::PhysicalDeviceFeatures2,
                      vk::PhysicalDeviceVulkan11Features,
                      vk::PhysicalDeviceVulkan13Features,
                      vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
     featureChain = {
-      {},                               // vk::PhysicalDeviceFeatures2 (empty for now)
-      { .shaderDrawParameters = true }, // Enable shader draw parameters from Vulkan 1.1
-      { 
-        .synchronization2 = true,
-        .dynamicRendering = true 
-      },    // Enable dynamic rendering from Vulkan 1.3
-      { .extendedDynamicState = true }  // Enable extended dynamic state from the extension
+      vkFeatures2,
+      vk11Features,
+      vk13Features,
+      extDynamicStateFeatures,
     };
 
   // Create the device.
@@ -418,7 +376,7 @@ bool Optim::CreateVkDeviceAndQueue(const vk::raii::PhysicalDevice &physicalDevic
     .pQueuePriorities = &queuePriority
   };
 
-  vk::DeviceCreateInfo deviceCreateInfo{
+  vk::DeviceCreateInfo deviceCreateInfo {
     .pNext                   = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
     .queueCreateInfoCount    = 1,
     .pQueueCreateInfos       = &deviceQueueCreateInfo,
@@ -426,20 +384,12 @@ bool Optim::CreateVkDeviceAndQueue(const vk::raii::PhysicalDevice &physicalDevic
     .ppEnabledExtensionNames = requiredDeviceExtensions.data()
   };
 
-  outDevice     = vk::raii::Device(physicalDevice, deviceCreateInfo);
-  outQueue      = vk::raii::Queue(outDevice, queueIndex, 0);
-  outQueueIndex = queueIndex;
+  auto outDevice     = vk::raii::Device(physicalDevice, deviceCreateInfo);
+  auto outQueue      = vk::raii::Queue(outDevice, queueIndex, 0);
 
-  return *outDevice && *outQueue && outQueueIndex != ~0;
+  return Optim::ResultCreateVkDeviceAndQueue{
+    .device     = std::move(outDevice),
+    .queue      = std::move(outQueue),
+    .queueIndex = queueIndex
+  };
 }
-
-// vk::raii::Queue Optim::CreateVkQueue(const vk::raii::PhysicalDevice &physicalDevice, uint32 &outQueueIndex)
-// {
-//   // List all familiy queues properties.
-//   auto queueFamiliyProperties = physicalDevice.getQueueFamilyProperties();
-// }
-
-// vk::raii::Device Optim::CreateVkDevice(const vk::raii::PhysicalDevice &physicalDevice, uint32 queueIndex)
-// {
-
-// }

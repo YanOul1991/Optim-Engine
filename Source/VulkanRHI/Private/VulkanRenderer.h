@@ -6,7 +6,6 @@
 #include "OpVkDebug/Debug.h"
 #include "OpVkTypes/Buffers.h"
 #include "OpVkTypes/CommandContext.h"
-#include "OpVkTypes/RenderContext.h"
 #include "OpVkTypes/SwapChainContext.h"
 
 // SDL
@@ -33,24 +32,21 @@ class Renderer final
 {
  public:
   static constexpr inline int32 MAX_FRAMES_IN_FLIGHT = 2;
-
+  
+  // SDL_Window pointer, only focusing on single window application so we make 
+  // it a simple member variable.
   SDL_Window*                      pWindow = nullptr;
 
   // Global Vulkan Objects
   vk::raii::Context                context;
-  vk::raii::Instance               instance       = nullptr;
-  vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
-  vk::raii::SurfaceKHR             surface        = nullptr;
-  vk::raii::PhysicalDevice         physicalDevice = nullptr;
-  vk::raii::Device                 device         = nullptr;
-  vk::raii::Queue                  renderQueue    = nullptr;
-  uint32                           renderQueueIndex;
-
-  // May become obsolete
-  // RenderContext                    renderContext;
-
-
-
+  vk::raii::Instance               instance         = nullptr;
+  vk::raii::DebugUtilsMessengerEXT debugMessenger   = nullptr;
+  vk::raii::SurfaceKHR             surface          = nullptr;
+  vk::raii::PhysicalDevice         physicalDevice   = nullptr;
+  vk::raii::Device                 device           = nullptr;
+  vk::raii::Queue                  renderQueue      = nullptr;
+  uint32                           renderQueueIndex = ~0;
+  
   Optim::SwapChainResource         swapChain;
 
   vk::raii::Pipeline                pipeline = nullptr;
@@ -90,7 +86,7 @@ class Renderer final
     pWindow = pSDLWindow;
 
     // Create VkInstance object
-    instance = Optim::VK::CreateVkInstance(context);
+    instance = Optim::CreateVkInstance(context);
     if (instance == nullptr) {
       throw std::runtime_error("VkInstance Initalization FAILURE");
     }
@@ -104,20 +100,18 @@ class Renderer final
     }
 
     // Create VKSurfaceKHR object
-    surface = Optim::VK::CreateVkSurfaceKHR(instance, pSDLWindow);
+    surface = Optim::CreateVkSurfaceKHR(instance, pSDLWindow);
     if (surface == nullptr) {
       throw std::runtime_error("VkSurfaceKHR Initalization FAILURE");
     }
 
-    // Create RenderContext object
-    // renderContext = RenderContext(instance, surface);
-    // if (!renderContext.IsValid()) {
-    //   throw std::runtime_error("RenderContext Initalization FAILURE");
-    // }
-
+    // Select the most suitable physical device (GPU) for rendering
     physicalDevice = Optim::SelectVkPhysicalDevice(instance, surface);
-    
-    Optim::CreateVkDeviceAndQueue(physicalDevice, surface, device, renderQueue, renderQueueIndex);
+
+    auto [outDevice, outRenderQueue, outRenderQueueIndex] = CreateVkDeviceAndQueue(physicalDevice, surface);
+    device           = std::move(outDevice);
+    renderQueue      = std::move(outRenderQueue);
+    renderQueueIndex = outRenderQueueIndex;
 
     // Create the initial SwapChainResources
     swapChain = Optim::SwapChainResource(device, physicalDevice, surface, pSDLWindow);

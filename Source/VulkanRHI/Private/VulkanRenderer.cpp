@@ -93,9 +93,3 @@ void Renderer::InitializeIndexBuffer()
   renderQueue.submit(vk::SubmitInfo{ .commandBufferCount = 1, .pCommandBuffers = &*cmdBuf }, nullptr);
   renderQueue.waitIdle();
 }
-
-// void Renderer::Initialize(SDL_Window *pSDLWindow)
-// {}
-
-// void Renderer::DrawFrame()
-// {}

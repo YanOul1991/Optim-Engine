@@ -8,7 +8,6 @@
 #include "OpVkCore/OpVkCore.h"
 #include "OpVkDebug/Debug.h"
 #include "OpVkTypes/CommandContext.h"
-#include "OpVkTypes/RenderContext.h"
 #include "OpVkTypes/SwapChainContext.h"
 #include "VulkanRenderer.h"
 
