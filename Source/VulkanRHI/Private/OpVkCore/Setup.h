@@ -15,6 +15,7 @@ namespace Optim::VK
  * platform specific operations, figuring out the display service, defining the
  * correct macros, vulkan functions, etc.
  */
+[[deprecated("Use Optim::CreateVkSurfaceKHR instead.")]]
 vk::raii::SurfaceKHR CreateVkSurfaceKHR(const vk::raii::Instance& instance, SDL_Window* sdlwindow);
 
 /**
@@ -25,6 +26,35 @@ vk::raii::SurfaceKHR CreateVkSurfaceKHR(const vk::raii::Instance& instance, SDL_
  * May through a `std::runtime_error` if anu required extension or layer is not
  * supported.
  */
+[[deprecated("Use Optim::CreateVkInstance instead.")]]
 vk::raii::Instance CreateVkInstance(const vk::raii::Context& context);
 
 }; // namespace Optim::VK
+
+namespace Optim
+{
+
+[[nodiscard]]
+vk::raii::Instance CreateVkInstance(const vk::raii::Context& context);
+
+[[nodiscard]]
+vk::raii::SurfaceKHR CreateVkSurfaceKHR(const vk::raii::Instance& instance, SDL_Window* sdlwindow);
+
+[[nodiscard]]
+vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance& instance, const vk::raii::SurfaceKHR& surface);
+
+/**
+ * Because the `vk::raii::Device` and `vk::raii::Queue` objects are tightly 
+ * coupled, this function creates both objects at the same time. The function
+ *  will also return the index of the queue family that was used to create the 
+ * queue.
+ */
+bool CreateVkDeviceAndQueue(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& surface, vk::raii::Device& outDevice, vk::raii::Queue& outQueue, uint32& outQueueIndex);
+
+[[nodiscard]]
+vk::raii::Queue CreateVkQueue(const vk::raii::PhysicalDevice& physicalDevice, uint32& outQueueIndex);
+
+[[nodiscard]]
+vk::raii::Device CreateVkDevice(const vk::raii::PhysicalDevice& physicalDevice, uint32& queueIndex);
+
+};

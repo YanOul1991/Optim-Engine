@@ -110,65 +110,65 @@ static vk::raii::PhysicalDevice SelectVkPhysicalDevice(const vk::raii::Instance&
  * Documentation for basic logical device creation:
  * https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.htm
  */
-RenderContext::RenderContext(const vk::raii::Instance& instance, const vk::raii::SurfaceKHR& surface)
-{
-  // Select the most apporpriate physical device
-  auto selectedPhysicalDevice = SelectVkPhysicalDevice(instance, surface);
+// RenderContext::RenderContext(const vk::raii::Instance& instance, const vk::raii::SurfaceKHR& surface)
+// {
+//   // Select the most apporpriate physical device
+//   auto selectedPhysicalDevice = SelectVkPhysicalDevice(instance, surface);
 
-  // List all familiy queues properties.
-  auto queueFamiliyProperties = selectedPhysicalDevice.getQueueFamilyProperties();
+//   // List all familiy queues properties.
+//   auto queueFamiliyProperties = selectedPhysicalDevice.getQueueFamilyProperties();
 
-  // Get Queue Family that supports both graphics and present.
-  uint32 queueIndex = ~0;
+//   // Get Queue Family that supports both graphics and present.
+//   uint32 queueIndex = ~0;
 
-  for (uint32 qfpIndex = 0; qfpIndex < queueFamiliyProperties.size(); qfpIndex++) {
-    auto const& qfp = queueFamiliyProperties[qfpIndex];
-    if ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) && selectedPhysicalDevice.getSurfaceSupportKHR(qfpIndex, *surface)) {
-      queueIndex = qfpIndex;
-      break;
-    }
-  }
+//   for (uint32 qfpIndex = 0; qfpIndex < queueFamiliyProperties.size(); qfpIndex++) {
+//     auto const& qfp = queueFamiliyProperties[qfpIndex];
+//     if ((qfp.queueFlags & vk::QueueFlagBits::eGraphics) && selectedPhysicalDevice.getSurfaceSupportKHR(qfpIndex, *surface)) {
+//       queueIndex = qfpIndex;
+//       break;
+//     }
+//   }
 
-  if (queueIndex == ~0) {
-    throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
-  }
+//   if (queueIndex == ~0) {
+//     throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
+//   }
 
-  // Create StructureChain object of feature structures.
-  vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                     vk::PhysicalDeviceVulkan11Features,
-                     vk::PhysicalDeviceVulkan13Features,
-                     vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
-    featureChain = {
-      {},                               // vk::PhysicalDeviceFeatures2 (empty for now)
-      { .shaderDrawParameters = true }, // Enable shader draw parameters from Vulkan 1.1
-      { 
-        .synchronization2 = true,
-        .dynamicRendering = true 
-      },    // Enable dynamic rendering from Vulkan 1.3
-      { .extendedDynamicState = true }  // Enable extended dynamic state from the extension
-    };
+//   // Create StructureChain object of feature structures.
+//   vk::StructureChain<vk::PhysicalDeviceFeatures2,
+//                      vk::PhysicalDeviceVulkan11Features,
+//                      vk::PhysicalDeviceVulkan13Features,
+//                      vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+//     featureChain = {
+//       {},                               // vk::PhysicalDeviceFeatures2 (empty for now)
+//       { .shaderDrawParameters = true }, // Enable shader draw parameters from Vulkan 1.1
+//       { 
+//         .synchronization2 = true,
+//         .dynamicRendering = true 
+//       },    // Enable dynamic rendering from Vulkan 1.3
+//       { .extendedDynamicState = true }  // Enable extended dynamic state from the extension
+//     };
 
-  // Create the device.
-  float queuePriority = 0.5f;
+//   // Create the device.
+//   float queuePriority = 0.5f;
 
-  vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
-    .queueFamilyIndex = queueIndex,
-    .queueCount       = 1,
-    .pQueuePriorities = &queuePriority
-  };
+//   vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
+//     .queueFamilyIndex = queueIndex,
+//     .queueCount       = 1,
+//     .pQueuePriorities = &queuePriority
+//   };
 
-  vk::DeviceCreateInfo deviceCreateInfo{
-    .pNext                   = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
-    .queueCreateInfoCount    = 1,
-    .pQueueCreateInfos       = &deviceQueueCreateInfo,
-    .enabledExtensionCount   = static_cast<uint32>(requiredDeviceExtensions.size()),
-    .ppEnabledExtensionNames = requiredDeviceExtensions.data()
-  };
+//   vk::DeviceCreateInfo deviceCreateInfo{
+//     .pNext                   = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
+//     .queueCreateInfoCount    = 1,
+//     .pQueueCreateInfos       = &deviceQueueCreateInfo,
+//     .enabledExtensionCount   = static_cast<uint32>(requiredDeviceExtensions.size()),
+//     .ppEnabledExtensionNames = requiredDeviceExtensions.data()
+//   };
 
-  // assign the queue index and selected physical device.
-  // Then use those to create the vkDevice and vkQueue objects.
-  this->physicalDevice = selectedPhysicalDevice;
-  this->queueIndex     = queueIndex;
-  this->device         = vk::raii::Device(this->physicalDevice, deviceCreateInfo);
-  this->queue          = vk::raii::Queue(this->device, this->queueIndex, 0);
-}
+//   // assign the queue index and selected physical device.
+//   // Then use those to create the vkDevice and vkQueue objects.
+//   this->physicalDevice = selectedPhysicalDevice;
+//   this->queueIndex     = queueIndex;
+//   this->device         = vk::raii::Device(this->physicalDevice, deviceCreateInfo);
+//   this->queue          = vk::raii::Queue(this->device, this->queueIndex, 0);
+// }

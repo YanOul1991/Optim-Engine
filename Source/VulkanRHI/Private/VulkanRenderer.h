@@ -25,6 +25,10 @@
 
 using namespace Optim;
 
+/**
+ * Review global uses of classes and encapsulation.
+ */
+
 class Renderer final
 {
  public:
@@ -32,12 +36,21 @@ class Renderer final
 
   SDL_Window*                      pWindow = nullptr;
 
+  // Global Vulkan Objects
   vk::raii::Context                context;
   vk::raii::Instance               instance       = nullptr;
   vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
-
   vk::raii::SurfaceKHR             surface        = nullptr;
-  RenderContext                    renderContext;
+  vk::raii::PhysicalDevice         physicalDevice = nullptr;
+  vk::raii::Device                 device         = nullptr;
+  vk::raii::Queue                  renderQueue    = nullptr;
+  uint32                           renderQueueIndex;
+
+  // May become obsolete
+  // RenderContext                    renderContext;
+
+
+
   Optim::SwapChainResource         swapChain;
 
   vk::raii::Pipeline                pipeline = nullptr;
@@ -97,13 +110,17 @@ class Renderer final
     }
 
     // Create RenderContext object
-    renderContext = RenderContext(instance, surface);
-    if (!renderContext.IsValid()) {
-      throw std::runtime_error("RenderContext Initalization FAILURE");
-    }
+    // renderContext = RenderContext(instance, surface);
+    // if (!renderContext.IsValid()) {
+    //   throw std::runtime_error("RenderContext Initalization FAILURE");
+    // }
+
+    physicalDevice = Optim::SelectVkPhysicalDevice(instance, surface);
+    
+    Optim::CreateVkDeviceAndQueue(physicalDevice, surface, device, renderQueue, renderQueueIndex);
 
     // Create the initial SwapChainResources
-    swapChain = Optim::SwapChainResource(renderContext.device, renderContext.physicalDevice, surface, pSDLWindow);
+    swapChain = Optim::SwapChainResource(device, physicalDevice, surface, pSDLWindow);
     if (!swapChain.IsValid()) {
       throw std::runtime_error("SwapChainResources Initalization FAILURE");
     }
@@ -114,21 +131,21 @@ class Renderer final
     //  * Crate Shader Stages Info
     //  * Use Data to create a `VkPipeline` Object
     auto shadercode       = Optim::VKPipeline::LoadCompiledShader("Shaders/dynVert.spv");
-    auto ShaderModule     = Optim::VKPipeline::CreateVkShaderModule(shadercode, renderContext.device);
+    auto ShaderModule     = Optim::VKPipeline::CreateVkShaderModule(shadercode, device);
     auto shaderStagesInfo = Optim::VKPipeline::CreateVkPipelineShaderStageCreateInfoList(ShaderModule);
 
     // pipeline = Optim::VKPipeline::CreateVulkanPipeline(swapChain, shaderStagesInfo, renderContext.device);
-    pipeline = Optim::VK::CreateVulkanPipeline(renderContext.device, swapChain.ImageFormat().format, shaderStagesInfo);
+    pipeline = Optim::VK::CreateVulkanPipeline(device, swapChain.ImageFormat().format, shaderStagesInfo);
     if (pipeline == nullptr) {
       throw std::runtime_error("VkPipeline Initalization FAILURE");
     }
 
     // Vertex buffer creation
-    vertexBuffer = VertexBuffer(renderContext.device, renderContext.physicalDevice, testVertices);
+    vertexBuffer = VertexBuffer(device, physicalDevice, testVertices);
 
     // Create the index buffer from generic GpuBuffer class
-    indexBuffer = GpuBuffer(renderContext.device,
-                            renderContext.physicalDevice,
+    indexBuffer = GpuBuffer(device,
+                            physicalDevice,
                             BinSize(indices),
                             vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
                             vk::MemoryPropertyFlagBits::eDeviceLocal,
@@ -139,8 +156,8 @@ class Renderer final
     
     // Create FrameResources objects
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-      auto frame = Optim::FrameRenderer(renderContext.device);
-      frame.CmdResources() = Optim::CommandResources(renderContext.device, renderContext.queueIndex);
+      auto frame = Optim::FrameRenderer(device);
+      frame.CmdResources() = Optim::CommandResources(device, renderQueueIndex);
       frames.emplace_back(std::move(frame));
     }
   }
@@ -160,7 +177,7 @@ class Renderer final
      * signaled when the last frame commands have finished being computed by
      * the GPU queue.
      */
-    auto fenceResult = renderContext.device.waitForFences(*currentFrame.InFlightFence(), vk::True, UINT64_MAX);
+    auto fenceResult = device.waitForFences(*currentFrame.InFlightFence(), vk::True, UINT64_MAX);
     if (fenceResult != vk::Result::eSuccess) {
       throw std::runtime_error("Failed to wait for inFlightFence");
     }
@@ -181,7 +198,7 @@ class Renderer final
       throw std::runtime_error("Failed to acquire swap chain image");
     }
 
-    renderContext.device.resetFences(*currentFrame.InFlightFence());
+    device.resetFences(*currentFrame.InFlightFence());
 
     auto& commandBuffer = currentFrame.CmdResources().CmdBuffer();
 
@@ -223,7 +240,7 @@ class Renderer final
       .signalSemaphoreCount = 1,
       .pSignalSemaphores    = &(*swapChain.RenderFinishedSemaphore()[imageIndex])
     };
-    renderContext.queue.submit(submitInfo, *currentFrame.InFlightFence());
+    renderQueue.submit(submitInfo, *currentFrame.InFlightFence());
 
     /**
      * Presentation:
@@ -242,7 +259,7 @@ class Renderer final
       .pSwapchains        = &(*swapChain.SwapChain()),
       .pImageIndices      = &imageIndex
     };
-    result = renderContext.queue.presentKHR(presentInfo);
+    result = renderQueue.presentKHR(presentInfo);
 
     if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR || frameBufferResized) {
       frameBufferResized = false;
@@ -255,7 +272,7 @@ class Renderer final
 
   inline void WaitForDeviceIdle()
   {
-    renderContext.device.waitIdle();
+    device.waitIdle();
   }
 
   inline void RecreateSwapChain()
@@ -263,7 +280,6 @@ class Renderer final
     WaitForDeviceIdle();
     swapChain.ImageViews().clear();
     swapChain.SwapChain() = nullptr;
-
-    swapChain = std::move(Optim::SwapChainResource(renderContext.device, renderContext.physicalDevice, surface, pWindow));
+    swapChain = std::move(Optim::SwapChainResource(device, physicalDevice, surface, pWindow));
   }
 };

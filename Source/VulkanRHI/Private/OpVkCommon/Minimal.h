@@ -3,6 +3,7 @@
 #include "Core/CoreMinimal.h"
 #include "Core/Debug/Debug.h"
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #define VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS
@@ -67,4 +68,11 @@ struct Vertex
       {.location = 1, .binding =0 , .format = vk::Format::eR32G32B32Sfloat, .offset = offsetof(Vertex, color)}
     }};
   }
+};
+
+struct UniformBufferObject
+{
+  glm::mat4 model;
+  glm::mat4 view;
+  glm::mat4 proj;
 };

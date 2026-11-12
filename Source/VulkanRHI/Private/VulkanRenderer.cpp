@@ -11,8 +11,8 @@ void Renderer::InitalizeVertexBuffer()
   };
 
   GpuBuffer stagingBuffer(
-    renderContext.device,
-    renderContext.physicalDevice,
+    device,
+    physicalDevice,
     BinSize(testVertices),
     stageBufferUsage,
     stageBufferMemoryProperties,
@@ -23,10 +23,10 @@ void Renderer::InitalizeVertexBuffer()
   // Create temporary command pool & command buffer for buffer transfer
   vk::CommandPoolCreateInfo poolInfo{
     .flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-    .queueFamilyIndex = renderContext.queueIndex
+    .queueFamilyIndex = renderQueueIndex
   };
 
-  auto cmdPool = vk::raii::CommandPool(renderContext.device, poolInfo);
+  auto cmdPool = vk::raii::CommandPool(device, poolInfo);
 
   vk::CommandBufferAllocateInfo allocInfo{
     .commandPool        = cmdPool,
@@ -34,7 +34,7 @@ void Renderer::InitalizeVertexBuffer()
     .commandBufferCount = 1
   };
 
-  auto cmdBuf = std::move(vk::raii::CommandBuffers(renderContext.device, allocInfo).front());
+  auto cmdBuf = std::move(vk::raii::CommandBuffers(device, allocInfo).front());
 
   // Record command to copy from staging buffer to vertex buffer
   cmdBuf.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
@@ -42,9 +42,9 @@ void Renderer::InitalizeVertexBuffer()
   cmdBuf.end();
 
   // Submit work to queue then, simply wait for it to be idle. (Could use a fence as well)
-  renderContext.queue.submit(vk::SubmitInfo{ .commandBufferCount = 1, .pCommandBuffers = &*cmdBuf }, nullptr);
+  renderQueue.submit(vk::SubmitInfo{ .commandBufferCount = 1, .pCommandBuffers = &*cmdBuf }, nullptr);
 
-  renderContext.queue.waitIdle();
+  renderQueue.waitIdle();
 }
 
 void Renderer::InitializeIndexBuffer()
@@ -58,8 +58,8 @@ void Renderer::InitializeIndexBuffer()
   };
 
   GpuBuffer stagingBuffer(
-    renderContext.device,
-    renderContext.physicalDevice,
+    device,
+    physicalDevice,
     BinSize(testVertices),
     stageBufferUsage,
     stageBufferMemoryProperties,
@@ -71,10 +71,10 @@ void Renderer::InitializeIndexBuffer()
   // Create temporary command pool & command buffer for buffer transfer
   vk::CommandPoolCreateInfo poolInfo{
     .flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-    .queueFamilyIndex = renderContext.queueIndex
+    .queueFamilyIndex = renderQueueIndex
   };
 
-  auto cmdPool = vk::raii::CommandPool(renderContext.device, poolInfo);
+  auto cmdPool = vk::raii::CommandPool(device, poolInfo);
 
   vk::CommandBufferAllocateInfo allocInfo{
     .commandPool        = cmdPool,
@@ -82,7 +82,7 @@ void Renderer::InitializeIndexBuffer()
     .commandBufferCount = 1
   };
 
-  auto cmdBuf = std::move(vk::raii::CommandBuffers(renderContext.device, allocInfo).front());
+  auto cmdBuf = std::move(vk::raii::CommandBuffers(device, allocInfo).front());
 
   // Record command to copy from staging buffer to vertex buffer
   cmdBuf.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
@@ -90,8 +90,8 @@ void Renderer::InitializeIndexBuffer()
   cmdBuf.end();
 
   // Submit work to queue then, simply wait for it to be idle. (Could use a fence as well)
-  renderContext.queue.submit(vk::SubmitInfo{ .commandBufferCount = 1, .pCommandBuffers = &*cmdBuf }, nullptr);
-  renderContext.queue.waitIdle();
+  renderQueue.submit(vk::SubmitInfo{ .commandBufferCount = 1, .pCommandBuffers = &*cmdBuf }, nullptr);
+  renderQueue.waitIdle();
 }
 
 // void Renderer::Initialize(SDL_Window *pSDLWindow)
