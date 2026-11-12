@@ -47,9 +47,11 @@ class Renderer final
   vk::raii::Queue                  renderQueue      = nullptr;
   uint32                           renderQueueIndex = ~0;
   
+  // Could decapsulate, but due to how tightly coupled, encapsulated Vulkan
+  // objects are keeping the this class defined. 
   Optim::SwapChainResource         swapChain;
 
-  vk::raii::Pipeline                pipeline = nullptr;
+  vk::raii::Pipeline               pipeline = nullptr;
 
   std::vector<Optim::FrameRenderer> frames;
   size_t                            frameIndex;

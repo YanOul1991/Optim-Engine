@@ -9,14 +9,17 @@ GpuBuffer::GpuBuffer(
   void*                     pInitalData,
   vk::SharingMode           sharingMode)
 {
-  // Buffer creation
+  // Buffer creation struct
   vk::BufferCreateInfo bufferCreateInfo{
     .size        = deviceSize,
     .usage       = usageFlags,
     .sharingMode = sharingMode
   };
+
+  // Create buffer handle
   buffer = vk::raii::Buffer(device, bufferCreateInfo);
 
+  // Validate buffer
   if (buffer == nullptr) {
     return;
   }
@@ -26,21 +29,20 @@ GpuBuffer::GpuBuffer(
 
   vk::MemoryAllocateInfo memAllocInfo{
     .allocationSize  = memoryReqs.size,
+    // Helper function to get correct index for requirements
     .memoryTypeIndex = FindMemoryTypeIndex(physicalDevice, memoryReqs.memoryTypeBits, memoryPorpertyFlag)
   };
 
+  // Create device memory 
   deviceMemory = vk::raii::DeviceMemory(device, memAllocInfo);
 
+  // Validate
   if (deviceMemory == nullptr) {
     return;
   }
 
+  // Bind memory
   buffer.bindMemory(*deviceMemory, 0);
-
-  // If inital data was provided then map it.
-  // if (pInitalData != nullptr) {
-  //   Map(pInitalData, deviceSize);
-  // }
 }
 
 uint32 GpuBuffer::FindMemoryTypeIndex(const vk::raii::PhysicalDevice& physicalDevice, uint32 typeFilter, vk::MemoryPropertyFlags properties)

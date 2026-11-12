@@ -48,7 +48,11 @@ namespace Optim
  * easier to manage a 1 pool per buffer, than to manage multiple buffers
  * with a restricted pool count, unless necessary. Might change during 
  * implementation.
+ * 
+ * Favoring a 1 command pool per command buffer as its much more simple to
+ * manage at negligible to non-existant cost.
  */
+
 class CommandResources final
 {
  private:
@@ -131,12 +135,6 @@ class FrameRenderer final
   [[nodiscard]]
   inline bool IsValid() const noexcept { return cmdResources.IsValid() && *presentCompleteSemaphore && *inFlightFence; }
 
-  // inline void BeginCommandRecord()
-  // {
-  //   auto& cmd = cmdResources.CmdBuffer();
-  //   cmd.begin({});
-  // }
-
   inline void Start(vk::Image& image, vk::raii::ImageView& imageView, vk::Extent2D& extent)
   {
     auto& cmd = cmdResources.CmdBuffer();
@@ -183,23 +181,6 @@ class FrameRenderer final
     // ??? Should be explicit
     cmd.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
   }
-
-  // inline void SetViewport(const vk::Extent2D& extent)
-  // {
-  //   cmdResources.CmdBuffer().setViewport(
-  //     0,
-  //     vk::Viewport(
-  //       0.0f,
-  //       0.0f,
-  //       static_cast<float>(extent.width),
-  //       static_cast<float>(extent.height),
-  //       0.0f,
-  //       1.0f));
-  // }
-  // inline void SetDefaultScissors(const vk::Extent2D& extent) 
-  // {
-  //   cmdResources.CmdBuffer().setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
-  // }
 
   inline void End(vk::Image& image)
   {

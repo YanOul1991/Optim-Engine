@@ -14,15 +14,24 @@ inline constexpr size_t BinSize(const std::array<T, N>& v) {
 
 /**
  * @brief
- * Wrapper class for generic GPU buffers.
+ * A class that serves as a generic handle to GPU allocated buffers.
+ * 
+ * Encapsulates:
+ *  vk::raii::Buffer
+ *  vk::raii::DeviceMemory
  */
 class GpuBuffer final
 {
  private:
- vk::raii::Buffer       buffer       = nullptr;
- vk::raii::DeviceMemory deviceMemory = nullptr;
- 
- static uint32 FindMemoryTypeIndex(const vk::raii::PhysicalDevice& physicalDevice, uint32 typeFilter, vk::MemoryPropertyFlags properties);
+  vk::raii::Buffer       buffer        = nullptr;
+  vk::raii::DeviceMemory deviceMemory  = nullptr;
+
+  // Keeping a pointer to allow for persistent resources mapping, which might 
+  // mostly become usefull, for uniform buffers and updating their data per
+  // frame to improve performance.
+  void*                  pMappedMemory = nullptr;
+
+  static uint32 FindMemoryTypeIndex(const vk::raii::PhysicalDevice& physicalDevice, uint32 typeFilter, vk::MemoryPropertyFlags properties);
 
  public:
   OPTIM_VK_RAII_TYPE(GpuBuffer)
