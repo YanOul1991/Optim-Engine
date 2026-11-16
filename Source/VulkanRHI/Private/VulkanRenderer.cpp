@@ -15,8 +15,7 @@ void Renderer::InitalizeVertexBuffer()
     physicalDevice,
     BinSize(testVertices),
     stageBufferUsage,
-    stageBufferMemoryProperties,
-    testVertices.data());
+    stageBufferMemoryProperties);
 
   stagingBuffer.Map(testVertices.data(), BinSize(testVertices));
 
@@ -62,8 +61,7 @@ void Renderer::InitializeIndexBuffer()
     physicalDevice,
     BinSize(testVertices),
     stageBufferUsage,
-    stageBufferMemoryProperties,
-    testVertices.data());
+    stageBufferMemoryProperties);
 
   // Map index buffer data
   stagingBuffer.Map(indices.data(), BinSize(indices));

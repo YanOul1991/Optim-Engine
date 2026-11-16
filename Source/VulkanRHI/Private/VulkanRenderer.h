@@ -145,8 +145,7 @@ class Renderer final
       physicalDevice,
       BinSize(indices),
       vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
-      vk::MemoryPropertyFlagBits::eDeviceLocal,
-      nullptr);
+      vk::MemoryPropertyFlagBits::eDeviceLocal);
 
     InitalizeVertexBuffer(); 
     InitializeIndexBuffer();

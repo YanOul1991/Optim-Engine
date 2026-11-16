@@ -42,8 +42,7 @@ class GpuBuffer final
     vk::DeviceSize            deviceSize,
     vk::BufferUsageFlags      usageFlags,
     vk::MemoryPropertyFlags   memoryPorpertyFlag,
-    void*                     pInitalData,
-    vk::SharingMode           sharingMode = vk::SharingMode::eExclusive);
+    vk::SharingMode           sharingMode = vk::SharingMode::eExclusive); // Default to GPU only resource
 
   inline void Map(const void* pData, vk::DeviceSize size)
   {
@@ -56,6 +55,13 @@ class GpuBuffer final
   bool IsValid() const noexcept          { return buffer != nullptr && deviceMemory != nullptr; }
   vk::raii::Buffer& Buffer()             { return buffer; }
   vk::raii::DeviceMemory& DeviceMemory() { return deviceMemory; }
+};
+
+struct BufferResourceHandle final
+{
+  vk::DeviceSize offset;
+  vk::DeviceSize size;
+  void* mappedData;
 };
 
 /**
@@ -87,7 +93,7 @@ class VertexBuffer final
     std::vector<Vertex>&      vertices,
     vk::BufferUsageFlags      inUsageFlags  = usageFlags,
     vk::MemoryPropertyFlags   inMemoryFlags = memoryFlags) :
-      gpuBuffer(device, physicalDevice, BinSize(vertices), inUsageFlags, inMemoryFlags, nullptr),
+      gpuBuffer(device, physicalDevice, BinSize(vertices), inUsageFlags, inMemoryFlags),
       vertexCount(vertices.size())
   {}
 

@@ -6,7 +6,6 @@ GpuBuffer::GpuBuffer(
   vk::DeviceSize            deviceSize,
   vk::BufferUsageFlags      usageFlags,
   vk::MemoryPropertyFlags   memoryPorpertyFlag,
-  void*                     pInitalData,
   vk::SharingMode           sharingMode)
 {
   // Buffer creation struct
