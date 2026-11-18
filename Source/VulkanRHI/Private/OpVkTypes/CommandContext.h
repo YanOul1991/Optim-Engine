@@ -172,9 +172,9 @@ class FrameRenderer final
       0,
       vk::Viewport(
         0.0f,
-        0.0f,
-        static_cast<float>(extent.width),
         static_cast<float>(extent.height),
+        static_cast<float>(extent.width),
+        -static_cast<float>(extent.height),
         0.0f,
         1.0f));
 

@@ -14,8 +14,8 @@
 
 // STD
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
-#include <glm/glm.hpp>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -46,12 +46,18 @@ class Renderer final
   vk::raii::Device                 device           = nullptr;
   vk::raii::Queue                  renderQueue      = nullptr;
   uint32                           renderQueueIndex = ~0;
-  
-  // Could decapsulate, but due to how tightly coupled, encapsulated Vulkan
-  // objects are keeping the this class defined. 
-  Optim::SwapChainResource         swapChain;
 
-  vk::raii::Pipeline               pipeline = nullptr;
+  // Could decapsulate, but keeping it as its encapsulated objets
+  // are tightly coupled. Could even add SurfaceKHR.
+  Optim::SwapChainResource swapChain;
+
+  vk::raii::DescriptorSetLayout        descriptorSetLayout = nullptr; // NEW
+  vk::raii::PipelineLayout             pipelineLayout      = nullptr; // NEW
+  vk::raii::DescriptorPool             descriptorPool      = nullptr; // NEW
+  std::vector<vk::raii::DescriptorSet> descriptorSets;
+  vk::raii::Pipeline                   pipeline = nullptr;
+
+  std::vector<GpuBuffer> uniformBuffers;  // NEW List of uniform buffers, one per frame in flight
 
   std::vector<Optim::FrameRenderer> frames;
   size_t                            frameIndex;
@@ -81,8 +87,101 @@ class Renderer final
   void InitalizeVertexBuffer();
   void InitializeIndexBuffer();
 
+  // NEW Function
+  // Must be called before creating the actual pipeline object.
+  inline void CreateDescriptorSetLayoutAndPipelineLayout()
+  {
+    // Note:
+    //  Slang refelection API could help implementing a flexible layout
+    //  binding for different pipeline.
+    vk::DescriptorSetLayoutBinding uBufferLayoutBinding = {
+      .binding            = 0,                                  // Binding slot: 0 by default
+      .descriptorType     = vk::DescriptorType::eUniformBuffer, // Resource type = uniform buffer / constant buffer
+      .descriptorCount    = 1,                                  // Only one value to assign
+      .stageFlags         = vk::ShaderStageFlagBits::eVertex,   // Used in the vertex shade stage only.
+      .pImmutableSamplers = nullptr                             // "relevant for image sampling related descriptors,"
+    };
+
+    vk::DescriptorSetLayoutCreateInfo layoutInfo = {
+      .bindingCount = 1,
+      .pBindings    = &uBufferLayoutBinding
+    };
+
+    descriptorSetLayout = vk::raii::DescriptorSetLayout(device, layoutInfo);
+
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {
+      .setLayoutCount         = 1,
+      .pSetLayouts            = &*descriptorSetLayout,
+      .pushConstantRangeCount = 0
+    };
+
+    pipelineLayout = vk::raii::PipelineLayout(device, pipelineLayoutInfo);
+  }
+
+  // NEW 
+  inline void CreateDescriptorPool()
+  {
+    vk::DescriptorPoolSize poolSize = {
+      .type            = vk::DescriptorType::eUniformBuffer,  //
+      .descriptorCount = MAX_FRAMES_IN_FLIGHT                 // Allocate for each frame
+    };
+
+    vk::DescriptorPoolCreateInfo poolInfo = {
+      .flags         = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+      .maxSets       = MAX_FRAMES_IN_FLIGHT,
+      .poolSizeCount = 1,
+      .pPoolSizes    = &poolSize
+    };
+
+    descriptorPool = vk::raii::DescriptorPool(device, poolInfo);
+  }
+
+  // NEW
+  inline void CreateDescriptorSets()
+  {
+#ifndef NDEBUG
+    // Assert descriptor pool is valid at this point. 
+    assert(descriptorPool != nullptr && "[VulkanRHI - Renderer::CreateDescriptorSets()] assertion failed: the 'descriptorPool' object is null");
+#endif
+    std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, *descriptorSetLayout);
+
+    vk::DescriptorSetAllocateInfo allocInfo = {
+      .descriptorPool     = descriptorPool,
+      .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
+      .pSetLayouts        = layouts.data()
+    };
+
+    descriptorSets = device.allocateDescriptorSets(allocInfo);
+  }
+
+  // NEW
+  inline void UpdateUniformBuffer(int32 index, const vk::Extent2D& imageExtent) 
+  {
+    static auto startTime   = std::chrono::high_resolution_clock::now();
+    auto        currentTime = std::chrono::high_resolution_clock::now();
+    float       time        = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    UniformBufferObject cBuffer{};
+    // Model rotates clockwise on the Z axis.
+    cBuffer.model = glm::rotate(glm::mat4(1.0f), time * (glm::pi<float>() / 2), glm::vec3(0.0f, 0.0f, 1.0f));
+    cBuffer.view  = glm::lookAt(glm::vec3(0.0f, 1.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    cBuffer.proj  = glm::perspective(glm::radians(50.0f), static_cast<float>(imageExtent.width) / static_cast<float>(imageExtent.height), 0.1f, 100.0f);
+
+    // NOTE:
+    //  GLM uses column-major layout, but Slang uses row-major like HLSL.
+    //  Could transpose before updating the buffer data, I opted to update the
+    //  slang compiler's settings to make matices layout as column-major to 
+    //  match glm's. This avoids extra transpose overhead on the host side.
+
+    // cBuffer.model = glm::transpose(cBuffer.model);
+    // cBuffer.view  = glm::transpose(cBuffer.view);
+    // cBuffer.proj  = glm::transpose(cBuffer.proj);
+
+    memcpy(uniformBuffers[index].pMappedMemory, &cBuffer, sizeof(cBuffer));
+  };
+
   /**
-   * MIGHT THROW
+   * Performs main initializations for Renderer members.
    */
   void Initialize(SDL_Window* pSDLWindow)
   {
@@ -127,11 +226,13 @@ class Renderer final
     //  * Create `VkShaderModule`
     //  * Crate Shader Stages Info
     //  * Use Data to create a `VkPipeline` Object
-    auto shadercode       = Optim::VKPipeline::LoadCompiledShader("Shaders/dynVert.spv");
-    auto ShaderModule     = Optim::VKPipeline::CreateVkShaderModule(shadercode, device);
-    auto shaderStagesInfo = Optim::VKPipeline::CreateVkPipelineShaderStageCreateInfoList(ShaderModule);
+    auto shadercode       = Optim::LoadCompiledShader("Shaders/uniformBuffers.spv");
+    auto ShaderModule     = Optim::CreateVkShaderModule(shadercode, device);
+    auto shaderStagesInfo = Optim::CreateVkPipelineShaderStageCreateInfoList(ShaderModule);
 
-    pipeline = Optim::CreateVkPipeline(device, swapChain.ImageFormat().format, shaderStagesInfo);
+    CreateDescriptorSetLayoutAndPipelineLayout();
+    
+    pipeline = Optim::CreateVkPipeline(device, swapChain.ImageFormat().format, shaderStagesInfo, pipelineLayout);
     if (pipeline == nullptr) {
       throw std::runtime_error("VkPipeline Initalization FAILURE");
     }
@@ -151,10 +252,46 @@ class Renderer final
     InitializeIndexBuffer();
     
     // Create FrameResources objects
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (int32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
       auto frame = Optim::FrameRenderer(device);
       frame.CmdResources() = Optim::CommandResources(device, renderQueueIndex);
       frames.emplace_back(std::move(frame));
+    }
+
+    // Create Uniform buffers
+    for (int32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+      GpuBuffer tempUniformBuffer(
+        device,
+        physicalDevice,
+        sizeof(UniformBufferObject),
+        vk::BufferUsageFlagBits::eUniformBuffer,
+        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+        // Cache mapped memory in pointer. Less expensive than per frame mapping.
+        tempUniformBuffer.pMappedMemory = tempUniformBuffer.deviceMemory.mapMemory(0, sizeof(UniformBufferObject));
+        uniformBuffers.emplace_back(std::move(tempUniformBuffer));
+    }
+
+    // Create then populate descriptors sets
+    CreateDescriptorPool();
+    CreateDescriptorSets();
+
+    for (int32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+      vk::DescriptorBufferInfo bufferInfo = {
+        .buffer = uniformBuffers[i].buffer,
+        .offset = 0,
+        .range  = sizeof(UniformBufferObject)
+      };
+
+      vk::WriteDescriptorSet descriptorWrite = {
+        .dstSet          = descriptorSets[i],
+        .dstBinding      = 0,
+        .dstArrayElement = 0,
+        .descriptorCount = 1,
+        .descriptorType  = vk::DescriptorType::eUniformBuffer,
+        .pBufferInfo     = &bufferInfo
+      };
+
+      device.updateDescriptorSets(descriptorWrite, {});
     }
   }
 
@@ -202,16 +339,24 @@ class Renderer final
     commandBuffer.reset();
     currentFrame.Start(swapChain.Images()[imageIndex], swapChain.ImageViews()[imageIndex], swapChain.ImageExtent());
 
-    // currentFrame.RecordCommandBuffer(swapChain, imageIndex, pipeline);
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
+    
     commandBuffer.bindVertexBuffers(0, *vertexBuffer.Buffer(), {0});
+    
     commandBuffer.bindIndexBuffer(*indexBuffer.Buffer(), 0, vk::IndexType::eUint32);
+    
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, *descriptorSets[frameIndex], nullptr);
+    
     commandBuffer.drawIndexed(static_cast<uint32>(indices.size()), 1, 0, 0, 0);
+
     currentFrame.End(swapChain.Images()[imageIndex]);
 
     // Only wait for the presentCompleteSemaphore during the color attachement
     // output stage.
     vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+
+    // Update uniform buffer before submitting work to gpu
+    UpdateUniformBuffer(frameIndex, swapChain.ImageExtent());
 
     /**
      * Commands submit:

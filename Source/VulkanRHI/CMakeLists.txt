@@ -17,13 +17,13 @@ target_include_directories(vulkanrhi
 )
 
 target_sources(vulkanrhi PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/Private/VulkanRHI.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Private/VulkanRenderer.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkCore/Setup.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkTypes/CommandContext.cpp"
-  # "${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkTypes/RenderContext.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkTypes/SwapChainContext.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkTypes/Buffers.cpp"
+  ${CMAKE_CURRENT_SOURCE_DIR}/Private/VulkanRHI.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Private/VulkanRenderer.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkCore/Setup.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkCore/Pipeline.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkTypes/CommandContext.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkTypes/SwapChainContext.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Private/OpVkTypes/Buffers.cpp
 )
 
 target_link_libraries(vulkanrhi PRIVATE

@@ -28,7 +28,7 @@ VSOutput VertexMain(VSInput input)
     View matrix: transforms the vertex from world space to camera (view) space.
     Projection matrix: transforms the vertex from camera space to clip space, applying perspective or orthographic projection.
   */
-  output.pos = mul(ubo.projection, mul(ubo.view, mul(ubo.model, float4(input.inPosition, 0.0, 1.0))));
+  output.pos = mul(ubo.projection, mul(ubo.view, mul(ubo.model, float4(input.inPosition, 0.0f, 1.0f))));
   output.color = input.inColor;
   return output;
 }

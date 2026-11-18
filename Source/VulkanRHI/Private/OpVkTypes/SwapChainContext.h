@@ -9,8 +9,22 @@ struct SDL_Window;
 namespace Optim
 {
 
+/**
+ * @brief
+ * Encapsulates vulkan objects used to draw to a surface.
+ */
 class SwapChainResource final
 {
+  /**
+   * NOTES:
+   * Could decapsulate, but keeping it as its encapsulated objets are tightly
+   * coupled. Could even add SurfaceKHR.
+   *
+   * Find a better name ???
+   *  - DrawData
+   *  - DrawResources
+   *  - TargetSurface
+   */
  public:
   SwapChainResource()                                    = default;
   ~SwapChainResource()                                   = default;

@@ -121,45 +121,6 @@ struct ShaderModule final
            entryPointVertex != nullptr &&
            entryPointFragment != nullptr;
   }
-
-  /**
-   * Try to load a slang module.
-   */
-  // [[deprecated]]
-  // bool TryLoadModule(const Slang::ComPtr<slang::ISession>& session, const char* moduleName)
-  // {
-  //   Slang::ComPtr<slang::IBlob> diagnostics;
-  //   shaderModule = session->loadModule(moduleName, diagnostics.writeRef());
-  //   if (!shaderModule) {
-  //     printf("Error: %s\n", (const char*)diagnostics->getBufferPointer());
-  //     return false;
-  //   }
-  //   return true;
-  // }
-
-  /**
-   * Try to load entry points from a shader module.
-   *
-   * Looks for already defined entry points name: `VertexMain` & `FragmentMain`.
-   * Fails if any of those is missing.
-   *
-   * The module must mark entry points with the `[shader("<shader_stage>")]` attribute.
-   */
-  // [[deprecated]]
-  // bool TryLoadEntryPoints()
-  // {
-  //   shaderModule->findEntryPointByName("VertexMain", entryPointVertex.writeRef());
-  //   shaderModule->findEntryPointByName("FragmentMain", entryPointFragment.writeRef());
-  //   if (!entryPointVertex) {
-  //     printf("Failed to get entry point 'VertexMain'.\n");
-  //     return false;
-  //   }
-  //   if (!entryPointFragment) {
-  //     printf("Failed to get entry point 'FragmentMain'.\n");
-  //     return false;
-  //   }
-  //   return true;
-  // }
 };
 
 /**
@@ -183,12 +144,13 @@ class SlangSession final
     }
 
     // Session and target description
-    slang::SessionDesc sessionDesc = {};
-    slang::TargetDesc  targetDesc  = {};
-    targetDesc.format              = SlangCompileTarget::SLANG_SPIRV;
-    targetDesc.profile             = globalSession->findProfile("spriv_1_5");
-    sessionDesc.targets            = &targetDesc;
-    sessionDesc.targetCount        = 1;
+    slang::SessionDesc sessionDesc      = {};
+    slang::TargetDesc  targetDesc       = {};
+    targetDesc.format                   = SlangCompileTarget::SLANG_SPIRV;
+    targetDesc.profile                  = globalSession->findProfile("spriv_1_5");
+    sessionDesc.targets                 = &targetDesc;
+    sessionDesc.targetCount             = 1;
+    sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
 
     slang::PreprocessorMacroDesc preprocessorMacroDesc[] = {
       {  "BIAS_VALUE",  "1138" },
